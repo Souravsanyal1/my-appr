@@ -4,6 +4,7 @@ import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/theme/theme_controller.dart';
+import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
 
@@ -65,7 +66,10 @@ class DashboardScreen extends GetView<DashboardController> {
             // 3. Battery Optimization Exemption Banner
             _buildBatteryOptimizationBanner(context, isDark),
 
-            // 4. Active Temporary Unlocks Section (if any)
+            // 4. Accessibility Service Warning / Restricted Setting Banner
+            _buildAccessibilityWarningBanner(context, isDark),
+
+            // 5. Active Temporary Unlocks Section (if any)
             _buildActiveUnlocksSection(context, isDark),
 
             // 5. Islamic Focus & Mindfulness Cards
@@ -335,6 +339,57 @@ class DashboardScreen extends GetView<DashboardController> {
                     await nativeBridge.requestIgnoreBatteryOptimizations();
                   },
                   child: const Text('Fix', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.warning)),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildAccessibilityWarningBanner(BuildContext context, bool isDark) {
+    final nativeBridge = Get.find<NativeBridgeService>();
+
+    return FutureBuilder<Map<String, bool>>(
+      future: nativeBridge.checkPermissions(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data?['accessibility'] == false) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: Colors.red.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: Colors.red.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.accessibility_new, color: Colors.redAccent, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Accessibility Service Inactive',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Required to detect foreground apps. Fix "Restricted setting" if blocked.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () => RestrictedSettingsDialog.show(context),
+                  child: const Text('Fix / Guide', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
                 ),
               ],
             ),

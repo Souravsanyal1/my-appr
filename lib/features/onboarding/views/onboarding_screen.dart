@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
+import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/onboarding/controllers/onboarding_controller.dart';
 
 class OnboardingScreen extends GetView<OnboardingController> {
@@ -201,6 +202,31 @@ class OnboardingScreen extends GetView<OnboardingController> {
                 isGranted: controller.hasAccessibilityPermission.value,
                 onRequest: () => controller.requestPermission('accessibility'),
               )),
+          Obx(() {
+            if (!controller.hasAccessibilityPermission.value) {
+              return Padding(
+                padding: const EdgeInsets.only(top: 6.0, bottom: 4.0),
+                child: Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    onTap: () => RestrictedSettingsDialog.show(context),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(Icons.help_outline, size: 14, color: AppColors.primaryGold),
+                        SizedBox(width: 4),
+                        Text(
+                          'Android 13+ "Restricted Setting"? Tap here',
+                          style: TextStyle(fontSize: 11, color: AppColors.primaryGold, fontWeight: FontWeight.w600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              );
+            }
+            return const SizedBox.shrink();
+          }),
           const SizedBox(height: 12),
 
           // 3. System Alert Overlay

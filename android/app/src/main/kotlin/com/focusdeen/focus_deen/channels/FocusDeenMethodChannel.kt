@@ -269,6 +269,10 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                     flags = Intent.FLAG_ACTIVITY_NEW_TASK
                 }
             }
+            "appSettings" -> Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                data = Uri.parse("package:${context.packageName}")
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK
+            }
             else -> null
         }
 

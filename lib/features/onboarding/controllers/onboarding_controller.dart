@@ -47,6 +47,10 @@ class OnboardingController extends GetxController with WidgetsBindingObserver {
     await _nativeBridge.requestPermission(type);
   }
 
+  Future<void> openAppSettings() async {
+    await _nativeBridge.openAppSettings();
+  }
+
   void nextStep() {
     if (currentStep.value < 1) {
       currentStep.value++;

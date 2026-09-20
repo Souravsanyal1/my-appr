@@ -119,6 +119,11 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Open FocusDeen App Info settings (to bypass Android 13+ "Restricted settings")
+  Future<void> openAppSettings() async {
+    await requestPermission('appSettings');
+  }
+
   /// Get installed launcher apps
   Future<List<InstalledAppModel>> getInstalledApps() async {
     if (!Platform.isAndroid) {
