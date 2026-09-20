@@ -1,7 +1,9 @@
 # FocusDeen (my-appr)
 
+[![FocusDeen CI/CD Pipeline](https://github.com/Souravsanyal1/my-appr/actions/workflows/ci_cd.yml/badge.svg)](https://github.com/Souravsanyal1/my-appr/actions/workflows/ci_cd.yml)
+
 > **Mindful Screen Time for the Believer**  
-> An Islamic mindfulness and digital focus application built with Flutter (GetX) and an Android Kotlin Native Monitoring Layer.
+> An Islamic mindfulness and digital focus application built with Flutter (GetX), Android Kotlin Native Services, and Firebase.
 
 ---
 
@@ -67,3 +69,16 @@ flutter pub get
 # Run on connected Android device
 flutter run
 ```
+
+---
+
+## ⚙️ CI/CD Pipeline (GitHub Actions)
+
+The project includes an automated Continuous Integration & Continuous Delivery workflow located in [`.github/workflows/ci_cd.yml`](.github/workflows/ci_cd.yml):
+
+* **Code Quality**: Runs `flutter analyze` across all Dart/Flutter files.
+* **Automated Tests**: Runs `flutter test --coverage` and saves coverage reports.
+* **Android Build**: Compiles `flutter build apk --release` and uploads the artifact for direct testing.
+* **Web Build**: Compiles `flutter build web --release` and stores web bundle artifacts.
+* **Trigger Events**: Runs automatically on every push to `main`, on Pull Requests, and manually via `workflow_dispatch`.
+
