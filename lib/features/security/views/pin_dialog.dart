@@ -46,15 +46,15 @@ class PinDialog extends StatelessWidget {
           color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
         ),
       ),
-      insetPadding: const EdgeInsets.symmetric(horizontal: 24, vertical: 32),
-      child: Padding(
-        padding: const EdgeInsets.all(24.0),
+      insetPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 20.0),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Row(
               children: [
-                const SizedBox(width: 48),
+                const SizedBox(width: 44),
                 Expanded(
                   child: Text(
                     title,
@@ -72,7 +72,7 @@ class PinDialog extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             Obx(() {
               String currentSubtitle = subtitle;
               if (isSetupMode) {
@@ -86,7 +86,7 @@ class PinDialog extends StatelessWidget {
                 style: Theme.of(context).textTheme.bodyMedium,
               );
             }),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             // PIN Dots Indicator
             Obx(() {
               final len = controller.enteredPin.value.length;
@@ -96,9 +96,9 @@ class PinDialog extends StatelessWidget {
                   final isFilled = index < len;
                   return AnimatedContainer(
                     duration: const Duration(milliseconds: 200),
-                    margin: const EdgeInsets.symmetric(horizontal: 10),
-                    width: 16,
-                    height: 16,
+                    margin: const EdgeInsets.symmetric(horizontal: 8),
+                    width: 14,
+                    height: 14,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
                       color: isFilled
@@ -112,25 +112,25 @@ class PinDialog extends StatelessWidget {
                 }),
               );
             }),
-            const SizedBox(height: 12),
+            const SizedBox(height: 8),
             // Error Message
             Obx(() {
               if (controller.errorMessage.value.isEmpty) {
-                return const SizedBox(height: 20);
+                return const SizedBox(height: 12);
               }
               return Padding(
-                padding: const EdgeInsets.only(top: 4, bottom: 8),
+                padding: const EdgeInsets.only(top: 2, bottom: 6),
                 child: Text(
                   controller.errorMessage.value,
                   style: const TextStyle(
                     color: AppColors.danger,
-                    fontSize: 13,
+                    fontSize: 12,
                     fontWeight: FontWeight.w500,
                   ),
                 ),
               );
             }),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             // Keypad
             _buildKeypad(context, controller),
           ],
@@ -143,11 +143,11 @@ class PinDialog extends StatelessWidget {
     return Column(
       children: [
         _buildRow(['1', '2', '3'], controller),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _buildRow(['4', '5', '6'], controller),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         _buildRow(['7', '8', '9'], controller),
-        const SizedBox(height: 12),
+        const SizedBox(height: 8),
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
@@ -191,10 +191,10 @@ class PinDialog extends StatelessWidget {
           }
         }
       },
-      borderRadius: BorderRadius.circular(36),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
-        width: 64,
-        height: 64,
+        width: 56,
+        height: 56,
         alignment: Alignment.center,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
@@ -203,7 +203,7 @@ class PinDialog extends StatelessWidget {
         child: Text(
           digit,
           style: const TextStyle(
-            fontSize: 24,
+            fontSize: 22,
             fontWeight: FontWeight.w600,
           ),
         ),
@@ -217,12 +217,12 @@ class PinDialog extends StatelessWidget {
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(36),
+      borderRadius: BorderRadius.circular(32),
       child: Container(
-        width: 64,
-        height: 64,
+        width: 56,
+        height: 56,
         alignment: Alignment.center,
-        child: Icon(icon, size: 24),
+        child: Icon(icon, size: 22),
       ),
     );
   }
