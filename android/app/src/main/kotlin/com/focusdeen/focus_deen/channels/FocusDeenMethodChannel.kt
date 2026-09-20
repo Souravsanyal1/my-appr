@@ -141,6 +141,37 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 result.success(success)
             }
 
+            "isBatteryOptimizationIgnored" -> {
+                val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
+                val isIgnored = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    powerManager?.isIgnoringBatteryOptimizations(context.packageName) ?: false
+                } else {
+                    true
+                }
+                result.success(isIgnored)
+            }
+
+            "requestIgnoreBatteryOptimizations" -> {
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    try {
+                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
+                            data = Uri.parse("package:${context.packageName}")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(intent)
+                        result.success(true)
+                    } catch (e: Exception) {
+                        val fallbackIntent = Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                        }
+                        context.startActivity(fallbackIntent)
+                        result.success(true)
+                    }
+                } else {
+                    result.success(true)
+                }
+            }
+
             else -> result.notImplemented()
         }
     }

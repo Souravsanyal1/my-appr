@@ -56,7 +56,7 @@ class UnlockScreen extends GetView<UnlockController> {
                             )),
                         const SizedBox(height: 2),
                         const Text(
-                          'Temporary Pass Required',
+                          'Recite to Earn an Unlock Pass',
                           style: TextStyle(fontSize: 13, color: AppColors.warning),
                         ),
                       ],
@@ -67,146 +67,220 @@ class UnlockScreen extends GetView<UnlockController> {
             ),
             const SizedBox(height: 20),
 
-            // Islamic Spiritual Practice / Reflection Module
+            // Surah Selection Pills
             Text(
-              'Mindful Reflection Exercise',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+              'Select Challenge Surah',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17),
             ),
             const SizedBox(height: 8),
-            Text(
-              'Pause, read, and reflect on this reminder before resuming your digital activity.',
-              style: TextStyle(
-                fontSize: 14,
-                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-              ),
+            SizedBox(
+              height: 40,
+              child: Obx(() => ListView.builder(
+                    scrollDirection: Axis.horizontal,
+                    itemCount: controller.verses.length,
+                    itemBuilder: (context, index) {
+                      final verse = controller.verses[index];
+                      final isSelected = controller.selectedVerseIndex.value == index;
+                      return Padding(
+                        padding: const EdgeInsets.only(right: 8.0),
+                        child: ChoiceChip(
+                          label: Text(verse.surahName.split('(').first.trim()),
+                          selected: isSelected,
+                          selectedColor: AppColors.primaryGold.withValues(alpha: 0.2),
+                          onSelected: (_) => controller.selectVerse(index),
+                        ),
+                      );
+                    },
+                  )),
             ),
-            const SizedBox(height: 14),
+            const SizedBox(height: 16),
 
-            // Quranic Card
-            Container(
-              padding: const EdgeInsets.all(20),
-              decoration: BoxDecoration(
-                gradient: isDark
-                    ? const LinearGradient(
-                        colors: [Color(0xFF1B3831), Color(0xFF132823)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : const LinearGradient(
-                        colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
+            // Quranic Card to Recite
+            Obx(() {
+              final verse = controller.currentVerse;
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  gradient: isDark
+                      ? const LinearGradient(
+                          colors: [Color(0xFF1B3831), Color(0xFF132823)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        )
+                      : const LinearGradient(
+                          colors: [Color(0xFFE8F5E9), Color(0xFFC8E6C9)],
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.emerald.withValues(alpha: 0.3)),
+                ),
+                child: Column(
+                  children: [
+                    Text(
+                      verse.surahName,
+                      style: const TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: AppColors.primaryGold,
                       ),
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.emerald.withValues(alpha: 0.3)),
-              ),
-              child: Column(
-                children: [
-                  const Text(
-                    'بِسْمِ اللَّهِ الرَّحْمَٰنِ الرَّحِيمِ',
-                    style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.primaryGold,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  const Text(
-                    '“قَدْ أَفْلَحَ الْمُؤْمِنُونَ • الَّذِينَ هُمْ فِي صَلَاتِهِمْ خَاشِعُونَ • وَالَّذِينَ هُمْ عَنِ اللَّغْوِ مُعْرِضُونَ”',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 18,
-                      height: 1.6,
-                      fontWeight: FontWeight.w600,
+                    const SizedBox(height: 14),
+                    Text(
+                      verse.arabic,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        fontSize: 22,
+                        height: 1.8,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  Text(
-                    AppStrings.ayahFocus,
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontStyle: FontStyle.italic,
-                      color: isDark ? AppColors.textSecondaryDark : Colors.black87,
+                    const SizedBox(height: 12),
+                    Text(
+                      verse.transliteration,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontStyle: FontStyle.italic,
+                        color: isDark ? AppColors.textSecondaryDark : Colors.black87,
+                      ),
                     ),
-                  ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    AppStrings.ayahFocusSource,
-                    style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
-                  ),
-                ],
-              ),
-            ),
+                    const SizedBox(height: 8),
+                    Text(
+                      verse.translation,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 12, height: 1.4),
+                    ),
+                  ],
+                ),
+              );
+            }),
             const SizedBox(height: 24),
+
+            // Audio Recording Section
+            Center(
+              child: Obx(() {
+                final isRec = controller.isRecording.value;
+                final seconds = controller.recordingSeconds.value;
+
+                return Column(
+                  children: [
+                    GestureDetector(
+                      onTap: controller.toggleRecording,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: isRec ? 88 : 76,
+                        height: isRec ? 88 : 76,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: isRec ? AppColors.danger : AppColors.primaryGold,
+                          boxShadow: [
+                            BoxShadow(
+                              color: (isRec ? AppColors.danger : AppColors.primaryGold)
+                                  .withValues(alpha: 0.4),
+                              blurRadius: isRec ? 24 : 12,
+                              spreadRadius: isRec ? 6 : 0,
+                            ),
+                          ],
+                        ),
+                        child: Icon(
+                          isRec ? Icons.stop : Icons.mic,
+                          color: isRec ? Colors.white : Colors.black,
+                          size: 38,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      isRec
+                          ? 'Recording recitation... 00:${seconds.toString().padLeft(2, '0')}'
+                          : 'Tap microphone to start reciting',
+                      style: TextStyle(
+                        fontWeight: isRec ? FontWeight.bold : FontWeight.normal,
+                        color: isRec ? AppColors.danger : null,
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
+            const SizedBox(height: 20),
+
+            // Score Result Card (when recorded)
+            Obx(() {
+              final res = controller.recitationResult.value;
+              if (res == null) return const SizedBox.shrink();
+
+              return Container(
+                padding: const EdgeInsets.all(16),
+                margin: const EdgeInsets.only(bottom: 20),
+                decoration: BoxDecoration(
+                  color: res.isPassing
+                      ? AppColors.emerald.withValues(alpha: 0.12)
+                      : AppColors.danger.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                  ),
+                ),
+                child: Column(
+                  children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Pronunciation Score: ${res.scorePercentage}%',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                          ),
+                        ),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          decoration: BoxDecoration(
+                            color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            res.isPassing ? '${res.earnedUnlockMinutes}m Earned' : 'Try Again',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      res.feedback,
+                      style: const TextStyle(fontSize: 13),
+                    ),
+                  ],
+                ),
+              );
+            }),
 
             // Unlock Duration Tiers Guide
             Text(
               'Unlock Duration Tiers',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 18),
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             _buildTierRow('70% – 79%', '5 minutes unlock', Icons.looks_one_outlined),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildTierRow('80% – 89%', '10 minutes unlock', Icons.looks_two_outlined),
-            const SizedBox(height: 8),
+            const SizedBox(height: 6),
             _buildTierRow('90%+ Score', '15 minutes unlock', Icons.looks_3_outlined, isHighlighted: true),
             const SizedBox(height: 24),
 
-            // Interactive Scoring Simulator (Prepares for Phase 5 Pronunciation module)
-            Text(
-              'Simulate Score / Controlled Unlock',
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.w600,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
-            ),
-            const SizedBox(height: 8),
-            Obx(() {
-              final score = controller.selectedScore.value;
-              final duration = controller.getDurationForScore(score);
-
-              return Column(
-                children: [
-                  Slider(
-                    value: score.toDouble(),
-                    min: 65,
-                    max: 100,
-                    divisions: 7,
-                    activeColor: AppColors.primaryGold,
-                    label: '$score%',
-                    onChanged: (v) => controller.selectedScore.value = v.round(),
-                  ),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Text('Achieved Score: $score%', style: const TextStyle(fontWeight: FontWeight.bold)),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                        decoration: BoxDecoration(
-                          color: duration > 0 ? AppColors.emerald.withValues(alpha: 0.15) : AppColors.danger.withValues(alpha: 0.15),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: Text(
-                          duration > 0 ? 'Qualifies for $duration min' : 'Below passing threshold (70%)',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: duration > 0 ? AppColors.emerald : AppColors.danger,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              );
-            }),
-            const SizedBox(height: 32),
-
             // Submit Button
             Obx(() {
-              final duration = controller.getDurationForScore(controller.selectedScore.value);
+              final res = controller.recitationResult.value;
+              final duration = res != null ? res.earnedUnlockMinutes : controller.getDurationForScore(controller.selectedScore.value);
               final canUnlock = duration > 0 && !controller.isUnlocking.value;
 
               return SizedBox(
@@ -257,7 +331,7 @@ class UnlockScreen extends GetView<UnlockController> {
 
   Widget _buildTierRow(String scoreRange, String duration, IconData icon, {bool isHighlighted = false}) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: isHighlighted ? AppColors.primaryGold.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
@@ -267,12 +341,13 @@ class UnlockScreen extends GetView<UnlockController> {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 22, color: isHighlighted ? AppColors.primaryGold : Colors.grey),
-          const SizedBox(width: 14),
+          Icon(icon, size: 20, color: isHighlighted ? AppColors.primaryGold : Colors.grey),
+          const SizedBox(width: 12),
           Expanded(
             child: Text(
               scoreRange,
               style: TextStyle(
+                fontSize: 13,
                 fontWeight: isHighlighted ? FontWeight.bold : FontWeight.w500,
                 color: isHighlighted ? AppColors.primaryGold : null,
               ),
@@ -280,7 +355,7 @@ class UnlockScreen extends GetView<UnlockController> {
           ),
           Text(
             duration,
-            style: const TextStyle(fontWeight: FontWeight.bold),
+            style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
           ),
         ],
       ),

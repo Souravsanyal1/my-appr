@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
+import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/theme/theme_controller.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
@@ -28,6 +29,12 @@ class DashboardScreen extends GetView<DashboardController> {
           ],
         ),
         actions: [
+          // Cloud Sync / Account
+          IconButton(
+            tooltip: 'Cloud Backup & Sync',
+            icon: const Icon(Icons.cloud_outlined),
+            onPressed: () => Get.toNamed('/auth'),
+          ),
           // Theme Toggle
           Obx(() => IconButton(
                 icon: Icon(
@@ -55,14 +62,21 @@ class DashboardScreen extends GetView<DashboardController> {
             _buildStatsOverviewCard(context, isDark),
             const SizedBox(height: 16),
 
-            // 3. Active Temporary Unlocks Section (if any)
+            // 3. Battery Optimization Exemption Banner
+            _buildBatteryOptimizationBanner(context, isDark),
+
+            // 4. Active Temporary Unlocks Section (if any)
             _buildActiveUnlocksSection(context, isDark),
 
-            // 4. Quick Action Buttons
+            // 5. Islamic Focus & Mindfulness Cards
+            _buildMindfulnessToolsSection(context, isDark),
+            const SizedBox(height: 16),
+
+            // 6. Quick Action Buttons
             _buildQuickActions(context),
             const SizedBox(height: 20),
 
-            // 5. Monitored Apps & Limits Section
+            // 7. Monitored Apps & Limits Section
             _buildMonitoredAppsSection(context, isDark),
           ],
         ),
@@ -276,6 +290,150 @@ class DashboardScreen extends GetView<DashboardController> {
         ),
       );
     });
+  }
+
+  Widget _buildBatteryOptimizationBanner(BuildContext context, bool isDark) {
+    final nativeBridge = Get.find<NativeBridgeService>();
+
+    return FutureBuilder<bool>(
+      future: nativeBridge.isBatteryOptimizationIgnored(),
+      builder: (context, snapshot) {
+        if (snapshot.hasData && snapshot.data == false) {
+          return Container(
+            margin: const EdgeInsets.only(bottom: 16),
+            padding: const EdgeInsets.all(14),
+            decoration: BoxDecoration(
+              color: AppColors.warning.withValues(alpha: 0.12),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.battery_alert_outlined, color: AppColors.warning, size: 24),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Battery Optimization Active',
+                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        'Exclude FocusDeen so monitoring stays active in background.',
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                TextButton(
+                  onPressed: () async {
+                    await nativeBridge.requestIgnoreBatteryOptimizations();
+                  },
+                  child: const Text('Fix', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.warning)),
+                ),
+              ],
+            ),
+          );
+        }
+        return const SizedBox.shrink();
+      },
+    );
+  }
+
+  Widget _buildMindfulnessToolsSection(BuildContext context, bool isDark) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Spiritual Focus & Dhikr',
+          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _buildToolCard(
+                context,
+                title: 'Focus Session',
+                subtitle: '25m Pomodoro',
+                icon: Icons.self_improvement,
+                color: AppColors.emerald,
+                isDark: isDark,
+                onTap: () => Get.toNamed('/focus-session'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildToolCard(
+                context,
+                title: 'Digital Tasbih',
+                subtitle: 'Daily Dhikr',
+                icon: Icons.fingerprint,
+                color: AppColors.primaryGold,
+                isDark: isDark,
+                onTap: () => Get.toNamed('/tasbih'),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildToolCard(
+    BuildContext context, {
+    required String title,
+    required String subtitle,
+    required IconData icon,
+    required Color color,
+    required bool isDark,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(16),
+      child: Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : AppColors.lightCard,
+          borderRadius: BorderRadius.circular(16),
+          border: Border.all(
+            color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: 0.15),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 22),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              title,
+              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: TextStyle(
+                fontSize: 11,
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
   Widget _buildQuickActions(BuildContext context) {

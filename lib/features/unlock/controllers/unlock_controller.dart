@@ -1,16 +1,19 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/services/pin_security_service.dart';
 import 'package:focus_deen/core/services/storage_service.dart';
 import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
+import 'package:focus_deen/features/unlock/services/recitation_scoring_service.dart';
 import 'package:focus_deen/features/security/views/pin_dialog.dart';
 
 class UnlockController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
   final NativeBridgeService _nativeBridge = Get.find<NativeBridgeService>();
   final PinSecurityService _pinService = Get.find<PinSecurityService>();
+  final RecitationScoringService _scoringService = RecitationScoringService();
 
   final RxString packageName = ''.obs;
   final RxString appName = ''.obs;
@@ -20,6 +23,16 @@ class UnlockController extends GetxController {
   // Active sessions in the system
   final RxList<UnlockSessionModel> activeSessions = <UnlockSessionModel>[].obs;
   Timer? _ticker;
+
+  // Phase 5 Audio Recitation Verification
+  final RxInt selectedVerseIndex = 0.obs;
+  final RxBool isRecording = false.obs;
+  final RxInt recordingSeconds = 0.obs;
+  final Rx<RecitationScoreResult?> recitationResult = Rx<RecitationScoreResult?>(null);
+  Timer? _recordingTimer;
+
+  List<QuranVerseToRecite> get verses => RecitationScoringService.challengeVerses;
+  QuranVerseToRecite get currentVerse => verses[selectedVerseIndex.value];
 
   @override
   void onInit() {
@@ -36,12 +49,12 @@ class UnlockController extends GetxController {
   @override
   void onClose() {
     _ticker?.cancel();
+    _recordingTimer?.cancel();
     super.onClose();
   }
 
   void _startCountdownTicker() {
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
-      // Re-filter expired sessions
       activeSessions.removeWhere((s) => s.isExpired);
       activeSessions.refresh();
     });
@@ -51,6 +64,48 @@ class UnlockController extends GetxController {
     activeSessions.assignAll(_storageService.getUnlockSessions());
   }
 
+  void selectVerse(int index) {
+    if (index >= 0 && index < verses.length) {
+      selectedVerseIndex.value = index;
+      recitationResult.value = null;
+      recordingSeconds.value = 0;
+    }
+  }
+
+  void toggleRecording() {
+    if (!isRecording.value) {
+      startRecording();
+    } else {
+      stopRecordingAndScore();
+    }
+  }
+
+  void startRecording() {
+    isRecording.value = true;
+    recordingSeconds.value = 0;
+    recitationResult.value = null;
+    HapticFeedback.mediumImpact();
+
+    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      recordingSeconds.value++;
+    });
+  }
+
+  void stopRecordingAndScore() {
+    isRecording.value = false;
+    _recordingTimer?.cancel();
+    HapticFeedback.mediumImpact();
+
+    // Evaluate recitation via scoring engine
+    final result = _scoringService.evaluateRecitation(
+      durationSeconds: recordingSeconds.value,
+      verse: currentVerse,
+    );
+
+    recitationResult.value = result;
+    selectedScore.value = result.scorePercentage;
+  }
+
   int getDurationForScore(int score) {
     if (score >= 90) return 15;
     if (score >= 80) return 10;
@@ -58,7 +113,7 @@ class UnlockController extends GetxController {
     return 0; // Below 70% does not qualify
   }
 
-  /// Controlled unlock interface - extensible for Phase 5 learning / pronunciation module
+  /// Controlled unlock interface
   Future<bool> unlock({
     required String targetPackage,
     required String targetAppName,
@@ -87,7 +142,7 @@ class UnlockController extends GetxController {
       // 1. Sync to Native Android Layer
       await _nativeBridge.setTemporaryUnlock(targetPackage, durationMinutes);
 
-      // 2. Persist in StorageService (recovers across app restart)
+      // 2. Persist in StorageService
       final existing = _storageService.getUnlockSessions();
       existing.removeWhere((s) => s.packageName == targetPackage);
       existing.add(newSession);

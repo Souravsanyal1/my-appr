@@ -239,6 +239,30 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Check if battery optimization is disabled for this app
+  Future<bool> isBatteryOptimizationIgnored() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>('isBatteryOptimizationIgnored');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error checking battery optimization: $e');
+      return false;
+    }
+  }
+
+  /// Request exemption from battery optimization
+  Future<bool> requestIgnoreBatteryOptimizations() async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>('requestIgnoreBatteryOptimizations');
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error requesting battery optimization exemption: $e');
+      return false;
+    }
+  }
+
   List<InstalledAppModel> _getDemoApps() {
     return const [
       InstalledAppModel(
