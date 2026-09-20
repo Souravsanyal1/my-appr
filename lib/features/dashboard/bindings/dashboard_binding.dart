@@ -12,6 +12,6 @@ class DashboardBinding extends Bindings {
     if (!Get.isRegistered<LimitController>()) {
       Get.put<LimitController>(LimitController());
     }
-    Get.lazyPut<DashboardController>(() => DashboardController());
+    Get.put<DashboardController>(DashboardController());
   }
 }

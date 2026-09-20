@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/services/storage_service.dart';
 import 'package:focus_deen/features/limits/controllers/limit_controller.dart';
@@ -16,7 +17,10 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
-    refreshDashboard();
+    activeUnlocks.assignAll(_storageService.getUnlockSessions());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      refreshDashboard();
+    });
     _startTimer();
   }
 
