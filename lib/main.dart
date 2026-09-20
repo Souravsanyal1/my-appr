@@ -5,6 +5,7 @@ import 'firebase_options.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/firebase_auth_service.dart';
+import 'core/services/firebase_realtime_service.dart';
 import 'core/services/firestore_sync_service.dart';
 import 'core/services/native_bridge_service.dart';
 import 'core/services/pin_security_service.dart';
@@ -26,9 +27,10 @@ void main() async {
   final storageService = await StorageService().init();
   Get.put<StorageService>(storageService, permanent: true);
 
-  // Initialize Firebase & Cloud Sync Services
+  // Initialize Firebase & Cloud Sync Services (Auth, Firestore, Realtime Database)
   Get.put<FirebaseAuthService>(FirebaseAuthService(), permanent: true);
   Get.put<FirestoreSyncService>(FirestoreSyncService(), permanent: true);
+  Get.put<FirebaseRealtimeService>(FirebaseRealtimeService(), permanent: true);
 
   // Initialize Core Services
   Get.put<NativeBridgeService>(NativeBridgeService(), permanent: true);

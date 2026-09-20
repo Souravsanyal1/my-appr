@@ -1,6 +1,9 @@
 import 'dart:async';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:focus_deen/core/services/firebase_realtime_service.dart';
+import 'package:focus_deen/core/services/firestore_sync_service.dart';
 
 class FocusSessionController extends GetxController {
   final RxInt selectedDurationMinutes = 25.obs;
@@ -29,7 +32,21 @@ class FocusSessionController extends GetxController {
   @override
   void onClose() {
     _timer?.cancel();
+    _syncLiveStatus(inSession: false);
     super.onClose();
+  }
+
+  void _syncLiveStatus({required bool inSession}) {
+    try {
+      if (Get.isRegistered<FirebaseRealtimeService>()) {
+        Get.find<FirebaseRealtimeService>().updateFocusSessionStatus(
+          inFocusSession: inSession,
+          remainingSeconds: remainingSeconds.value,
+        );
+      }
+    } catch (e) {
+      debugPrint('Error syncing focus session live status: $e');
+    }
   }
 
   void setDuration(int minutes) {
@@ -42,6 +59,8 @@ class FocusSessionController extends GetxController {
   void startSession() {
     isRunning.value = true;
     HapticFeedback.mediumImpact();
+    _syncLiveStatus(inSession: true);
+
     _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
       if (remainingSeconds.value > 0) {
         remainingSeconds.value--;
@@ -60,23 +79,40 @@ class FocusSessionController extends GetxController {
     isRunning.value = false;
     _timer?.cancel();
     HapticFeedback.lightImpact();
+    _syncLiveStatus(inSession: false);
   }
 
   void resetSession() {
     pauseSession();
     isBreak.value = false;
     remainingSeconds.value = selectedDurationMinutes.value * 60;
+    _syncLiveStatus(inSession: false);
   }
 
   void _onSessionComplete() {
     _timer?.cancel();
     isRunning.value = false;
     HapticFeedback.heavyImpact();
+    _syncLiveStatus(inSession: false);
 
     if (!isBreak.value) {
       completedSessionsCount.value++;
       isBreak.value = true;
       remainingSeconds.value = 5 * 60; // 5 minute sunnah break
+
+      // Sync completed session count to Firestore daily stats
+      try {
+        if (Get.isRegistered<FirestoreSyncService>()) {
+          Get.find<FirestoreSyncService>().saveDailyStats(
+            totalMinutes: 0,
+            focusScore: 90,
+            completedFocusSessions: completedSessionsCount.value,
+          );
+        }
+      } catch (e) {
+        debugPrint('Error syncing completed session to Firestore: $e');
+      }
+
       Get.snackbar(
         'Barakah Focus Complete! 🎉',
         'MashAllah! 25 minutes of mindful focus completed. Enjoy a 5-minute reflection break.',

@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:focus_deen/core/services/firebase_realtime_service.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/services/pin_security_service.dart';
 import 'package:focus_deen/core/services/storage_service.dart';
@@ -148,6 +149,15 @@ class UnlockController extends GetxController {
       existing.add(newSession);
       _storageService.saveUnlockSessions(existing);
 
+      // 3. Broadcast to Firebase Realtime Database
+      try {
+        if (Get.isRegistered<FirebaseRealtimeService>()) {
+          Get.find<FirebaseRealtimeService>().syncUnlockSession(newSession);
+        }
+      } catch (e) {
+        debugPrint('Realtime sync error: $e');
+      }
+
       activeSessions.assignAll(existing);
 
       Get.snackbar(
@@ -171,6 +181,13 @@ class UnlockController extends GetxController {
 
   Future<void> revokeUnlock(String targetPackage) async {
     await _nativeBridge.removeTemporaryUnlock(targetPackage);
+    try {
+      if (Get.isRegistered<FirebaseRealtimeService>()) {
+        Get.find<FirebaseRealtimeService>().removeUnlockSession(targetPackage);
+      }
+    } catch (e) {
+      debugPrint('Realtime remove unlock error: $e');
+    }
     final existing = _storageService.getUnlockSessions();
     existing.removeWhere((s) => s.packageName == targetPackage);
     _storageService.saveUnlockSessions(existing);

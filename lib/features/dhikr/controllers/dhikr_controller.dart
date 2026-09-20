@@ -1,6 +1,9 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
+import 'package:focus_deen/core/services/firebase_realtime_service.dart';
+import 'package:focus_deen/core/services/firestore_sync_service.dart';
 import 'package:focus_deen/features/dhikr/models/dhikr_model.dart';
 
 class DhikrController extends GetxController {
@@ -83,6 +86,20 @@ class DhikrController extends GetxController {
     currentCount.value++;
     totalLifetimeCount.value++;
     _box.write(_keyTotalCount, totalLifetimeCount.value);
+
+    // Sync to Firebase Realtime Database & Cloud Firestore every 5 counts or on target
+    if (currentCount.value % 5 == 0 || currentCount.value == currentDhikr.targetCount) {
+      try {
+        if (Get.isRegistered<FirebaseRealtimeService>()) {
+          Get.find<FirebaseRealtimeService>().syncTasbihLive(totalLifetimeCount.value);
+        }
+        if (Get.isRegistered<FirestoreSyncService>()) {
+          Get.find<FirestoreSyncService>().saveTasbihStats(totalLifetimeCount.value);
+        }
+      } catch (e) {
+        debugPrint('Error syncing tasbih to Firebase: $e');
+      }
+    }
 
     // If target reached
     if (currentCount.value == currentDhikr.targetCount) {

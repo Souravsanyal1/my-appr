@@ -47,6 +47,7 @@ class DefaultFirebaseOptions {
     projectId: 'focusdeen-f8295',
     authDomain: 'focusdeen-f8295.firebaseapp.com',
     storageBucket: 'focusdeen-f8295.firebasestorage.app',
+    databaseURL: 'https://focusdeen-f8295-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions android = FirebaseOptions(
@@ -55,6 +56,7 @@ class DefaultFirebaseOptions {
     messagingSenderId: '422731970610',
     projectId: 'focusdeen-f8295',
     storageBucket: 'focusdeen-f8295.firebasestorage.app',
+    databaseURL: 'https://focusdeen-f8295-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
@@ -64,6 +66,7 @@ class DefaultFirebaseOptions {
     projectId: 'focusdeen-f8295',
     storageBucket: 'focusdeen-f8295.firebasestorage.app',
     iosBundleId: 'com.focusdeen.focusDeen',
+    databaseURL: 'https://focusdeen-f8295-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
@@ -73,6 +76,7 @@ class DefaultFirebaseOptions {
     projectId: 'focusdeen-f8295',
     storageBucket: 'focusdeen-f8295.firebasestorage.app',
     iosBundleId: 'com.focusdeen.focusDeen',
+    databaseURL: 'https://focusdeen-f8295-default-rtdb.firebaseio.com',
   );
 
   static const FirebaseOptions windows = FirebaseOptions(
@@ -82,5 +86,6 @@ class DefaultFirebaseOptions {
     projectId: 'focusdeen-f8295',
     authDomain: 'focusdeen-f8295.firebaseapp.com',
     storageBucket: 'focusdeen-f8295.firebasestorage.app',
+    databaseURL: 'https://focusdeen-f8295-default-rtdb.firebaseio.com',
   );
 }

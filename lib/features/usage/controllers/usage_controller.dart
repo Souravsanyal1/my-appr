@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:focus_deen/core/services/firebase_realtime_service.dart';
+import 'package:focus_deen/core/services/firestore_sync_service.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/services/storage_service.dart';
 
@@ -43,6 +45,20 @@ class UsageController extends GetxController {
       final appName = event['appName'] as String? ?? 'App';
       final used = (event['usedMinutes'] as num?)?.toInt() ?? 0;
       final limit = (event['limitMinutes'] as num?)?.toInt() ?? 0;
+
+      // Broadcast to Firebase Realtime Database
+      try {
+        if (Get.isRegistered<FirebaseRealtimeService>()) {
+          Get.find<FirebaseRealtimeService>().broadcastBlockedEvent(
+            packageName: pkg,
+            appName: appName,
+            usedMinutes: used,
+            limitMinutes: limit,
+          );
+        }
+      } catch (e) {
+        debugPrint('Error broadcasting blocked event: $e');
+      }
 
       Get.toNamed('/blocked', arguments: {
         'packageName': pkg,
@@ -95,6 +111,19 @@ class UsageController extends GetxController {
 
       final score = ((100 - (exceededCount * 25) - (total > 180 ? 20 : 0)).clamp(20, 100)).toInt();
       focusScore.value = score;
+
+      // Sync daily usage summary to Cloud Firestore
+      try {
+        if (Get.isRegistered<FirestoreSyncService>()) {
+          Get.find<FirestoreSyncService>().saveDailyStats(
+            totalMinutes: total,
+            focusScore: score,
+            completedFocusSessions: 0,
+          );
+        }
+      } catch (e) {
+        debugPrint('Error syncing daily stats to Firestore: $e');
+      }
     } catch (e) {
       debugPrint('Error refreshing usage: $e');
     } finally {
