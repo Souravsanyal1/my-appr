@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "422731970610",
+    "project_id": "focusdeen-f8295",
+    "storage_bucket": "focusdeen-f8295.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:422731970610:android:89acc8d98969405851242b",
+        "android_client_info": {
+          "package_name": "com.focusdeen.focus_deen"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyD1YjlhtWrJIrc2yG0eM3v5g-3Q_N17uxg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
