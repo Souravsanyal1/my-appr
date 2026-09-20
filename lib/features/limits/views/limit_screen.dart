@@ -267,8 +267,8 @@ class LimitScreen extends GetView<LimitController> {
     if (enable) {
       if (!pinService.hasPin()) {
         final set = await PinDialog.show(
-          title: 'Set PIN to Enable Strict Mode',
-          subtitle: 'Create a 4-digit PIN',
+          title: 'Set Strict Mode PIN',
+          subtitle: 'Create a 4-digit security PIN',
           isSetupMode: true,
         );
         if (!set) return;
