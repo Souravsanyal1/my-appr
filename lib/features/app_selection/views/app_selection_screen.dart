@@ -53,17 +53,20 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
                 ),
                 const SizedBox(height: 10),
                 // Filter Tabs
-                Obx(() => Row(
-                      children: [
-                        _buildFilterChip('all', 'All Apps (${controller.allApps.length})'),
-                        const SizedBox(width: 8),
-                        _buildFilterChip(
-                          'monitored',
-                          'Monitored (${controller.monitoredPackages.length})',
-                        ),
-                        const SizedBox(width: 8),
-                        _buildFilterChip('user_only', 'Downloaded'),
-                      ],
+                Obx(() => SingleChildScrollView(
+                      scrollDirection: Axis.horizontal,
+                      child: Row(
+                        children: [
+                          _buildFilterChip('all', 'All Apps (${controller.allApps.length})'),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
+                            'monitored',
+                            'Monitored (${controller.monitoredPackages.length})',
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip('user_only', 'Downloaded'),
+                        ],
+                      ),
                     )),
               ],
             ),
