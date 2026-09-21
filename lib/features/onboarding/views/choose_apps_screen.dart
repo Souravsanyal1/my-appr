@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
-import '../../../core/services/storage_service.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../../app_selection/controllers/app_selection_controller.dart';
+import '../../app_selection/models/installed_app_model.dart';
 
 class ChooseAppsScreen extends StatelessWidget {
   const ChooseAppsScreen({super.key});
@@ -64,11 +64,11 @@ class ChooseAppsScreen extends StatelessWidget {
                   final displayList = apps.isNotEmpty
                       ? apps
                       : [
-                          _mockApp('TikTok', 'com.zhiliaoapp.musically', 'Social media'),
-                          _mockApp('Instagram', 'com.instagram.android', 'Social media'),
-                          _mockApp('Facebook', 'com.facebook.katana', 'Social media'),
-                          _mockApp('YouTube', 'com.google.android.youtube', 'Video & entertainment'),
-                          _mockApp('Reddit', 'com.reddit.frontpage', 'Social media'),
+                          InstalledAppModel(appName: 'TikTok', packageName: 'com.zhiliaoapp.musically', category: 'Social media'),
+                          InstalledAppModel(appName: 'Instagram', packageName: 'com.instagram.android', category: 'Social media'),
+                          InstalledAppModel(appName: 'Facebook', packageName: 'com.facebook.katana', category: 'Social media'),
+                          InstalledAppModel(appName: 'YouTube', packageName: 'com.google.android.youtube', category: 'Video & entertainment'),
+                          InstalledAppModel(appName: 'Reddit', packageName: 'com.reddit.frontpage', category: 'Social media'),
                         ];
 
                   return ListView.separated(
@@ -188,15 +188,4 @@ class ChooseAppsScreen extends StatelessWidget {
       ),
     );
   }
-
-  static dynamic _mockApp(String name, String pkg, String cat) {
-    return _MockInstalledApp(name, pkg, cat);
-  }
-}
-
-class _MockInstalledApp {
-  final String appName;
-  final String packageName;
-  final String category;
-  _MockInstalledApp(this.appName, this.packageName, this.category);
 }
