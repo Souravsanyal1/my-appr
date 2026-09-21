@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
-import 'package:focus_deen/core/services/notification_service.dart';
 import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
@@ -15,158 +14,38 @@ class DashboardScreen extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text(
-          AppStrings.appName,
-          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-        ),
-        actions: [
-          // Notification Bell with unread badge
-          Obx(() {
-            final notifService = Get.isRegistered<NotificationService>()
-                ? NotificationService.to
-                : null;
-            final unread = notifService?.unreadCount.value ?? 0;
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  tooltip: 'Notifications',
-                  icon: const Icon(Icons.notifications_outlined),
-                  onPressed: () => Get.toNamed('/notifications'),
-                ),
-                if (unread > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        unread > 9 ? '9+' : '$unread',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          }),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async => controller.refreshDashboard(),
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          children: [
-            // 1. Islamic Daily Motivation Banner
-            _buildDailyReminderCard(context, isDark),
-            const SizedBox(height: 16),
+    return RefreshIndicator(
+      onRefresh: () async => controller.refreshDashboard(),
+      child: ListView(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        children: [
+          // 1. Islamic Daily Motivation Banner
+          _buildDailyReminderCard(context, isDark),
+          const SizedBox(height: 16),
 
-            // 2. Main Stats Summary Card (Focus Score + Screen Time)
-            _buildStatsOverviewCard(context, isDark),
-            const SizedBox(height: 16),
+          // 2. Main Stats Summary Card (Focus Score + Screen Time)
+          _buildStatsOverviewCard(context, isDark),
+          const SizedBox(height: 16),
 
-            // 3. Battery Optimization Exemption Banner
-            _buildBatteryOptimizationBanner(context, isDark),
+          // 3. Battery Optimization Exemption Banner
+          _buildBatteryOptimizationBanner(context, isDark),
 
-            // 4. Accessibility Service Warning / Restricted Setting Banner
-            _buildAccessibilityWarningBanner(context, isDark),
+          // 4. Accessibility Service Warning / Restricted Setting Banner
+          _buildAccessibilityWarningBanner(context, isDark),
 
-            // 5. Active Temporary Unlocks Section (if any)
-            _buildActiveUnlocksSection(context, isDark),
+          // 5. Active Temporary Unlocks Section (if any)
+          _buildActiveUnlocksSection(context, isDark),
 
-            // 5. Islamic Focus & Mindfulness Cards
-            _buildMindfulnessToolsSection(context, isDark),
-            const SizedBox(height: 16),
+          // 5. Islamic Focus & Mindfulness Cards
+          _buildMindfulnessToolsSection(context, isDark),
+          const SizedBox(height: 16),
 
-            // 6. Quick Action Buttons
-            _buildQuickActions(context),
-            const SizedBox(height: 20),
+          // 6. Quick Action Buttons
+          _buildQuickActions(context),
+          const SizedBox(height: 20),
 
-            // 7. Monitored Apps & Limits Section
-            _buildMonitoredAppsSection(context, isDark),
-          ],
-        ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (idx) {
-          switch (idx) {
-            case 0:
-              break;
-            case 1:
-              Get.toNamed('/learning');
-              break;
-            case 2:
-              Get.toNamed('/limits');
-              break;
-            case 3:
-              Get.toNamed('/schedule');
-              break;
-            case 4:
-              Get.toNamed('/statistics');
-              break;
-            case 5:
-              Get.toNamed('/settings');
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(
-              Icons.dashboard,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(
-              Icons.menu_book,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Learning',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.timer_outlined),
-            selectedIcon: Icon(Icons.timer, color: AppColors.primaryEmerald),
-            label: 'Limits',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.alarm_outlined),
-            selectedIcon: Icon(Icons.alarm, color: AppColors.primaryEmerald),
-            label: 'Schedule',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(
-              Icons.bar_chart,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Stats',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.settings_outlined),
-            selectedIcon: Icon(
-              Icons.settings,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Settings',
-          ),
+          // 7. Monitored Apps & Limits Section
+          _buildMonitoredAppsSection(context, isDark),
         ],
       ),
     );

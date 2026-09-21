@@ -1,10 +1,10 @@
 import 'package:get/get.dart';
+import '../../core/widgets/main_shell.dart';
 import '../../features/app_selection/bindings/app_selection_binding.dart';
 import '../../features/app_selection/views/app_selection_screen.dart';
 import '../../features/auth/views/auth_screen.dart';
 import '../../features/blocking/views/blocked_screen.dart';
-import '../../features/dashboard/bindings/dashboard_binding.dart';
-import '../../features/dashboard/views/dashboard_screen.dart';
+
 import '../../features/dhikr/views/adhkar_screen.dart';
 import '../../features/dhikr/views/tasbih_screen.dart';
 import '../../features/focus_session/views/focus_session_screen.dart';
@@ -55,8 +55,7 @@ class AppPages {
     GetPage(name: AppRoutes.dailyGoal, page: () => const DailyGoalScreen()),
     GetPage(
       name: AppRoutes.home,
-      page: () => const DashboardScreen(),
-      binding: DashboardBinding(),
+      page: () => const MainShell(),
     ),
     GetPage(name: AppRoutes.intention, page: () => const IntentionScreen()),
     GetPage(
@@ -85,8 +84,7 @@ class AppPages {
     ),
     GetPage(
       name: AppRoutes.dashboard,
-      page: () => const DashboardScreen(),
-      binding: DashboardBinding(),
+      page: () => const MainShell(),
     ),
     GetPage(
       name: AppRoutes.appSelection,
