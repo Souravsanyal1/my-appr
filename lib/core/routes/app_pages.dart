@@ -5,7 +5,6 @@ import '../../features/auth/views/auth_screen.dart';
 import '../../features/blocking/views/blocked_screen.dart';
 import '../../features/dashboard/bindings/dashboard_binding.dart';
 import '../../features/dashboard/views/dashboard_screen.dart';
-import '../../features/dashboard/views/home_screen.dart';
 import '../../features/dhikr/views/adhkar_screen.dart';
 import '../../features/dhikr/views/tasbih_screen.dart';
 import '../../features/focus_session/views/focus_session_screen.dart';
@@ -56,7 +55,7 @@ class AppPages {
     GetPage(name: AppRoutes.dailyGoal, page: () => const DailyGoalScreen()),
     GetPage(
       name: AppRoutes.home,
-      page: () => const HomeScreen(),
+      page: () => const DashboardScreen(),
       binding: DashboardBinding(),
     ),
     GetPage(name: AppRoutes.intention, page: () => const IntentionScreen()),

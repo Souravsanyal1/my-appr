@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
+import 'package:focus_deen/core/services/notification_service.dart';
 import 'package:focus_deen/core/theme/theme_controller.dart';
 import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
@@ -30,6 +31,48 @@ class DashboardScreen extends GetView<DashboardController> {
           ],
         ),
         actions: [
+          // Notification Bell with unread badge
+          Obx(() {
+            final notifService = Get.isRegistered<NotificationService>()
+                ? NotificationService.to
+                : null;
+            final unread = notifService?.unreadCount.value ?? 0;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  tooltip: 'Notifications',
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: () => Get.toNamed('/notifications'),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        unread > 9 ? '9+' : '$unread',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
           // Cloud Sync / Account
           IconButton(
             tooltip: 'Cloud Backup & Sync',
@@ -45,6 +88,7 @@ class DashboardScreen extends GetView<DashboardController> {
           // Theme Toggle
           Obx(
             () => IconButton(
+              tooltip: 'Toggle Theme',
               icon: Icon(
                 themeController.isDarkMode.value
                     ? Icons.light_mode
@@ -53,10 +97,6 @@ class DashboardScreen extends GetView<DashboardController> {
               ),
               onPressed: themeController.toggleTheme,
             ),
-          ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: controller.refreshDashboard,
           ),
         ],
       ),
