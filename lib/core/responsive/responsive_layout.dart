@@ -57,8 +57,8 @@ class ResponsiveScaffoldBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final effectivePadding = padding ??
-        const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0);
+    final effectivePadding =
+        padding ?? const EdgeInsets.symmetric(horizontal: 20.0, vertical: 12.0);
 
     if (scrollable && child is! ScrollView) {
       return SafeArea(
@@ -69,9 +69,7 @@ class ResponsiveScaffoldBody extends StatelessWidget {
               return SingleChildScrollView(
                 physics: const BouncingScrollPhysics(),
                 child: ConstrainedBox(
-                  constraints: BoxConstraints(
-                    minHeight: constraints.maxHeight,
-                  ),
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: maxContentWidth),

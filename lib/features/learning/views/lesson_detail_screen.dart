@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/native_bridge_service.dart';
 import '../../unlock/views/unlock_screen.dart';
 import '../controllers/learning_controller.dart';
 import '../models/learning_lesson_model.dart';
@@ -18,20 +19,35 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
   bool _isPlayingAudio = false;
   int _repetitionCount = 0;
 
+  @override
+  void dispose() {
+    Get.find<NativeBridgeService>().stopSpeaking();
+    super.dispose();
+  }
+
   void _simulateAudioPlayback() async {
-    if (_isPlayingAudio) return;
+    final nativeBridge = Get.find<NativeBridgeService>();
+    if (_isPlayingAudio) {
+      await nativeBridge.stopSpeaking();
+      if (mounted) setState(() => _isPlayingAudio = false);
+      return;
+    }
+
     setState(() => _isPlayingAudio = true);
-    await Future.delayed(Duration(seconds: widget.lesson.minRecitationSeconds));
+
+    final arabic = widget.lesson.arabicText.trim();
+    if (arabic.isNotEmpty) {
+      await nativeBridge.speak(text: arabic, language: 'ar', rate: 0.75);
+    } else {
+      await nativeBridge.speak(
+        text: widget.lesson.transliteration,
+        language: 'en',
+        rate: 0.85,
+      );
+    }
+
     if (mounted) {
       setState(() => _isPlayingAudio = false);
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text(
-            'Audio recitation preview completed. Now practice reciting!',
-          ),
-          duration: Duration(seconds: 2),
-        ),
-      );
     }
   }
 

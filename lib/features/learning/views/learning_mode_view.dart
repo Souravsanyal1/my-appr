@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/language_service.dart';
+import '../../../core/services/native_bridge_service.dart';
 import '../../../core/widgets/arabic_text.dart';
 import '../models/learning_lesson_model.dart';
 import '../repositories/learning_repository.dart';
@@ -16,15 +18,62 @@ class LearningModeView extends StatefulWidget {
 
 class _LearningModeViewState extends State<LearningModeView> {
   bool _isPlaying = false;
+  StreamSubscription? _ttsSub;
 
-  void _playAudio() async {
-    if (_isPlaying) return;
+  @override
+  void initState() {
+    super.initState();
+    final nativeBridge = Get.find<NativeBridgeService>();
+    _ttsSub = nativeBridge.ttsStateStream.listen((playing) {
+      if (mounted) {
+        setState(() => _isPlaying = playing);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _ttsSub?.cancel();
+    Get.find<NativeBridgeService>().stopSpeaking();
+    super.dispose();
+  }
+
+  void _toggleAudio(LearningLessonModel lesson, bool isBn) async {
+    final nativeBridge = Get.find<NativeBridgeService>();
+    if (_isPlaying) {
+      await nativeBridge.stopSpeaking();
+      if (mounted) {
+        setState(() => _isPlaying = false);
+      }
+      return;
+    }
+
     setState(() => _isPlaying = true);
     HapticFeedback.lightImpact();
 
-    await Future.delayed(const Duration(seconds: 2));
-    if (mounted) {
-      setState(() => _isPlaying = false);
+    final arabic = lesson.arabicText.trim();
+    if (arabic.isNotEmpty) {
+      final success = await nativeBridge.speak(
+        text: arabic,
+        language: 'ar',
+        rate: 0.75,
+      );
+      if (!success && isBn && lesson.banglaPronunciation != null) {
+        await nativeBridge.speak(
+          text: lesson.banglaPronunciation!,
+          language: 'bn',
+          rate: 0.85,
+        );
+      }
+    } else {
+      final fallbackText = isBn
+          ? (lesson.banglaPronunciation ?? lesson.banglaTitle ?? lesson.title)
+          : lesson.transliteration;
+      await nativeBridge.speak(
+        text: fallbackText,
+        language: isBn ? 'bn' : 'en',
+        rate: 0.85,
+      );
     }
   }
 
@@ -122,7 +171,7 @@ class _LearningModeViewState extends State<LearningModeView> {
 
                 // Audio Playback Disc
                 GestureDetector(
-                  onTap: _playAudio,
+                  onTap: () => _toggleAudio(lesson, isBn),
                   child: Container(
                     width: 90,
                     height: 90,
@@ -232,7 +281,7 @@ class _LearningModeViewState extends State<LearningModeView> {
                   children: [
                     Expanded(
                       child: OutlinedButton(
-                        onPressed: _playAudio,
+                        onPressed: () => _toggleAudio(lesson, isBn),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.textPrimary,
                           side: const BorderSide(color: AppColors.border),
@@ -241,7 +290,11 @@ class _LearningModeViewState extends State<LearningModeView> {
                             borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                        child: Text(isBn ? 'পুনরায় শুনুন' : 'Hear Again'),
+                        child: Text(
+                          _isPlaying
+                              ? (isBn ? 'থামুন' : 'Stop')
+                              : (isBn ? 'পুনরায় শুনুন' : 'Hear Again'),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),

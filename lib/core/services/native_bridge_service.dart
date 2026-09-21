@@ -28,20 +28,43 @@ class NativeBridgeService extends GetxService {
   Stream<Map<String, dynamic>> get limitWarningStream =>
       _limitWarningController.stream;
 
+  final _ttsStateController = StreamController<bool>.broadcast();
+  Stream<bool> get ttsStateStream => _ttsStateController.stream;
+  final RxBool isSpeakingRx = false.obs;
+
   StreamSubscription? _eventSubscription;
 
   @override
   void onInit() {
     super.onInit();
+    _setupMethodCallHandler();
     _listenToNativeEvents();
+  }
+
+  void _setupMethodCallHandler() {
+    _methodChannel.setMethodCallHandler((call) async {
+      switch (call.method) {
+        case 'onTtsStart':
+          isSpeakingRx.value = true;
+          _ttsStateController.add(true);
+          break;
+        case 'onTtsDone':
+        case 'onTtsError':
+          isSpeakingRx.value = false;
+          _ttsStateController.add(false);
+          break;
+      }
+    });
   }
 
   @override
   void onClose() {
+    stopSpeaking();
     _eventSubscription?.cancel();
     _foregroundAppController.close();
     _appBlockedController.close();
     _limitWarningController.close();
+    _ttsStateController.close();
     super.onClose();
   }
 
@@ -309,5 +332,63 @@ class NativeBridgeService extends GetxService {
         appName: 'Snapchat',
       ),
     ];
+  }
+
+  /// Recite text using on-device TextToSpeech
+  Future<bool> speak({
+    required String text,
+    String language = 'ar',
+    double rate = 0.85,
+  }) async {
+    if (kIsWeb || !Platform.isAndroid) {
+      // Fallback simulation for tests/web
+      isSpeakingRx.value = true;
+      _ttsStateController.add(true);
+      Future.delayed(const Duration(seconds: 2), () {
+        isSpeakingRx.value = false;
+        _ttsStateController.add(false);
+      });
+      return true;
+    }
+
+    try {
+      isSpeakingRx.value = true;
+      final res = await _methodChannel.invokeMethod<bool>(
+        ChannelConstants.speak,
+        {'text': text, 'language': language, 'rate': rate},
+      );
+      return res ?? false;
+    } catch (e) {
+      isSpeakingRx.value = false;
+      debugPrint('Error invoking speak: $e');
+      return false;
+    }
+  }
+
+  /// Stop current audio speech playback
+  Future<void> stopSpeaking() async {
+    isSpeakingRx.value = false;
+    _ttsStateController.add(false);
+
+    if (kIsWeb || !Platform.isAndroid) return;
+
+    try {
+      await _methodChannel.invokeMethod(ChannelConstants.stopSpeaking);
+    } catch (e) {
+      debugPrint('Error invoking stopSpeaking: $e');
+    }
+  }
+
+  /// Check if the engine is actively speaking
+  Future<bool> isSpeaking() async {
+    if (kIsWeb || !Platform.isAndroid) return isSpeakingRx.value;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        ChannelConstants.isSpeaking,
+      );
+      return res ?? false;
+    } catch (e) {
+      return false;
+    }
   }
 }

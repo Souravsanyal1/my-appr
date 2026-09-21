@@ -10,7 +10,11 @@ import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
 import android.net.Uri
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.provider.Settings
+import android.speech.tts.TextToSpeech
+import android.speech.tts.UtteranceProgressListener
 import android.util.Base64
 import androidx.core.app.NotificationManagerCompat
 import com.focusdeen.focus_deen.services.AppMonitorService
@@ -21,9 +25,10 @@ import io.flutter.plugin.common.BinaryMessenger
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import java.io.ByteArrayOutputStream
+import java.util.Locale
 import java.util.concurrent.Executors
 
-class FocusDeenMethodChannel(private val context: Context) : MethodChannel.MethodCallHandler {
+class FocusDeenMethodChannel(private val context: Context) : MethodChannel.MethodCallHandler, TextToSpeech.OnInitListener {
 
     companion object {
         const val CHANNEL_NAME = "com.focusdeen.app/methods"
@@ -33,6 +38,99 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
     private val usageStatsService = UsageStatsService(context)
     private val appMonitorService = AppMonitorService.getInstance(context)
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    private var tts: TextToSpeech? = null
+    private var isTtsInitialized = false
+    private var pendingSpeakText: String? = null
+    private var pendingLanguage: String? = null
+    private var pendingRate: Float = 0.85f
+
+    init {
+        try {
+            tts = TextToSpeech(context.applicationContext, this)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    override fun onInit(status: Int) {
+        if (status == TextToSpeech.SUCCESS) {
+            isTtsInitialized = true
+            tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
+                override fun onStart(utteranceId: String?) {
+                    mainHandler.post {
+                        channel?.invokeMethod("onTtsStart", mapOf("utteranceId" to (utteranceId ?: "")))
+                    }
+                }
+
+                override fun onDone(utteranceId: String?) {
+                    mainHandler.post {
+                        channel?.invokeMethod("onTtsDone", mapOf("utteranceId" to (utteranceId ?: "")))
+                    }
+                }
+
+                @Deprecated("Deprecated in Java")
+                override fun onError(utteranceId: String?) {
+                    mainHandler.post {
+                        channel?.invokeMethod("onTtsError", mapOf("utteranceId" to (utteranceId ?: "")))
+                    }
+                }
+            })
+
+            pendingSpeakText?.let { text ->
+                speakText(text, pendingLanguage ?: "ar", pendingRate)
+                pendingSpeakText = null
+                pendingLanguage = null
+            }
+        }
+    }
+
+    fun speakText(text: String, language: String, rate: Float): Boolean {
+        if (!isTtsInitialized || tts == null) {
+            pendingSpeakText = text
+            pendingLanguage = language
+            pendingRate = rate
+            return false
+        }
+
+        try {
+            val targetLocale = when (language.lowercase()) {
+                "ar" -> Locale("ar")
+                "bn" -> Locale("bn", "BD")
+                else -> Locale("en", "US")
+            }
+
+            val avail = tts?.isLanguageAvailable(targetLocale)
+            if (avail != TextToSpeech.LANG_NOT_SUPPORTED && avail != TextToSpeech.LANG_MISSING_DATA) {
+                tts?.language = targetLocale
+            } else {
+                val fallbackLocale = Locale(targetLocale.language)
+                val fallbackAvail = tts?.isLanguageAvailable(fallbackLocale)
+                if (fallbackAvail != TextToSpeech.LANG_NOT_SUPPORTED && fallbackAvail != TextToSpeech.LANG_MISSING_DATA) {
+                    tts?.language = fallbackLocale
+                }
+            }
+
+            tts?.setSpeechRate(rate)
+            tts?.setPitch(1.0f)
+
+            val utteranceId = "deenflow_${System.currentTimeMillis()}"
+            val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+            return result == TextToSpeech.SUCCESS
+        } catch (e: Exception) {
+            e.printStackTrace()
+            return false
+        }
+    }
+
+    fun stopSpeaking() {
+        try {
+            tts?.stop()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
 
     fun register(messenger: BinaryMessenger) {
         channel = MethodChannel(messenger, CHANNEL_NAME)
@@ -42,6 +140,14 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
     fun unregister() {
         channel?.setMethodCallHandler(null)
         channel = null
+        stopSpeaking()
+        try {
+            tts?.shutdown()
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+        tts = null
+        isTtsInitialized = false
     }
 
     override fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
@@ -170,6 +276,23 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 } else {
                     result.success(true)
                 }
+            }
+
+            "speak" -> {
+                val text = call.argument<String>("text") ?: ""
+                val language = call.argument<String>("language") ?: "ar"
+                val rate = (call.argument<Double>("rate") ?: 0.85).toFloat()
+                val success = speakText(text, language, rate)
+                result.success(success)
+            }
+
+            "stopSpeaking" -> {
+                stopSpeaking()
+                result.success(true)
+            }
+
+            "isSpeaking" -> {
+                result.success(tts?.isSpeaking == true)
             }
 
             else -> result.notImplemented()
