@@ -1,3 +1,4 @@
+import 'package:focus_deen/core/services/notification_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
@@ -14,39 +15,91 @@ class DashboardScreen extends GetView<DashboardController> {
   Widget build(BuildContext context) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return RefreshIndicator(
-      onRefresh: () async => controller.refreshDashboard(),
-      child: ListView(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-        children: [
-          // 1. Islamic Daily Motivation Banner
-          _buildDailyReminderCard(context, isDark),
-          const SizedBox(height: 16),
-
-          // 2. Main Stats Summary Card (Focus Score + Screen Time)
-          _buildStatsOverviewCard(context, isDark),
-          const SizedBox(height: 16),
-
-          // 3. Battery Optimization Exemption Banner
-          _buildBatteryOptimizationBanner(context, isDark),
-
-          // 4. Accessibility Service Warning / Restricted Setting Banner
-          _buildAccessibilityWarningBanner(context, isDark),
-
-          // 5. Active Temporary Unlocks Section (if any)
-          _buildActiveUnlocksSection(context, isDark),
-
-          // 5. Islamic Focus & Mindfulness Cards
-          _buildMindfulnessToolsSection(context, isDark),
-          const SizedBox(height: 16),
-
-          // 6. Quick Action Buttons
-          _buildQuickActions(context),
-          const SizedBox(height: 20),
-
-          // 7. Monitored Apps & Limits Section
-          _buildMonitoredAppsSection(context, isDark),
+    return Scaffold(
+      appBar: AppBar(
+        title: const Text(
+          AppStrings.appName,
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+        ),
+        automaticallyImplyLeading: false,
+        actions: [
+          Obx(() {
+            final notifService = Get.isRegistered<NotificationService>()
+                ? NotificationService.to
+                : null;
+            final unread = notifService?.unreadCount.value ?? 0;
+            return Stack(
+              alignment: Alignment.center,
+              children: [
+                IconButton(
+                  tooltip: 'Notifications',
+                  icon: const Icon(Icons.notifications_outlined),
+                  onPressed: () => Get.toNamed('/notifications'),
+                ),
+                if (unread > 0)
+                  Positioned(
+                    top: 8,
+                    right: 8,
+                    child: Container(
+                      padding: const EdgeInsets.all(4),
+                      decoration: const BoxDecoration(
+                        color: Colors.redAccent,
+                        shape: BoxShape.circle,
+                      ),
+                      constraints: const BoxConstraints(
+                        minWidth: 16,
+                        minHeight: 16,
+                      ),
+                      child: Text(
+                        unread > 9 ? '9+' : '$unread',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 9,
+                          fontWeight: FontWeight.bold,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                    ),
+                  ),
+              ],
+            );
+          }),
         ],
+      ),
+      body: RefreshIndicator(
+        onRefresh: () async => controller.refreshDashboard(),
+        child: ListView(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+          children: [
+            // 1. Islamic Daily Motivation Banner
+            _buildDailyReminderCard(context, isDark),
+            const SizedBox(height: 16),
+
+            // 2. Main Stats Summary Card (Focus Score + Screen Time)
+            _buildStatsOverviewCard(context, isDark),
+            const SizedBox(height: 16),
+
+            // 3. Battery Optimization Exemption Banner
+            _buildBatteryOptimizationBanner(context, isDark),
+
+            // 4. Accessibility Service Warning / Restricted Setting Banner
+            _buildAccessibilityWarningBanner(context, isDark),
+
+            // 5. Active Temporary Unlocks Section (if any)
+            _buildActiveUnlocksSection(context, isDark),
+
+            // 5. Islamic Focus & Mindfulness Cards
+            _buildMindfulnessToolsSection(context, isDark),
+            const SizedBox(height: 16),
+
+            // 6. Quick Action Buttons
+            _buildQuickActions(context),
+            const SizedBox(height: 20),
+
+            // 7. Monitored Apps & Limits Section
+            _buildMonitoredAppsSection(context, isDark),
+          ],
+        ),
       ),
     );
   }

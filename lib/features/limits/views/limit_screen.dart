@@ -15,6 +15,7 @@ class LimitScreen extends GetView<LimitController> {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text('Daily Limits & Rules'),
         actions: [
           IconButton(

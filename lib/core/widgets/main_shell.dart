@@ -1,8 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
-import 'package:focus_deen/core/services/notification_service.dart';
-import 'package:focus_deen/core/constants/app_strings.dart';
 import 'package:focus_deen/features/dashboard/bindings/dashboard_binding.dart';
 import 'package:focus_deen/features/dashboard/views/dashboard_screen.dart';
 import 'package:focus_deen/features/learning/views/learning_catalog_screen.dart';
@@ -32,15 +29,6 @@ class _MainShellState extends State<MainShell> {
     SettingsScreen(),
   ];
 
-  static const List<String> _pageTitles = [
-    AppStrings.appName,
-    'Learning',
-    'Limits',
-    'Schedule',
-    'Statistics',
-    'Settings',
-  ];
-
   @override
   void initState() {
     super.initState();
@@ -54,56 +42,6 @@ class _MainShellState extends State<MainShell> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(
-          _pageTitles[_currentIndex],
-          style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-        ),
-        actions: [
-          // Notification bell with unread badge
-          Obx(() {
-            final notifService = Get.isRegistered<NotificationService>()
-                ? NotificationService.to
-                : null;
-            final unread = notifService?.unreadCount.value ?? 0;
-            return Stack(
-              alignment: Alignment.center,
-              children: [
-                IconButton(
-                  tooltip: 'Notifications',
-                  icon: const Icon(Icons.notifications_outlined),
-                  onPressed: () => Get.toNamed('/notifications'),
-                ),
-                if (unread > 0)
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: Container(
-                      padding: const EdgeInsets.all(4),
-                      decoration: const BoxDecoration(
-                        color: Colors.redAccent,
-                        shape: BoxShape.circle,
-                      ),
-                      constraints: const BoxConstraints(
-                        minWidth: 16,
-                        minHeight: 16,
-                      ),
-                      child: Text(
-                        unread > 9 ? '9+' : '$unread',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 9,
-                          fontWeight: FontWeight.bold,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                    ),
-                  ),
-              ],
-            );
-          }),
-        ],
-      ),
       body: IndexedStack(
         index: _currentIndex,
         children: _pages,

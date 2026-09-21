@@ -14,6 +14,7 @@ class ScheduleScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Block Schedules',
           style: TextStyle(fontWeight: FontWeight.bold),
