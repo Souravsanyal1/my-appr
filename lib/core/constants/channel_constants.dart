@@ -8,6 +8,7 @@ class ChannelConstants {
   static const String checkPermissions = "checkPermissions";
   static const String requestPermission = "requestPermission";
   static const String syncLimits = "syncLimits";
+  static const String syncMonitoredPackages = "syncMonitoredPackages";
   static const String setTemporaryUnlock = "setTemporaryUnlock";
   static const String removeTemporaryUnlock = "removeTemporaryUnlock";
   static const String getUnlockSessions = "getUnlockSessions";

@@ -55,10 +55,8 @@ class AppIconWidget extends StatelessWidget {
             height: size,
             fit: BoxFit.cover,
             filterQuality: FilterQuality.medium,
-            errorBuilder: (_, _, _) => _buildFallback(
-              effectivePkg,
-              effectiveName,
-            ),
+            errorBuilder: (_, _, _) =>
+                _buildFallback(effectivePkg, effectiveName),
           ),
         ),
       );

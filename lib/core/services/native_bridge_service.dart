@@ -233,6 +233,21 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Sync monitored/protected packages list to native Android service
+  Future<bool> syncMonitoredPackages(List<String> packages) async {
+    if (!Platform.isAndroid) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        ChannelConstants.syncMonitoredPackages,
+        {'packages': packages},
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error syncing monitored packages: $e');
+      return false;
+    }
+  }
+
   /// Set temporary unlock duration for an app
   Future<bool> setTemporaryUnlock(
     String packageName,

@@ -15,19 +15,38 @@ class UnlockSuccessView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageService = LanguageService.to;
+    final storage = Get.find<StorageService>();
+    final nativeBridge = Get.find<NativeBridgeService>();
+
     final duration = (Get.arguments is Map)
         ? (Get.arguments['durationMinutes'] as int? ?? 30)
         : 30;
 
-    const targetPackage = 'com.zhiliaoapp.musically';
-    const targetAppName = 'TikTok';
+    final targetPackage =
+        (Get.arguments is Map && Get.arguments['packageName'] != null)
+        ? Get.arguments['packageName'] as String
+        : (storage.getMonitoredPackages().isNotEmpty
+              ? storage.getMonitoredPackages().first
+              : 'com.zhiliaoapp.musically');
+
+    final targetAppName =
+        (Get.arguments is Map && Get.arguments['appName'] != null)
+        ? Get.arguments['appName'] as String
+        : (targetPackage.contains('tiktok') ||
+                  targetPackage.contains('musically')
+              ? 'TikTok'
+              : (targetPackage.contains('instagram')
+                    ? 'Instagram'
+                    : (targetPackage.contains('facebook')
+                          ? 'Facebook'
+                          : (targetPackage.contains('youtube')
+                                ? 'YouTube'
+                                : 'App'))));
 
     final expiresAt = DateTime.now().add(Duration(minutes: duration));
     final expireTimeStr = DateFormat('hh:mm a').format(expiresAt);
 
     // Save temporary unlock pass into storage & native bridge
-    final storage = Get.find<StorageService>();
-    final nativeBridge = Get.find<NativeBridgeService>();
     final session = UnlockSessionModel(
       packageName: targetPackage,
       appName: targetAppName,

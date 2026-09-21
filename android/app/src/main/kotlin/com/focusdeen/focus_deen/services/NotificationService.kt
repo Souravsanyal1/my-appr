@@ -62,4 +62,31 @@ class NotificationService(private val context: Context) {
         val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
         manager.notify(packageName.hashCode(), notification)
     }
+
+    fun showLockNotification(packageName: String, appName: String) {
+        val intent = Intent(context, MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+            putExtra("route", "/blocked")
+            putExtra("packageName", packageName)
+            putExtra("appName", appName)
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            packageName.hashCode() + 1,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setContentTitle("FocusDeen: $appName Locked")
+            .setContentText("Time is up! $appName is locked. Recite an Islamic deed to unlock.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(packageName.hashCode() + 100, notification)
+    }
 }

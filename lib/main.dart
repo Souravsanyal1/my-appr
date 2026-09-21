@@ -44,9 +44,16 @@ void main() async {
   Get.put<FirebaseRealtimeService>(FirebaseRealtimeService(), permanent: true);
 
   // Initialize Core Services
-  Get.put<NativeBridgeService>(NativeBridgeService(), permanent: true);
+  final nativeBridge = Get.put<NativeBridgeService>(
+    NativeBridgeService(),
+    permanent: true,
+  );
   Get.put<PinSecurityService>(PinSecurityService(), permanent: true);
   Get.put<ThemeController>(ThemeController(), permanent: true);
+
+  // Sync monitored/protected packages to Android Native Layer
+  final initialMonitored = storageService.getMonitoredPackages();
+  nativeBridge.syncMonitoredPackages(initialMonitored);
 
   // Initialize Global State Controllers
   Get.put<LimitController>(LimitController(), permanent: true);

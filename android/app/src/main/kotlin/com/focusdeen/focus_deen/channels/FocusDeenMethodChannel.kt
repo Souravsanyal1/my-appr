@@ -286,6 +286,12 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 }
             }
 
+            "syncMonitoredPackages" -> {
+                val packages = call.argument<List<String>>("packages") ?: emptyList()
+                appMonitorService.syncMonitoredPackages(packages)
+                result.success(true)
+            }
+
             "syncLimits" -> {
                 val limitsList = call.argument<List<Map<String, Any>>>("limits") ?: emptyList()
                 val configs = limitsList.map {

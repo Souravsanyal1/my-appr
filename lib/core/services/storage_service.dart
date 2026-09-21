@@ -2,6 +2,7 @@ import 'package:get/get.dart';
 import 'package:get_storage/get_storage.dart';
 import '../../features/limits/models/app_limit_model.dart';
 import '../../features/unlock/models/unlock_session_model.dart';
+import 'native_bridge_service.dart';
 
 class StorageService extends GetxService {
   late final GetStorage _box;
@@ -45,12 +46,28 @@ class StorageService extends GetxService {
   // Monitored Packages
   List<String> getMonitoredPackages() {
     final raw = _box.read<List<dynamic>>(keyMonitoredPackages);
-    if (raw == null) return [];
+    if (raw == null || raw.isEmpty) {
+      return [
+        'com.zhiliaoapp.musically',
+        'com.ss.android.ugc.trill',
+        'com.instagram.android',
+        'com.facebook.katana',
+        'com.google.android.youtube',
+        'com.snapchat.android',
+      ];
+    }
     return raw.map((e) => e.toString()).toList();
   }
 
   void saveMonitoredPackages(List<String> packages) {
     _box.write(keyMonitoredPackages, packages);
+    try {
+      if (Get.isRegistered<NativeBridgeService>()) {
+        Get.find<NativeBridgeService>().syncMonitoredPackages(packages);
+      }
+    } catch (e) {
+      // Ignored if service not yet initialized
+    }
   }
 
   // Temporary Unlock Sessions

@@ -169,10 +169,17 @@ class ResultView extends StatelessWidget {
                   width: double.infinity,
                   height: 54,
                   child: ElevatedButton(
-                    onPressed: () => Get.offNamed(
-                      '/unlock-success',
-                      arguments: {'durationMinutes': 30},
-                    ),
+                    onPressed: () {
+                      final args = (Get.arguments is Map)
+                          ? Map<String, dynamic>.from(Get.arguments as Map)
+                          : <String, dynamic>{};
+                      final pkg = args['packageName'];
+                      final app = args['appName'];
+                      final passArgs = <String, dynamic>{'durationMinutes': 30};
+                      if (pkg != null) passArgs['packageName'] = pkg;
+                      if (app != null) passArgs['appName'] = app;
+                      Get.offNamed('/unlock-success', arguments: passArgs);
+                    },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.black,

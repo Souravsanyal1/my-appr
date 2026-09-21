@@ -65,10 +65,17 @@ class _RecordingViewState extends State<RecordingView>
     setState(() => _isRecording = false);
     HapticFeedback.mediumImpact();
 
+    final existingArgs = (Get.arguments is Map)
+        ? Map<String, dynamic>.from(Get.arguments as Map)
+        : <String, dynamic>{};
+
     // Advance to multi-step Analysis screen with recorded duration
     Get.offNamed(
       '/analysis',
-      arguments: {'durationSeconds': _recordingSeconds.round()},
+      arguments: {
+        ...existingArgs,
+        'durationSeconds': _recordingSeconds.round(),
+      },
     );
   }
 

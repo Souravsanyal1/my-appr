@@ -86,12 +86,22 @@ class _AnalysisViewState extends State<AnalysisView> {
                 if (!mounted) return;
                 Future.delayed(const Duration(milliseconds: 350), () {
                   if (!mounted) return;
+                  final args = (Get.arguments is Map)
+                      ? Map<String, dynamic>.from(Get.arguments as Map)
+                      : <String, dynamic>{};
                   if (res.isPassing) {
-                    Get.offNamed('/result', arguments: {'result': res});
+                    Get.offNamed(
+                      '/result',
+                      arguments: {'result': res, ...args},
+                    );
                   } else {
                     Get.offNamed(
                       '/retry-result',
-                      arguments: {'result': res, 'score': res.overallScore},
+                      arguments: {
+                        'result': res,
+                        'score': res.overallScore,
+                        ...args,
+                      },
                     );
                   }
                 });

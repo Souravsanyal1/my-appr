@@ -14,6 +14,9 @@ class FocusAccessibilityService : AccessibilityService() {
         var instance: FocusAccessibilityService? = null
             private set
 
+        @Volatile
+        var currentForegroundPackage: String? = null
+
         var onForegroundAppChangedListener: ((String) -> Unit)? = null
         var onAppBlockedListener: ((packageName: String, appName: String, usedMinutes: Int, limitMinutes: Int) -> Unit)? = null
         var onLimitWarningListener: ((packageName: String, appName: String, minutesLeft: Int) -> Unit)? = null
@@ -27,21 +30,56 @@ class FocusAccessibilityService : AccessibilityService() {
 
     private var lastForegroundPackage: String? = null
     private val mainHandler = Handler(Looper.getMainLooper())
+    private var isEnforcingBlock = false
+
+    // Periodic ticker to check if the active app's temporary unlock session has expired
+    private val autoLockTicker = object : Runnable {
+        override fun run() {
+            try {
+                val currentPkg = currentForegroundPackage
+                if (currentPkg != null && !isSystemOrOwnPackage(currentPkg)) {
+                    val monitor = AppMonitorService.getInstance(applicationContext)
+                    val check = monitor.checkPackage(currentPkg)
+                    if (check is AppMonitorService.CheckResult.Blocked) {
+                        enforceBlock(currentPkg, check)
+                    }
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            mainHandler.postDelayed(this, 1500L)
+        }
+    }
 
     override fun onServiceConnected() {
         super.onServiceConnected()
         instance = this
+        mainHandler.removeCallbacks(autoLockTicker)
+        mainHandler.postDelayed(autoLockTicker, 1500L)
     }
 
     override fun onDestroy() {
+        mainHandler.removeCallbacks(autoLockTicker)
         super.onDestroy()
         if (instance == this) {
             instance = null
+            currentForegroundPackage = null
+            lastForegroundPackage = null
         }
     }
 
     override fun onInterrupt() {
         // Accessibility interrupted
+    }
+
+    private fun isSystemOrOwnPackage(pkg: String): Boolean {
+        val lower = pkg.lowercase()
+        return pkg == packageName ||
+            lower == "com.android.systemui" ||
+            lower.contains("launcher") ||
+            lower.contains("inputmethod") ||
+            lower.contains("systemui") ||
+            lower == "android"
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -52,17 +90,17 @@ class FocusAccessibilityService : AccessibilityService() {
         val pkgCharSequence = event.packageName ?: return
         val currentPackage = pkgCharSequence.toString()
 
-        // Ignore our own app and common Android system overlays
-        if (currentPackage == packageName ||
-            currentPackage == "com.android.systemui" ||
-            currentPackage.contains("launcher") ||
-            currentPackage.contains("inputmethod")
-        ) {
+        // If user is at launcher, lock screen, keyboard, or inside FocusDeen:
+        // Reset tracked packages so opening the app again triggers detection
+        if (isSystemOrOwnPackage(currentPackage)) {
+            currentForegroundPackage = null
+            lastForegroundPackage = null
             return
         }
 
         if (currentPackage != lastForegroundPackage) {
             lastForegroundPackage = currentPackage
+            currentForegroundPackage = currentPackage
 
             // 1. Notify listeners (for Flutter EventChannel)
             mainHandler.post {
@@ -73,29 +111,7 @@ class FocusAccessibilityService : AccessibilityService() {
             val monitor = AppMonitorService.getInstance(applicationContext)
             when (val check = monitor.checkPackage(currentPackage)) {
                 is AppMonitorService.CheckResult.Blocked -> {
-                    // Send to Flutter event channel
-                    mainHandler.post {
-                        onAppBlockedListener?.invoke(
-                            currentPackage,
-                            check.appName,
-                            check.usedMinutes,
-                            check.limitMinutes
-                        )
-                    }
-
-                    // Kick user out of restricted app immediately
-                    performGlobalAction(GLOBAL_ACTION_HOME)
-
-                    // Launch FocusDeen Blocked Screen
-                    val blockIntent = Intent(applicationContext, MainActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        putExtra("route", "/blocked")
-                        putExtra("packageName", currentPackage)
-                        putExtra("appName", check.appName)
-                        putExtra("usedMinutes", check.usedMinutes)
-                        putExtra("limitMinutes", check.limitMinutes)
-                    }
-                    startActivity(blockIntent)
+                    enforceBlock(currentPackage, check)
                 }
                 is AppMonitorService.CheckResult.Warning -> {
                     mainHandler.post {
@@ -111,5 +127,52 @@ class FocusAccessibilityService : AccessibilityService() {
                 }
             }
         }
+    }
+
+    private fun enforceBlock(currentPackage: String, check: AppMonitorService.CheckResult.Blocked) {
+        if (isEnforcingBlock) return
+        isEnforcingBlock = true
+
+        // 1. Kick user out of restricted app immediately
+        performGlobalAction(GLOBAL_ACTION_HOME)
+        currentForegroundPackage = null
+        lastForegroundPackage = null
+
+        // 2. Notify Flutter event channel
+        mainHandler.post {
+            onAppBlockedListener?.invoke(
+                currentPackage,
+                check.appName,
+                check.usedMinutes,
+                check.limitMinutes
+            )
+        }
+
+        // 3. Show lock notification
+        try {
+            val notificationService = NotificationService(applicationContext)
+            notificationService.showLockNotification(currentPackage, check.appName)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        // 4. Launch FocusDeen Blocked Screen
+        try {
+            val blockIntent = Intent(applicationContext, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
+                putExtra("route", "/blocked")
+                putExtra("packageName", currentPackage)
+                putExtra("appName", check.appName)
+                putExtra("usedMinutes", check.usedMinutes)
+                putExtra("limitMinutes", check.limitMinutes)
+            }
+            startActivity(blockIntent)
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+
+        mainHandler.postDelayed({
+            isEnforcingBlock = false
+        }, 1200L)
     }
 }
