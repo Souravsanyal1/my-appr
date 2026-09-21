@@ -32,6 +32,12 @@ class PinSecurityService extends GetxService {
     return _storageService.hasPinSet();
   }
 
+  bool isPinConfigured() => hasPin();
+
+  void setStrictMode(bool enabled) {
+    _storageService.setStrictModeEnabled(enabled);
+  }
+
   String _hashPin(String pin) {
     final bytes = utf8.encode(pin + _salt);
     return sha256.convert(bytes).toString();

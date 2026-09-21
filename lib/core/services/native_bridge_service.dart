@@ -124,6 +124,11 @@ class NativeBridgeService extends GetxService {
     await requestPermission('appSettings');
   }
 
+  Future<bool> checkUsageAccess() async => (await checkPermissions())['usageStats'] ?? false;
+  Future<bool> checkAccessibilityPermission() async => (await checkPermissions())['accessibility'] ?? false;
+  Future<bool> checkOverlayPermission() async => (await checkPermissions())['overlay'] ?? false;
+  Future<bool> requestUsageAccess() async => requestPermission('usageStats');
+
   /// Get installed launcher apps
   Future<List<InstalledAppModel>> getInstalledApps() async {
     if (!Platform.isAndroid) {

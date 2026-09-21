@@ -2,38 +2,43 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:focus_deen/core/services/firebase_realtime_service.dart';
-import 'package:focus_deen/core/services/native_bridge_service.dart';
-import 'package:focus_deen/core/services/pin_security_service.dart';
-import 'package:focus_deen/core/services/storage_service.dart';
-import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
-import 'package:focus_deen/features/unlock/services/recitation_scoring_service.dart';
-import 'package:focus_deen/features/security/views/pin_dialog.dart';
+import '../../../core/services/firebase_realtime_service.dart';
+import '../../../core/services/native_bridge_service.dart';
+import '../../../core/services/pin_security_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../security/views/pin_dialog.dart';
+import '../models/unlock_session_model.dart';
+import '../services/pronunciation_analyzer.dart';
+import '../services/recitation_scoring_service.dart';
 
 class UnlockController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
   final NativeBridgeService _nativeBridge = Get.find<NativeBridgeService>();
   final PinSecurityService _pinService = Get.find<PinSecurityService>();
-  final RecitationScoringService _scoringService = RecitationScoringService();
+  final PronunciationAnalyzer _analyzer = LocalPronunciationAnalyzer();
 
   final RxString packageName = ''.obs;
   final RxString appName = ''.obs;
-  final RxInt selectedScore = 85.obs; // Simulates score achieved (70-100)
+  final RxInt selectedScore = 85.obs;
   final RxBool isUnlocking = false.obs;
+  final RxBool isAnalyzing = false.obs;
 
   // Active sessions in the system
   final RxList<UnlockSessionModel> activeSessions = <UnlockSessionModel>[].obs;
   Timer? _ticker;
 
-  // Phase 5 Audio Recitation Verification
+  // Recitation Verification
   final RxInt selectedVerseIndex = 0.obs;
   final RxBool isRecording = false.obs;
   final RxInt recordingSeconds = 0.obs;
-  final Rx<RecitationScoreResult?> recitationResult = Rx<RecitationScoreResult?>(null);
+  final Rx<PronunciationResult?> recitationResult = Rx<PronunciationResult?>(null);
   Timer? _recordingTimer;
 
   List<QuranVerseToRecite> get verses => RecitationScoringService.challengeVerses;
   QuranVerseToRecite get currentVerse => verses[selectedVerseIndex.value];
+
+  int get configuredThreshold =>
+      _storageService.read<int>('unlock_threshold_percentage') ?? 80;
 
   @override
   void onInit() {
@@ -92,26 +97,37 @@ class UnlockController extends GetxController {
     });
   }
 
-  void stopRecordingAndScore() {
+  Future<void> stopRecordingAndScore() async {
     isRecording.value = false;
     _recordingTimer?.cancel();
     HapticFeedback.mediumImpact();
 
-    // Evaluate recitation via scoring engine
-    final result = _scoringService.evaluateRecitation(
-      durationSeconds: recordingSeconds.value,
-      verse: currentVerse,
-    );
+    isAnalyzing.value = true;
+    try {
+      final result = await _analyzer.analyze(
+        expectedArabic: currentVerse.arabic,
+        expectedTransliteration: currentVerse.transliteration,
+        durationSeconds: recordingSeconds.value,
+        minDurationSeconds: currentVerse.minRecitationSeconds,
+        unlockThreshold: configuredThreshold,
+      );
 
-    recitationResult.value = result;
-    selectedScore.value = result.scorePercentage;
+      recitationResult.value = result;
+      selectedScore.value = result.overallScore;
+
+      // Update recitation stats
+      final totalRecitations = (_storageService.read<int>('total_recitations') ?? 0) + 1;
+      _storageService.write('total_recitations', totalRecitations);
+    } finally {
+      isAnalyzing.value = false;
+    }
   }
 
   int getDurationForScore(int score) {
     if (score >= 90) return 15;
     if (score >= 80) return 10;
     if (score >= 70) return 5;
-    return 0; // Below 70% does not qualify
+    return 0;
   }
 
   /// Controlled unlock interface

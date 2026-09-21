@@ -209,6 +209,29 @@ class UnlockScreen extends GetView<UnlockController> {
 
             // Score Result Card (when recorded)
             Obx(() {
+              if (controller.isAnalyzing.value) {
+                return Container(
+                  padding: const EdgeInsets.all(16),
+                  margin: const EdgeInsets.only(bottom: 20),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.05),
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  child: const Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      ),
+                      SizedBox(width: 14),
+                      Text('Analyzing pronunciation & rhythm...'),
+                    ],
+                  ),
+                );
+              }
+
               final res = controller.recitationResult.value;
               if (res == null) return const SizedBox.shrink();
 
@@ -217,34 +240,35 @@ class UnlockScreen extends GetView<UnlockController> {
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: res.isPassing
-                      ? AppColors.emerald.withValues(alpha: 0.12)
-                      : AppColors.danger.withValues(alpha: 0.12),
+                      ? AppColors.primaryEmerald.withOpacity(0.12)
+                      : AppColors.danger.withOpacity(0.12),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                    color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
                   ),
                 ),
                 child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          'Pronunciation Score: ${res.scorePercentage}%',
+                          'Practice Score: ${res.overallScore}%',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                            color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
                           ),
                         ),
                         Container(
                           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                           decoration: BoxDecoration(
-                            color: res.isPassing ? AppColors.emerald : AppColors.danger,
+                            color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            res.isPassing ? '${res.earnedUnlockMinutes}m Earned' : 'Try Again',
+                            res.isPassing ? '${res.earnedUnlockMinutes}m Pass' : 'Try Again',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -254,10 +278,30 @@ class UnlockScreen extends GetView<UnlockController> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 8),
+                    const SizedBox(height: 12),
+                    // Detailed metrics
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildMetricCol('Words', '${res.wordRecognitionScore}%'),
+                        _buildMetricCol('Timing', '${res.timingScore}%'),
+                        _buildMetricCol('Similarity', '${res.audioSimilarityScore}%'),
+                      ],
+                    ),
+                    const SizedBox(height: 10),
                     Text(
                       res.feedback,
-                      style: const TextStyle(fontSize: 13),
+                      style: const TextStyle(fontSize: 13, height: 1.3),
+                    ),
+                    const SizedBox(height: 8),
+                    // Tajweed Disclaimer
+                    Text(
+                      res.disclaimer,
+                      style: const TextStyle(
+                        fontSize: 10,
+                        color: Colors.grey,
+                        fontStyle: FontStyle.italic,
+                      ),
                     ),
                   ],
                 ),
@@ -359,6 +403,29 @@ class UnlockScreen extends GetView<UnlockController> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildMetricCol(String label, String value) {
+    return Column(
+      children: [
+        Text(
+          value,
+          style: const TextStyle(
+            fontSize: 15,
+            fontWeight: FontWeight.bold,
+            color: AppColors.secondaryGold,
+          ),
+        ),
+        const SizedBox(height: 2),
+        Text(
+          label,
+          style: const TextStyle(
+            fontSize: 11,
+            color: Colors.grey,
+          ),
+        ),
+      ],
     );
   }
 }

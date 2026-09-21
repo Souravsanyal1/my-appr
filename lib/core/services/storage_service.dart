@@ -91,4 +91,9 @@ class StorageService extends GetxService {
     final hash = getPinHash();
     return hash != null && hash.isNotEmpty;
   }
+
+  // Generic key-value helpers
+  T? read<T>(String key) => _box.read<T>(key);
+  void write(String key, dynamic value) => _box.write(key, value);
+  void clear() => _box.erase();
 }

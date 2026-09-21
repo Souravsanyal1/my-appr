@@ -15,7 +15,9 @@ class AppColors {
 
   // Brand Accents
   static const Color primaryGold = Color(0xFFD4AF37);
+  static const Color secondaryGold = Color(0xFFD4AF37);
   static const Color primaryGoldLight = Color(0xFFF3E5AB);
+  static const Color primaryEmerald = Color(0xFF0F6B4F);
   static const Color emerald = Color(0xFF10B981);
   static const Color emeraldDark = Color(0xFF059669);
   static const Color emeraldLight = Color(0xFF34D399);

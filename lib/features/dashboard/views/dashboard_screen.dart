@@ -36,6 +36,12 @@ class DashboardScreen extends GetView<DashboardController> {
             icon: const Icon(Icons.cloud_outlined),
             onPressed: () => Get.toNamed('/auth'),
           ),
+          // Settings & Privacy
+          IconButton(
+            tooltip: 'Settings & Privacy',
+            icon: const Icon(Icons.settings_outlined),
+            onPressed: () => Get.toNamed('/settings'),
+          ),
           // Theme Toggle
           Obx(() => IconButton(
                 icon: Icon(
@@ -84,6 +90,54 @@ class DashboardScreen extends GetView<DashboardController> {
             _buildMonitoredAppsSection(context, isDark),
           ],
         ),
+      ),
+      bottomNavigationBar: NavigationBar(
+        selectedIndex: 0,
+        onDestinationSelected: (idx) {
+          switch (idx) {
+            case 0:
+              break;
+            case 1:
+              Get.toNamed('/learning');
+              break;
+            case 2:
+              Get.toNamed('/limits');
+              break;
+            case 3:
+              Get.toNamed('/schedule');
+              break;
+            case 4:
+              Get.toNamed('/statistics');
+              break;
+          }
+        },
+        destinations: const [
+          NavigationDestination(
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard, color: AppColors.primaryEmerald),
+            label: 'Home',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book, color: AppColors.primaryEmerald),
+            label: 'Learning',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.timer_outlined),
+            selectedIcon: Icon(Icons.timer, color: AppColors.primaryEmerald),
+            label: 'Limits',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.alarm_outlined),
+            selectedIcon: Icon(Icons.alarm, color: AppColors.primaryEmerald),
+            label: 'Schedule',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart, color: AppColors.primaryEmerald),
+            label: 'Stats',
+          ),
+        ],
       ),
     );
   }
@@ -405,10 +459,73 @@ class DashboardScreen extends GetView<DashboardController> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Text(
-          'Spiritual Focus & Dhikr',
+          'Islamic Learning & Focus',
           style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
+
+        // Featured: Islamic Learning Library Card
+        InkWell(
+          onTap: () => Get.toNamed('/learning'),
+          borderRadius: BorderRadius.circular(16),
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              gradient: const LinearGradient(
+                colors: [Color(0xFF0F6B4F), Color(0xFF094332)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(16),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primaryEmerald.withOpacity(0.2),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(10),
+                  decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.15),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(Icons.menu_book, color: AppColors.secondaryGold, size: 24),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Islamic Learning Library',
+                        style: TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.white,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Daily Dhikr, Duas, Salah Learning & Short Surahs',
+                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(Icons.chevron_right, color: Colors.white70),
+              ],
+            ),
+          ),
+        ),
+        const SizedBox(height: 12),
+
+        // Row 1: Focus Session & Schedules
         Row(
           children: [
             Expanded(
@@ -426,12 +543,42 @@ class DashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: _buildToolCard(
                 context,
+                title: 'Block Schedules',
+                subtitle: 'Study & Night Mode',
+                icon: Icons.alarm_outlined,
+                color: Colors.deepOrangeAccent,
+                isDark: isDark,
+                onTap: () => Get.toNamed('/schedule'),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+
+        // Row 2: Digital Tasbih & Adhkar
+        Row(
+          children: [
+            Expanded(
+              child: _buildToolCard(
+                context,
                 title: 'Digital Tasbih',
-                subtitle: 'Daily Dhikr',
+                subtitle: 'Daily Dhikr Counter',
                 icon: Icons.fingerprint,
                 color: AppColors.primaryGold,
                 isDark: isDark,
                 onTap: () => Get.toNamed('/tasbih'),
+              ),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _buildToolCard(
+                context,
+                title: 'Daily Adhkar',
+                subtitle: 'Morning & Evening',
+                icon: Icons.wb_sunny_outlined,
+                color: Colors.teal,
+                isDark: isDark,
+                onTap: () => Get.toNamed('/adhkar'),
               ),
             ),
           ],

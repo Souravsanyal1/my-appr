@@ -21,12 +21,13 @@ class PinDialog extends StatelessWidget {
     String title = 'Enter PIN',
     String subtitle = 'Strict Mode is active',
     bool isSetupMode = false,
+    bool isCreatingPin = false,
   }) async {
     final result = await Get.dialog<bool>(
       PinDialog(
         title: title,
         subtitle: subtitle,
-        isSetupMode: isSetupMode,
+        isSetupMode: isSetupMode || isCreatingPin,
       ),
       barrierDismissible: false,
     );

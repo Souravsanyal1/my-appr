@@ -9,5 +9,9 @@ abstract class AppRoutes {
   static const String focusSession = '/focus-session';
   static const String tasbih = '/tasbih';
   static const String adhkar = '/adhkar';
+  static const String learning = '/learning';
+  static const String schedule = '/schedule';
+  static const String statistics = '/statistics';
+  static const String settings = '/settings';
   static const String auth = '/auth';
 }
