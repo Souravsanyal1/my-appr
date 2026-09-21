@@ -54,3 +54,6 @@ admin_panel/dist/
 admin_panel/.env
 functions/node_modules/
 .env
+
+# Test screencaps
+current_*.png

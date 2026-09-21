@@ -32,13 +32,15 @@ service cloud.firestore {
 
       // Anonymous mobile app updates lastActiveAt, fcmToken, and stats
       // Admin has full update permission
-      allow update: if isAdmin() || (
-        isAuthenticated() &&
-        request.resource.data.deviceId == deviceId
-      );
+      allow update: if isAdmin() || isAuthenticated();
 
       // Only admin can delete user records
       allow delete: if isAdmin();
+    }
+
+    // Allow user device to sync its own subcollections (limits, stats, sessions)
+    match /users/{userId}/{allChildren=**} {
+      allow read, write: if isAuthenticated();
     }
 
     // ─── Notifications Log Collection ──────────────────────────────

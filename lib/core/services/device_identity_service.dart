@@ -128,7 +128,11 @@ class DeviceIdentityService extends GetxService {
       await FirebaseFirestore.instance
           .collection('users')
           .doc(_deviceId)
-          .update({'fcmToken': token, 'notificationsEnabled': true});
+          .set({
+            'deviceId': _deviceId,
+            'fcmToken': token,
+            'notificationsEnabled': true,
+          }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('[DeviceIdentity] updateFcmToken notice: $e');
     }

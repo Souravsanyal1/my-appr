@@ -34,9 +34,6 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Register background message handler BEFORE Firebase init
-  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
   // Initialize Firebase safely
   try {
     if (Firebase.apps.isEmpty) {
@@ -44,6 +41,8 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
+    // Register background message handler once Firebase is initialized
+    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   } catch (e) {
     debugPrint('Firebase initializeApp notice: $e');
   }

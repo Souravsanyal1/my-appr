@@ -774,56 +774,65 @@ class _HomeScreenState extends State<HomeScreen> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Text(
-                        languageService.t('locked_apps'),
-                        style: const TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.18),
-                          borderRadius: BorderRadius.circular(12),
-                          border: Border.all(
-                            color: AppColors.primaryGreen.withValues(alpha: 0.4),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(
+                            languageService.t('locked_apps'),
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
-                        child: Text(
-                          '${monitoredPkgs.length}',
-                          style: const TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.brightGreen,
+                        const SizedBox(width: 6),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.18),
+                            borderRadius: BorderRadius.circular(12),
+                            border: Border.all(
+                              color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                            ),
+                          ),
+                          child: Text(
+                            '${monitoredPkgs.length}',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.brightGreen,
+                            ),
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 4),
-                  Obx(
-                    () => Text(
-                      gamification.isUnlocked
-                          ? (isBn ? 'সুরক্ষিত অ্যাপসমূহ সাময়িক আনলকড' : 'Protected apps temporarily accessible')
-                          : (isBn ? 'সুরক্ষিত সকল অ্যাপ লক করা আছে' : 'All protected apps are locked'),
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: gamification.isUnlocked
-                            ? AppColors.brightGreen
-                            : AppColors.textSecondary,
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Obx(
+                      () => Text(
+                        gamification.isUnlocked
+                            ? (isBn ? 'সুরক্ষিত অ্যাপসমূহ সাময়িক আনলকড' : 'Protected apps temporarily accessible')
+                            : (isBn ? 'সুরক্ষিত সকল অ্যাপ লক করা আছে' : 'All protected apps are locked'),
+                        style: TextStyle(
+                          fontSize: 12,
+                          color: gamification.isUnlocked
+                              ? AppColors.brightGreen
+                              : AppColors.textSecondary,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
+              const SizedBox(width: 8),
               OutlinedButton.icon(
                 onPressed: () => Get.toNamed('/choose-apps'),
                 icon: const Icon(Iconsax.setting_4, size: 16),
