@@ -119,6 +119,9 @@ class DashboardScreen extends GetView<DashboardController> {
             case 4:
               Get.toNamed('/statistics');
               break;
+            case 5:
+              Get.toNamed('/settings');
+              break;
           }
         },
         destinations: const [
@@ -155,6 +158,14 @@ class DashboardScreen extends GetView<DashboardController> {
               color: AppColors.primaryEmerald,
             ),
             label: 'Stats',
+          ),
+          NavigationDestination(
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(
+              Icons.settings,
+              color: AppColors.primaryEmerald,
+            ),
+            label: 'Settings',
           ),
         ],
       ),
