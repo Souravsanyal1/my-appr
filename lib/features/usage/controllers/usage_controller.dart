@@ -60,12 +60,15 @@ class UsageController extends GetxController {
         debugPrint('Error broadcasting blocked event: $e');
       }
 
-      Get.toNamed('/blocked', arguments: {
-        'packageName': pkg,
-        'appName': appName,
-        'usedMinutes': used,
-        'limitMinutes': limit,
-      });
+      Get.toNamed(
+        '/blocked',
+        arguments: {
+          'packageName': pkg,
+          'appName': appName,
+          'usedMinutes': used,
+          'limitMinutes': limit,
+        },
+      );
     });
 
     _warningSub = _nativeBridge.limitWarningStream.listen((event) {
@@ -103,13 +106,18 @@ class UsageController extends GetxController {
       final limits = _storageService.getLimits();
       int exceededCount = 0;
       for (final limit in limits) {
-        final usedMins = ((usage[limit.packageName] ?? 0) / (1000 * 60)).round();
+        final usedMins = ((usage[limit.packageName] ?? 0) / (1000 * 60))
+            .round();
         if (usedMins > limit.dailyLimitMinutes) {
           exceededCount++;
         }
       }
 
-      final score = ((100 - (exceededCount * 25) - (total > 180 ? 20 : 0)).clamp(20, 100)).toInt();
+      final score =
+          ((100 - (exceededCount * 25) - (total > 180 ? 20 : 0)).clamp(
+            20,
+            100,
+          )).toInt();
       focusScore.value = score;
 
       // Sync daily usage summary to Cloud Firestore

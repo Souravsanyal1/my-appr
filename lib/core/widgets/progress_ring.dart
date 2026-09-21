@@ -35,7 +35,7 @@ class ProgressRing extends StatelessWidget {
               progressColor ?? AppColors.primaryGreen,
             ),
           ),
-          if (centerChild != null) centerChild!,
+          ?centerChild,
         ],
       ),
     );
@@ -60,22 +60,17 @@ class AppCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final cardBorder = isSelected
-        ? AppColors.primaryGreen
-        : AppColors.border;
+    final cardBorder = isSelected ? AppColors.primaryGreen : AppColors.border;
 
     return Container(
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(24),
-        border: Border.all(
-          color: cardBorder,
-          width: isSelected ? 1.8 : 1.0,
-        ),
+        border: Border.all(color: cardBorder, width: isSelected ? 1.8 : 1.0),
         boxShadow: isSelected
             ? [
                 BoxShadow(
-                  color: AppColors.primaryGreen.withOpacity(0.18),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.18),
                   blurRadius: 16,
                   spreadRadius: 1,
                 ),

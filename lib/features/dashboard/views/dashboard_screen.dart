@@ -43,13 +43,17 @@ class DashboardScreen extends GetView<DashboardController> {
             onPressed: () => Get.toNamed('/settings'),
           ),
           // Theme Toggle
-          Obx(() => IconButton(
-                icon: Icon(
-                  themeController.isDarkMode.value ? Icons.light_mode : Icons.dark_mode,
-                  color: AppColors.primaryGold,
-                ),
-                onPressed: themeController.toggleTheme,
-              )),
+          Obx(
+            () => IconButton(
+              icon: Icon(
+                themeController.isDarkMode.value
+                    ? Icons.light_mode
+                    : Icons.dark_mode,
+                color: AppColors.primaryGold,
+              ),
+              onPressed: themeController.toggleTheme,
+            ),
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: controller.refreshDashboard,
@@ -114,12 +118,18 @@ class DashboardScreen extends GetView<DashboardController> {
         destinations: const [
           NavigationDestination(
             icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: AppColors.primaryEmerald),
+            selectedIcon: Icon(
+              Icons.dashboard,
+              color: AppColors.primaryEmerald,
+            ),
             label: 'Home',
           ),
           NavigationDestination(
             icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book, color: AppColors.primaryEmerald),
+            selectedIcon: Icon(
+              Icons.menu_book,
+              color: AppColors.primaryEmerald,
+            ),
             label: 'Learning',
           ),
           NavigationDestination(
@@ -134,7 +144,10 @@ class DashboardScreen extends GetView<DashboardController> {
           ),
           NavigationDestination(
             icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart, color: AppColors.primaryEmerald),
+            selectedIcon: Icon(
+              Icons.bar_chart,
+              color: AppColors.primaryEmerald,
+            ),
             label: 'Stats',
           ),
         ],
@@ -162,7 +175,11 @@ class DashboardScreen extends GetView<DashboardController> {
               color: AppColors.primaryGold.withValues(alpha: 0.12),
               shape: BoxShape.circle,
             ),
-            child: const Icon(Icons.wb_sunny_outlined, color: AppColors.primaryGold, size: 20),
+            child: const Icon(
+              Icons.wb_sunny_outlined,
+              color: AppColors.primaryGold,
+              size: 20,
+            ),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -184,7 +201,9 @@ class DashboardScreen extends GetView<DashboardController> {
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
                     height: 1.4,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -229,7 +248,9 @@ class DashboardScreen extends GetView<DashboardController> {
                       child: CircularProgressIndicator(
                         value: (score / 100).clamp(0.0, 1.0),
                         strokeWidth: 8,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.black12,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           score >= 80 ? AppColors.emerald : AppColors.warning,
                         ),
@@ -237,7 +258,10 @@ class DashboardScreen extends GetView<DashboardController> {
                     ),
                     Text(
                       '$score',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ],
                 ),
@@ -261,7 +285,9 @@ class DashboardScreen extends GetView<DashboardController> {
                   'Restricted Time',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                    color: isDark
+                        ? AppColors.textMutedDark
+                        : AppColors.textMutedLight,
                   ),
                 ),
                 const SizedBox(height: 4),
@@ -278,7 +304,9 @@ class DashboardScreen extends GetView<DashboardController> {
                   '$limitsCount Active Limit${limitsCount == 1 ? '' : 's'}',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -312,7 +340,10 @@ class DashboardScreen extends GetView<DashboardController> {
                   SizedBox(width: 8),
                   Text(
                     'Active Temporary Passes',
-                    style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.emerald),
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.emerald,
+                    ),
                   ),
                 ],
               ),
@@ -323,9 +354,15 @@ class DashboardScreen extends GetView<DashboardController> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text(session.appName, style: const TextStyle(fontWeight: FontWeight.w600)),
+                      Text(
+                        session.appName,
+                        style: const TextStyle(fontWeight: FontWeight.w600),
+                      ),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
                         decoration: BoxDecoration(
                           color: AppColors.emerald,
                           borderRadius: BorderRadius.circular(8),
@@ -363,11 +400,17 @@ class DashboardScreen extends GetView<DashboardController> {
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.12),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
+              border: Border.all(
+                color: AppColors.warning.withValues(alpha: 0.4),
+              ),
             ),
             child: Row(
               children: [
-                const Icon(Icons.battery_alert_outlined, color: AppColors.warning, size: 24),
+                const Icon(
+                  Icons.battery_alert_outlined,
+                  color: AppColors.warning,
+                  size: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -375,14 +418,19 @@ class DashboardScreen extends GetView<DashboardController> {
                     children: [
                       const Text(
                         'Battery Optimization Active',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Exclude FocusDeen so monitoring stays active in background.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -392,7 +440,13 @@ class DashboardScreen extends GetView<DashboardController> {
                   onPressed: () async {
                     await nativeBridge.requestIgnoreBatteryOptimizations();
                   },
-                  child: const Text('Fix', style: TextStyle(fontWeight: FontWeight.bold, color: AppColors.warning)),
+                  child: const Text(
+                    'Fix',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.warning,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -420,7 +474,11 @@ class DashboardScreen extends GetView<DashboardController> {
             ),
             child: Row(
               children: [
-                const Icon(Icons.accessibility_new, color: Colors.redAccent, size: 24),
+                const Icon(
+                  Icons.accessibility_new,
+                  color: Colors.redAccent,
+                  size: 24,
+                ),
                 const SizedBox(width: 12),
                 Expanded(
                   child: Column(
@@ -428,14 +486,20 @@ class DashboardScreen extends GetView<DashboardController> {
                     children: [
                       const Text(
                         'Accessibility Service Inactive',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13, color: Colors.redAccent),
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                          color: Colors.redAccent,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         'Required to detect foreground apps. Fix "Restricted setting" if blocked.',
                         style: TextStyle(
                           fontSize: 11,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -443,7 +507,13 @@ class DashboardScreen extends GetView<DashboardController> {
                 ),
                 TextButton(
                   onPressed: () => RestrictedSettingsDialog.show(context),
-                  child: const Text('Fix / Guide', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.redAccent)),
+                  child: const Text(
+                    'Fix / Guide',
+                    style: TextStyle(
+                      fontWeight: FontWeight.bold,
+                      color: Colors.redAccent,
+                    ),
+                  ),
                 ),
               ],
             ),
@@ -479,7 +549,7 @@ class DashboardScreen extends GetView<DashboardController> {
               borderRadius: BorderRadius.circular(16),
               boxShadow: [
                 BoxShadow(
-                  color: AppColors.primaryEmerald.withOpacity(0.2),
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.2),
                   blurRadius: 8,
                   offset: const Offset(0, 3),
                 ),
@@ -490,10 +560,14 @@ class DashboardScreen extends GetView<DashboardController> {
                 Container(
                   padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.15),
+                    color: Colors.white.withValues(alpha: 0.15),
                     shape: BoxShape.circle,
                   ),
-                  child: const Icon(Icons.menu_book, color: AppColors.secondaryGold, size: 24),
+                  child: const Icon(
+                    Icons.menu_book,
+                    color: AppColors.secondaryGold,
+                    size: 24,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 const Expanded(
@@ -605,7 +679,9 @@ class DashboardScreen extends GetView<DashboardController> {
           color: isDark ? AppColors.darkCard : AppColors.lightCard,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+            color: isDark
+                ? AppColors.darkCardBorder
+                : AppColors.lightCardBorder,
           ),
         ),
         child: Column(
@@ -629,7 +705,9 @@ class DashboardScreen extends GetView<DashboardController> {
               subtitle,
               style: TextStyle(
                 fontSize: 11,
-                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                color: isDark
+                    ? AppColors.textMutedDark
+                    : AppColors.textMutedLight,
               ),
             ),
           ],
@@ -661,12 +739,15 @@ class DashboardScreen extends GetView<DashboardController> {
           tooltip: 'Preview Block Screen',
           icon: const Icon(Icons.play_arrow_rounded, color: AppColors.danger),
           onPressed: () {
-            Get.toNamed('/blocked', arguments: {
-              'packageName': 'com.instagram.android',
-              'appName': 'Instagram',
-              'usedMinutes': 30,
-              'limitMinutes': 30,
-            });
+            Get.toNamed(
+              '/blocked',
+              arguments: {
+                'packageName': 'com.instagram.android',
+                'appName': 'Instagram',
+                'usedMinutes': 30,
+                'limitMinutes': 30,
+              },
+            );
           },
         ),
       ],
@@ -698,7 +779,9 @@ class DashboardScreen extends GetView<DashboardController> {
               child: Padding(
                 padding: EdgeInsets.all(20),
                 child: Center(
-                  child: Text('No app limits added yet. Tap Limits to configure.'),
+                  child: Text(
+                    'No app limits added yet. Tap Limits to configure.',
+                  ),
                 ),
               ),
             );
@@ -706,7 +789,9 @@ class DashboardScreen extends GetView<DashboardController> {
 
           return Column(
             children: limits.map((limit) {
-              final used = controller.usageController.getUsageForPackage(limit.packageName);
+              final used = controller.usageController.getUsageForPackage(
+                limit.packageName,
+              );
               return _buildAppUsageCard(context, limit, used, isDark);
             }).toList(),
           );
@@ -723,7 +808,10 @@ class DashboardScreen extends GetView<DashboardController> {
   ) {
     final progress = (usedMinutes / limit.dailyLimitMinutes).clamp(0.0, 1.0);
     final isExceeded = usedMinutes >= limit.dailyLimitMinutes;
-    final isWarning = !isExceeded && (limit.dailyLimitMinutes - usedMinutes) <= limit.warningThresholdMinutes;
+    final isWarning =
+        !isExceeded &&
+        (limit.dailyLimitMinutes - usedMinutes) <=
+            limit.warningThresholdMinutes;
 
     Color statusColor = AppColors.emerald;
     String statusText = 'Normal';
@@ -758,21 +846,29 @@ class DashboardScreen extends GetView<DashboardController> {
                     children: [
                       Text(
                         limit.appName,
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 15,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '$usedMinutes / ${limit.dailyLimitMinutes} minutes',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: statusColor.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(6),

@@ -30,7 +30,9 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
               color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
               border: Border(
                 bottom: BorderSide(
-                  color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                  color: isDark
+                      ? AppColors.darkCardBorder
+                      : AppColors.lightCardBorder,
                 ),
               ),
             ),
@@ -43,8 +45,13 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
                     hintText: 'Search apps or packages...',
                     prefixIcon: const Icon(Icons.search, size: 20),
                     filled: true,
-                    fillColor: isDark ? AppColors.darkCard : Colors.grey.shade100,
-                    contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                    fillColor: isDark
+                        ? AppColors.darkCard
+                        : Colors.grey.shade100,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     border: OutlineInputBorder(
                       borderRadius: BorderRadius.circular(12),
                       borderSide: BorderSide.none,
@@ -53,21 +60,26 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
                 ),
                 const SizedBox(height: 10),
                 // Filter Tabs
-                Obx(() => SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildFilterChip('all', 'All Apps (${controller.allApps.length})'),
-                          const SizedBox(width: 8),
-                          _buildFilterChip(
-                            'monitored',
-                            'Monitored (${controller.monitoredPackages.length})',
-                          ),
-                          const SizedBox(width: 8),
-                          _buildFilterChip('user_only', 'Downloaded'),
-                        ],
-                      ),
-                    )),
+                Obx(
+                  () => SingleChildScrollView(
+                    scrollDirection: Axis.horizontal,
+                    child: Row(
+                      children: [
+                        _buildFilterChip(
+                          'all',
+                          'All Apps (${controller.allApps.length})',
+                        ),
+                        const SizedBox(width: 8),
+                        _buildFilterChip(
+                          'monitored',
+                          'Monitored (${controller.monitoredPackages.length})',
+                        ),
+                        const SizedBox(width: 8),
+                        _buildFilterChip('user_only', 'Downloaded'),
+                      ],
+                    ),
+                  ),
+                ),
               ],
             ),
           ),
@@ -110,7 +122,9 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
             color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
             border: Border(
               top: BorderSide(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
           ),

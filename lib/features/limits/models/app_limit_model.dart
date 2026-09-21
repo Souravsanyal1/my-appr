@@ -27,7 +27,8 @@ class AppLimitModel {
       packageName: packageName ?? this.packageName,
       appName: appName ?? this.appName,
       dailyLimitMinutes: dailyLimitMinutes ?? this.dailyLimitMinutes,
-      warningThresholdMinutes: warningThresholdMinutes ?? this.warningThresholdMinutes,
+      warningThresholdMinutes:
+          warningThresholdMinutes ?? this.warningThresholdMinutes,
       mode: mode ?? this.mode,
       isEnabled: isEnabled ?? this.isEnabled,
     );
@@ -49,7 +50,8 @@ class AppLimitModel {
       packageName: map['packageName'] as String? ?? '',
       appName: map['appName'] as String? ?? '',
       dailyLimitMinutes: (map['dailyLimitMinutes'] as num?)?.toInt() ?? 30,
-      warningThresholdMinutes: (map['warningThresholdMinutes'] as num?)?.toInt() ?? 5,
+      warningThresholdMinutes:
+          (map['warningThresholdMinutes'] as num?)?.toInt() ?? 5,
       mode: map['mode'] as String? ?? 'block',
       isEnabled: map['isEnabled'] as bool? ?? true,
     );

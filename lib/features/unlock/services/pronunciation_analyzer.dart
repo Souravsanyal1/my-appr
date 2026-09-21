@@ -77,11 +77,10 @@ class LocalPronunciationAnalyzer implements PronunciationAnalyzer {
     }
 
     // Weighted average practice score
-    final int overallScore = (
-      (wordRecognition * 0.4) +
-      (timing * 0.3) +
-      (audioSimilarity * 0.3)
-    ).round().clamp(0, 100);
+    final int overallScore =
+        ((wordRecognition * 0.4) + (timing * 0.3) + (audioSimilarity * 0.3))
+            .round()
+            .clamp(0, 100);
 
     final bool isPassing = overallScore >= unlockThreshold;
 
@@ -93,7 +92,8 @@ class LocalPronunciationAnalyzer implements PronunciationAnalyzer {
           'Score ($overallScore%) was below the passing threshold of $unlockThreshold%. Try again with clearer pauses.';
     } else if (overallScore >= 90) {
       earnedMinutes = 15;
-      feedback = 'MashaAllah! Excellent Tartil, clear pace and timing. 15-minute pass unlocked!';
+      feedback =
+          'MashaAllah! Excellent Tartil, clear pace and timing. 15-minute pass unlocked!';
     } else if (overallScore >= 80) {
       earnedMinutes = 10;
       feedback = 'Very good recitation & rhythm. 10-minute pass unlocked.';

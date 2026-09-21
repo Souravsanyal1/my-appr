@@ -34,23 +34,32 @@ class RecitationScoringService {
   static const List<QuranVerseToRecite> challengeVerses = [
     QuranVerseToRecite(
       surahName: 'Surah Al-Asr (The Declining Day)',
-      arabic: 'وَالْعَصْرِ • إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ',
-      transliteration: 'Wal-‘Asr. Innal-insana lafi khusr. Illal-ladhina amanu wa ‘amilus-salihati wa tawasaw bil-haqqi wa tawasaw bis-sabr.',
-      translation: 'By time, indeed mankind is in loss, except for those who believe and do righteous deeds and advise each other to truth and advise each other to patience.',
+      arabic:
+          'وَالْعَصْرِ • إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ',
+      transliteration:
+          'Wal-‘Asr. Innal-insana lafi khusr. Illal-ladhina amanu wa ‘amilus-salihati wa tawasaw bil-haqqi wa tawasaw bis-sabr.',
+      translation:
+          'By time, indeed mankind is in loss, except for those who believe and do righteous deeds and advise each other to truth and advise each other to patience.',
       minRecitationSeconds: 5,
     ),
     QuranVerseToRecite(
       surahName: 'Surah Al-Ikhlas (Purity)',
-      arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ • وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ',
-      transliteration: 'Qul Huwallahu Ahad. Allahus-Samad. Lam yalid wa lam yulad. Wa lam yakun lahu kufuwan ahad.',
-      translation: 'Say, He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.',
+      arabic:
+          'قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ • وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ',
+      transliteration:
+          'Qul Huwallahu Ahad. Allahus-Samad. Lam yalid wa lam yulad. Wa lam yakun lahu kufuwan ahad.',
+      translation:
+          'Say, He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.',
       minRecitationSeconds: 4,
     ),
     QuranVerseToRecite(
       surahName: 'Surah Al-Kawthar (Abundance)',
-      arabic: 'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ • فَصَلِّ لِرَبِّكَ وَانْحَرْ • إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
-      transliteration: 'Inna a‘taynaka al-kawthar. Fasalli li-rabbika wanhar. Inna shani’aka huwal-abtar.',
-      translation: 'Indeed, We have granted you, [O Muhammad], al-Kawthar. So pray to your Lord and sacrifice. Indeed, your enemy is the one cut off.',
+      arabic:
+          'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ • فَصَلِّ لِرَبِّكَ وَانْحَرْ • إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
+      transliteration:
+          'Inna a‘taynaka al-kawthar. Fasalli li-rabbika wanhar. Inna shani’aka huwal-abtar.',
+      translation:
+          'Indeed, We have granted you, [O Muhammad], al-Kawthar. So pray to your Lord and sacrifice. Indeed, your enemy is the one cut off.',
       minRecitationSeconds: 4,
     ),
   ];
@@ -64,7 +73,8 @@ class RecitationScoringService {
       return const RecitationScoreResult(
         scorePercentage: 60,
         earnedUnlockMinutes: 0,
-        feedback: 'Recitation was too short. Please recite all verses calmly with Tartil.',
+        feedback:
+            'Recitation was too short. Please recite all verses calmly with Tartil.',
         isPassing: false,
       );
     }
@@ -86,7 +96,8 @@ class RecitationScoringService {
     String feedback = 'Good recitation. 5 minutes unlocked.';
     if (score >= 90) {
       earnedMinutes = 15;
-      feedback = 'MashaAllah! Excellent Tartil & clear pronunciation. Maximum 15-minute pass earned!';
+      feedback =
+          'MashaAllah! Excellent Tartil & clear pronunciation. Maximum 15-minute pass earned!';
     } else if (score >= 80) {
       earnedMinutes = 10;
       feedback = 'Very good recitation & clear pace. 10-minute pass earned.';

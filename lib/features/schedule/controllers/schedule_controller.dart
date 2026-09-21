@@ -20,7 +20,11 @@ class ScheduleController extends GetxController {
     final rawList = _storageService.read<List<dynamic>>('user_schedules');
     if (rawList != null && rawList.isNotEmpty) {
       schedules.assignAll(
-        rawList.map((m) => ScheduleModel.fromMap(Map<String, dynamic>.from(m as Map))).toList(),
+        rawList
+            .map(
+              (m) => ScheduleModel.fromMap(Map<String, dynamic>.from(m as Map)),
+            )
+            .toList(),
       );
     } else {
       // Default presets as requested in prompt Section 18

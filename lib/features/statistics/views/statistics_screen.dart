@@ -10,7 +10,8 @@ class StatisticsScreen extends StatefulWidget {
   State<StatisticsScreen> createState() => _StatisticsScreenState();
 }
 
-class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerProviderStateMixin {
+class _StatisticsScreenState extends State<StatisticsScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
 
   @override
@@ -59,7 +60,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildTodayTab(BuildContext context, StatisticsController controller, bool isDark) {
+  Widget _buildTodayTab(
+    BuildContext context,
+    StatisticsController controller,
+    bool isDark,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Obx(() {
@@ -80,7 +85,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                 borderRadius: BorderRadius.circular(20),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primaryEmerald.withOpacity(0.3),
+                    color: AppColors.primaryEmerald.withValues(alpha: 0.3),
                     blurRadius: 12,
                     offset: const Offset(0, 4),
                   ),
@@ -98,7 +103,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                           value: controller.focusScore.value / 100,
                           strokeWidth: 8,
                           backgroundColor: Colors.white24,
-                          valueColor: const AlwaysStoppedAnimation(AppColors.secondaryGold),
+                          valueColor: const AlwaysStoppedAnimation(
+                            AppColors.secondaryGold,
+                          ),
                         ),
                       ),
                       Text(
@@ -131,14 +138,20 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                         ),
                         const SizedBox(height: 6),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
                           decoration: BoxDecoration(
                             color: Colors.black26,
                             borderRadius: BorderRadius.circular(6),
                           ),
                           child: const Text(
                             '* Motivational estimate, non-medical',
-                            style: TextStyle(fontSize: 10, color: Colors.white60),
+                            style: TextStyle(
+                              fontSize: 10,
+                              color: Colors.white60,
+                            ),
                           ),
                         ),
                       ],
@@ -155,7 +168,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF16201C) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: AppColors.secondaryGold.withOpacity(0.4)),
+                border: Border.all(
+                  color: AppColors.secondaryGold.withValues(alpha: 0.4),
+                ),
               ),
               child: Row(
                 children: [
@@ -248,7 +263,11 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildWeeklyTab(BuildContext context, StatisticsController controller, bool isDark) {
+  Widget _buildWeeklyTab(
+    BuildContext context,
+    StatisticsController controller,
+    bool isDark,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Obx(() {
@@ -274,7 +293,9 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF14201C) : Colors.white,
                 borderRadius: BorderRadius.circular(16),
-                border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                border: Border.all(
+                  color: isDark ? Colors.white12 : Colors.black12,
+                ),
               ),
               child: Column(
                 children: list.map((day) {
@@ -287,7 +308,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                           width: 44,
                           child: Text(
                             dayLabel,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
                         Expanded(
@@ -297,9 +321,14 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                               // Screen time bar
                               Container(
                                 height: 8,
-                                width: (day.totalScreenTimeMinutes * 1.0).clamp(20.0, 200.0),
+                                width: (day.totalScreenTimeMinutes * 1.0).clamp(
+                                  20.0,
+                                  200.0,
+                                ),
                                 decoration: BoxDecoration(
-                                  color: Colors.blueAccent.withOpacity(0.8),
+                                  color: Colors.blueAccent.withValues(
+                                    alpha: 0.8,
+                                  ),
                                   borderRadius: BorderRadius.circular(4),
                                 ),
                               ),
@@ -307,7 +336,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                               // Focus time bar
                               Container(
                                 height: 8,
-                                width: (day.focusMinutes * 2.5).clamp(10.0, 200.0),
+                                width: (day.focusMinutes * 2.5).clamp(
+                                  10.0,
+                                  200.0,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryEmerald,
                                   borderRadius: BorderRadius.circular(4),
@@ -319,7 +351,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                         const SizedBox(width: 8),
                         Text(
                           '${day.totalScreenTimeMinutes}m / ${day.focusMinutes}m',
-                          style: const TextStyle(fontSize: 11, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey,
+                          ),
                         ),
                       ],
                     ),
@@ -339,26 +374,37 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
               itemCount: list.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 8),
+              separatorBuilder: (_, _) => const SizedBox(height: 8),
               itemBuilder: (context, index) {
                 final day = list[index];
                 return Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 10,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? const Color(0xFF16201C) : Colors.white,
                     borderRadius: BorderRadius.circular(12),
-                    border: Border.all(color: isDark ? Colors.white12 : Colors.black12),
+                    border: Border.all(
+                      color: isDark ? Colors.white12 : Colors.black12,
+                    ),
                   ),
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
                         day.dateString,
-                        style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                        ),
                       ),
                       Text(
                         'Blocked: ${day.blockedAttempts} • Lessons: ${day.lessonsCompleted} • Score: ${day.averagePracticeScore}%',
-                        style: const TextStyle(fontSize: 12, color: AppColors.secondaryGold),
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppColors.secondaryGold,
+                        ),
                       ),
                     ],
                   ),
@@ -371,14 +417,18 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     );
   }
 
-  Widget _buildAchievementsTab(BuildContext context, StatisticsController controller, bool isDark) {
+  Widget _buildAchievementsTab(
+    BuildContext context,
+    StatisticsController controller,
+    bool isDark,
+  ) {
     return Obx(() {
       final list = controller.achievements;
 
       return ListView.separated(
         padding: const EdgeInsets.all(16),
         itemCount: list.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
+        separatorBuilder: (_, _) => const SizedBox(height: 10),
         itemBuilder: (context, index) {
           final ach = list[index];
           return Card(
@@ -401,13 +451,15 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                     height: 48,
                     decoration: BoxDecoration(
                       color: ach.isUnlocked
-                          ? AppColors.secondaryGold.withOpacity(0.15)
-                          : Colors.grey.withOpacity(0.1),
+                          ? AppColors.secondaryGold.withValues(alpha: 0.15)
+                          : Colors.grey.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                     ),
                     child: Icon(
                       ach.isUnlocked ? Icons.emoji_events : Icons.lock_outline,
-                      color: ach.isUnlocked ? AppColors.secondaryGold : Colors.grey,
+                      color: ach.isUnlocked
+                          ? AppColors.secondaryGold
+                          : Colors.grey,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -427,7 +479,10 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                             ),
                             if (ach.isUnlocked)
                               Container(
-                                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 2,
+                                ),
                                 decoration: BoxDecoration(
                                   color: AppColors.primaryEmerald,
                                   borderRadius: BorderRadius.circular(8),
@@ -446,14 +501,21 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
                         const SizedBox(height: 4),
                         Text(
                           ach.description,
-                          style: const TextStyle(fontSize: 12, color: Colors.grey),
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
                         ),
                         const SizedBox(height: 8),
                         LinearProgressIndicator(
                           value: ach.progressPercentage,
-                          backgroundColor: isDark ? Colors.white10 : Colors.black12,
+                          backgroundColor: isDark
+                              ? Colors.white10
+                              : Colors.black12,
                           valueColor: AlwaysStoppedAnimation(
-                            ach.isUnlocked ? AppColors.secondaryGold : AppColors.primaryEmerald,
+                            ach.isUnlocked
+                                ? AppColors.secondaryGold
+                                : AppColors.primaryEmerald,
                           ),
                           minHeight: 4,
                         ),
@@ -469,7 +531,13 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
     });
   }
 
-  Widget _buildStatTile(String label, String value, IconData icon, Color color, bool isDark) {
+  Widget _buildStatTile(
+    String label,
+    String value,
+    IconData icon,
+    Color color,
+    bool isDark,
+  ) {
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
@@ -498,10 +566,7 @@ class _StatisticsScreenState extends State<StatisticsScreen> with SingleTickerPr
           const SizedBox(height: 6),
           Text(
             value,
-            style: const TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-            ),
+            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
           ),

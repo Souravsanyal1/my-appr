@@ -18,7 +18,11 @@ class ChooseAppsScreen extends StatelessWidget {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 20,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Get.back(),
         ),
       ),
@@ -43,10 +47,7 @@ class ChooseAppsScreen extends StatelessWidget {
               // Subtitle
               const Text(
                 'Choose the apps you want to use more intentionally.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 24),
 
@@ -56,7 +57,9 @@ class ChooseAppsScreen extends StatelessWidget {
                   final apps = controller.installedApps;
                   if (apps.isEmpty && controller.isLoading.value) {
                     return const Center(
-                      child: CircularProgressIndicator(color: AppColors.primaryGreen),
+                      child: CircularProgressIndicator(
+                        color: AppColors.primaryGreen,
+                      ),
                     );
                   }
 
@@ -64,23 +67,46 @@ class ChooseAppsScreen extends StatelessWidget {
                   final displayList = apps.isNotEmpty
                       ? apps
                       : [
-                          InstalledAppModel(appName: 'TikTok', packageName: 'com.zhiliaoapp.musically', category: 'Social media'),
-                          InstalledAppModel(appName: 'Instagram', packageName: 'com.instagram.android', category: 'Social media'),
-                          InstalledAppModel(appName: 'Facebook', packageName: 'com.facebook.katana', category: 'Social media'),
-                          InstalledAppModel(appName: 'YouTube', packageName: 'com.google.android.youtube', category: 'Video & entertainment'),
-                          InstalledAppModel(appName: 'Reddit', packageName: 'com.reddit.frontpage', category: 'Social media'),
+                          InstalledAppModel(
+                            appName: 'TikTok',
+                            packageName: 'com.zhiliaoapp.musically',
+                            category: 'Social media',
+                          ),
+                          InstalledAppModel(
+                            appName: 'Instagram',
+                            packageName: 'com.instagram.android',
+                            category: 'Social media',
+                          ),
+                          InstalledAppModel(
+                            appName: 'Facebook',
+                            packageName: 'com.facebook.katana',
+                            category: 'Social media',
+                          ),
+                          InstalledAppModel(
+                            appName: 'YouTube',
+                            packageName: 'com.google.android.youtube',
+                            category: 'Video & entertainment',
+                          ),
+                          InstalledAppModel(
+                            appName: 'Reddit',
+                            packageName: 'com.reddit.frontpage',
+                            category: 'Social media',
+                          ),
                         ];
 
                   return ListView.separated(
                     itemCount: displayList.length,
-                    separatorBuilder: (_, __) => const SizedBox(height: 12),
+                    separatorBuilder: (_, _) => const SizedBox(height: 12),
                     itemBuilder: (context, index) {
                       final app = displayList[index];
-                      final isSelected = controller.selectedPackages.contains(app.packageName);
+                      final isSelected = controller.selectedPackages.contains(
+                        app.packageName,
+                      );
 
                       return AppCard(
                         isSelected: isSelected,
-                        onTap: () => controller.toggleAppSelection(app.packageName),
+                        onTap: () =>
+                            controller.toggleAppSelection(app.packageName),
                         child: Row(
                           children: [
                             Container(
@@ -88,17 +114,23 @@ class ChooseAppsScreen extends StatelessWidget {
                               height: 44,
                               decoration: BoxDecoration(
                                 color: isSelected
-                                    ? AppColors.primaryGreen.withOpacity(0.18)
+                                    ? AppColors.primaryGreen.withValues(
+                                        alpha: 0.18,
+                                      )
                                     : AppColors.surfaceLight,
                                 shape: BoxShape.circle,
                               ),
                               child: Center(
                                 child: Text(
-                                  app.appName.isNotEmpty ? app.appName[0].toUpperCase() : 'A',
+                                  app.appName.isNotEmpty
+                                      ? app.appName[0].toUpperCase()
+                                      : 'A',
                                   style: TextStyle(
                                     fontWeight: FontWeight.bold,
                                     fontSize: 18,
-                                    color: isSelected ? AppColors.brightGreen : AppColors.textPrimary,
+                                    color: isSelected
+                                        ? AppColors.brightGreen
+                                        : AppColors.textPrimary,
                                   ),
                                 ),
                               ),
@@ -118,7 +150,9 @@ class ChooseAppsScreen extends StatelessWidget {
                                   ),
                                   const SizedBox(height: 2),
                                   Text(
-                                    app.category.isNotEmpty ? app.category : 'Social media',
+                                    app.category.isNotEmpty
+                                        ? app.category
+                                        : 'Social media',
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -132,14 +166,22 @@ class ChooseAppsScreen extends StatelessWidget {
                               height: 26,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                color: isSelected ? AppColors.primaryGreen : Colors.transparent,
+                                color: isSelected
+                                    ? AppColors.primaryGreen
+                                    : Colors.transparent,
                                 border: Border.all(
-                                  color: isSelected ? AppColors.primaryGreen : AppColors.border,
+                                  color: isSelected
+                                      ? AppColors.primaryGreen
+                                      : AppColors.border,
                                   width: 1.5,
                                 ),
                               ),
                               child: isSelected
-                                  ? const Icon(Icons.check, size: 16, color: Colors.black)
+                                  ? const Icon(
+                                      Icons.check,
+                                      size: 16,
+                                      color: Colors.black,
+                                    )
                                   : null,
                             ),
                           ],
@@ -173,7 +215,10 @@ class ChooseAppsScreen extends StatelessWidget {
                     children: [
                       Text(
                         'Continue',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(width: 8),
                       Icon(Icons.arrow_forward_rounded, size: 18),

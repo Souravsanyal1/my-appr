@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../services/pronunciation_analyzer.dart';
 
@@ -9,6 +12,7 @@ class ResultView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = LanguageService.to;
     final PronunciationResult? res = (Get.arguments is Map)
         ? (Get.arguments['result'] as PronunciationResult?)
         : null;
@@ -16,28 +20,35 @@ class ResultView extends StatelessWidget {
     final int score = res?.overallScore ?? 86;
     final bool isPassing = score >= 80;
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+    return Obx(() {
+      final isBn = languageService.isBangla;
+
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: ResponsiveScaffoldBody(
           child: Column(
             children: [
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.sm),
               // Headline
               Text(
-                isPassing ? 'Great effort' : 'Almost there',
+                isPassing
+                    ? (isBn ? 'চমৎকার তিলাওয়াত!' : 'Great effort')
+                    : (isBn ? 'প্রায় কাছাকাছি!' : 'Almost there'),
                 style: const TextStyle(
                   fontSize: 26,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 6),
+              const SizedBox(height: AppSpacing.xs),
               Text(
                 isPassing
-                    ? 'Your pronunciation meets the unlock requirement.'
-                    : 'You need at least 80% to unlock this app.',
+                    ? (isBn
+                          ? 'আপনার উচ্চারণ আনলক করার নির্ধারিত মান পূরণ করেছে।'
+                          : 'Your pronunciation meets the unlock requirement.')
+                    : (isBn
+                          ? 'অ্যাপটি আনলক করতে কমপক্ষে ৮০% স্কোর প্রয়োজন।'
+                          : 'You need at least 80% to unlock this app.'),
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -45,14 +56,16 @@ class ResultView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 36),
+              const SizedBox(height: AppSpacing.lg),
 
               // Score Progress Ring
               ProgressRing(
                 progress: score / 100.0,
-                size: 136,
+                size: context.responsiveSize(136, minSize: 100, maxSize: 160),
                 strokeWidth: 9,
-                progressColor: isPassing ? AppColors.brightGreen : AppColors.warning,
+                progressColor: isPassing
+                    ? AppColors.brightGreen
+                    : AppColors.warning,
                 centerChild: Column(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
@@ -64,9 +77,9 @@ class ResultView extends StatelessWidget {
                         color: AppColors.textPrimary,
                       ),
                     ),
-                    const Text(
-                      'Pronunciation',
-                      style: TextStyle(
+                    Text(
+                      isBn ? 'উচ্চারণ স্কোর' : 'Pronunciation',
+                      style: const TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w600,
                         color: AppColors.textSecondary,
@@ -76,13 +89,13 @@ class ResultView extends StatelessWidget {
                 ),
               ),
 
-              const SizedBox(height: 36),
+              const SizedBox(height: AppSpacing.lg),
 
               // Breakdown Card
               if (isPassing) ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: AppSpacing.cardPadding,
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(24),
@@ -90,38 +103,59 @@ class ResultView extends StatelessWidget {
                   ),
                   child: Column(
                     children: [
-                      _buildBreakdownRow('Alif (Opening)', '92%'),
+                      _buildBreakdownRow(
+                        isBn ? 'আলিফ (শুরু)' : 'Alif (Opening)',
+                        '92%',
+                      ),
                       const SizedBox(height: 12),
-                      _buildBreakdownRow('Sin (Sibilant)', '81%'),
+                      _buildBreakdownRow(
+                        isBn ? 'সীন (ধ্বনি)' : 'Sin (Sibilant)',
+                        '81%',
+                      ),
                       const SizedBox(height: 12),
-                      _buildBreakdownRow('Ta (Articulation)', '88%'),
+                      _buildBreakdownRow(
+                        isBn ? 'তা (স্পষ্টতা)' : 'Ta (Articulation)',
+                        '88%',
+                      ),
                       const SizedBox(height: 12),
-                      _buildBreakdownRow('Ghayn (Velar)', '84%'),
+                      _buildBreakdownRow(
+                        isBn ? 'গায়ন (কণ্ঠনালী)' : 'Ghayn (Velar)',
+                        '84%',
+                      ),
                     ],
                   ),
                 ),
               ] else ...[
                 Container(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(20),
+                  padding: AppSpacing.cardPadding,
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(24),
                     border: Border.all(color: AppColors.border),
                   ),
-                  child: const Column(
+                  child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Try focusing on:',
-                        style: TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: AppColors.textPrimary),
+                        isBn ? 'যে বিষয়ে মনোযোগ দেবেন:' : 'Try focusing on:',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                      SizedBox(height: 10),
-                      Text('• Clear pronunciation of the middle letters', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                      SizedBox(height: 6),
-                      Text('• Slower recitation with measured pauses', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
-                      SizedBox(height: 6),
-                      Text('• Clear ending sound at the conclusion', style: TextStyle(fontSize: 13, color: AppColors.textSecondary)),
+                      const SizedBox(height: 10),
+                      Text(
+                        isBn
+                            ? '• অক্ষরের মাখরাজ ও স্পষ্ট উচ্চারণে খেয়াল রাখুন\n• ধীরস্থির ও পরিমিত বিরতি দিয়ে পাঠ করুন\n• শেষ অক্ষরের সঠিক স্পষ্টতা বজায় রাখুন'
+                            : '• Clear pronunciation of the middle letters\n• Slower recitation with measured pauses\n• Clear ending sound at the conclusion',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                          height: 1.5,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -133,11 +167,12 @@ class ResultView extends StatelessWidget {
               if (isPassing) ...[
                 SizedBox(
                   width: double.infinity,
-                  height: 56,
+                  height: 54,
                   child: ElevatedButton(
-                    onPressed: () => Get.offNamed('/unlock-success', arguments: {
-                      'durationMinutes': 30,
-                    }),
+                    onPressed: () => Get.offNamed(
+                      '/unlock-success',
+                      arguments: {'durationMinutes': 30},
+                    ),
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,
                       foregroundColor: Colors.black,
@@ -146,15 +181,20 @@ class ResultView extends StatelessWidget {
                       ),
                       elevation: 0,
                     ),
-                    child: const Row(
+                    child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
                         Text(
-                          'Unlock 30 minutes',
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          isBn
+                              ? '৩০ মিনিট ব্যবহারের সুযোগ নিন'
+                              : 'Unlock 30 minutes',
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward_rounded, size: 18),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded, size: 18),
                       ],
                     ),
                   ),
@@ -173,7 +213,7 @@ class ResultView extends StatelessWidget {
                             borderRadius: BorderRadius.circular(28),
                           ),
                         ),
-                        child: const Text('Practice First'),
+                        child: Text(isBn ? 'আগে শুনুন' : 'Practice First'),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -189,21 +229,21 @@ class ResultView extends StatelessWidget {
                           ),
                           elevation: 0,
                         ),
-                        child: const Text(
-                          'Try Again',
-                          style: TextStyle(fontWeight: FontWeight.bold),
+                        child: Text(
+                          isBn ? 'পুনরায় চেষ্টা' : 'Try Again',
+                          style: const TextStyle(fontWeight: FontWeight.bold),
                         ),
                       ),
                     ),
                   ],
                 ),
               ],
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildBreakdownRow(String label, String value) {
@@ -216,7 +256,11 @@ class ResultView extends StatelessWidget {
         ),
         Text(
           value,
-          style: const TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: AppColors.brightGreen),
+          style: const TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.bold,
+            color: AppColors.brightGreen,
+          ),
         ),
       ],
     );

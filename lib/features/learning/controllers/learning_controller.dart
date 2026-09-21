@@ -22,7 +22,8 @@ class LearningController extends GetxController {
   }
 
   void loadLessons() {
-    final savedCompleted = _storageService.read<List<dynamic>>('completed_lesson_ids') ?? [];
+    final savedCompleted =
+        _storageService.read<List<dynamic>>('completed_lesson_ids') ?? [];
     completedLessonIds.assignAll(savedCompleted.map((e) => e.toString()));
 
     lessons.assignAll(
@@ -41,7 +42,8 @@ class LearningController extends GetxController {
       if (query.isEmpty) {
         return matchesCategory;
       }
-      final matchesSearch = lesson.title.toLowerCase().contains(query) ||
+      final matchesSearch =
+          lesson.title.toLowerCase().contains(query) ||
           lesson.transliteration.toLowerCase().contains(query) ||
           lesson.translation.toLowerCase().contains(query);
       return matchesCategory && matchesSearch;

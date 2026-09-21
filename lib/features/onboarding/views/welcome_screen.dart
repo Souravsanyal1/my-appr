@@ -18,7 +18,10 @@ class WelcomeScreen extends StatelessWidget {
               Align(
                 alignment: Alignment.topRight,
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: AppColors.surface,
                     borderRadius: BorderRadius.circular(20),
@@ -36,7 +39,11 @@ class WelcomeScreen extends StatelessWidget {
                         ),
                       ),
                       SizedBox(width: 4),
-                      Icon(Icons.keyboard_arrow_down, size: 16, color: AppColors.textSecondary),
+                      Icon(
+                        Icons.keyboard_arrow_down,
+                        size: 16,
+                        color: AppColors.textSecondary,
+                      ),
                     ],
                   ),
                 ),
@@ -54,7 +61,7 @@ class WelcomeScreen extends StatelessWidget {
                   border: Border.all(color: AppColors.border, width: 2),
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withOpacity(0.18),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.18),
                       blurRadius: 32,
                       offset: const Offset(0, 10),
                     ),
@@ -67,7 +74,7 @@ class WelcomeScreen extends StatelessWidget {
                       width: 52,
                       height: 52,
                       decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withOpacity(0.15),
+                        color: AppColors.primaryGreen.withValues(alpha: 0.15),
                         shape: BoxShape.circle,
                       ),
                       child: const Icon(
@@ -87,9 +94,12 @@ class WelcomeScreen extends StatelessWidget {
                     ),
                     const SizedBox(height: 6),
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 4,
+                      ),
                       decoration: BoxDecoration(
-                        color: AppColors.brightGreen.withOpacity(0.12),
+                        color: AppColors.brightGreen.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(12),
                       ),
                       child: const Text(
@@ -171,10 +181,7 @@ class WelcomeScreen extends StatelessWidget {
               // Footer: Terms & Privacy
               const Text(
                 'By continuing, you agree to Terms & Privacy Policy',
-                style: TextStyle(
-                  fontSize: 11,
-                  color: AppColors.textMuted,
-                ),
+                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
               ),
               const SizedBox(height: 8),
             ],

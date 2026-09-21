@@ -1,4 +1,6 @@
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_deen/core/responsive/responsive_layout.dart';
 import 'package:focus_deen/features/dhikr/models/dhikr_model.dart';
 import 'package:focus_deen/features/focus_session/models/focus_session_model.dart';
 import 'package:focus_deen/features/learning/models/learning_lesson_model.dart';
@@ -142,38 +144,44 @@ void main() {
   });
 
   group('PronunciationAnalyzer Tests', () {
-    test('Short recitation generates failure result with educational guidance', () async {
-      final analyzer = LocalPronunciationAnalyzer();
-      final result = await analyzer.analyze(
-        expectedArabic: 'سُبْحَانَ اللَّهِ',
-        expectedTransliteration: 'Subḥān Allāh',
-        durationSeconds: 1,
-        minDurationSeconds: 4,
-        unlockThreshold: 80,
-      );
+    test(
+      'Short recitation generates failure result with educational guidance',
+      () async {
+        final analyzer = LocalPronunciationAnalyzer();
+        final result = await analyzer.analyze(
+          expectedArabic: 'سُبْحَانَ اللَّهِ',
+          expectedTransliteration: 'Subḥān Allāh',
+          durationSeconds: 1,
+          minDurationSeconds: 4,
+          unlockThreshold: 80,
+        );
 
-      expect(result.isPassing, false);
-      expect(result.earnedUnlockMinutes, 0);
-      expect(result.disclaimer, isNotEmpty);
-    });
+        expect(result.isPassing, false);
+        expect(result.earnedUnlockMinutes, 0);
+        expect(result.disclaimer, isNotEmpty);
+      },
+    );
 
-    test('Sufficient duration generates passing result above threshold', () async {
-      final analyzer = LocalPronunciationAnalyzer();
-      final result = await analyzer.analyze(
-        expectedArabic: 'سُبْحَانَ اللَّهِ',
-        expectedTransliteration: 'Subḥān Allāh',
-        durationSeconds: 6,
-        minDurationSeconds: 4,
-        unlockThreshold: 75,
-      );
+    test(
+      'Sufficient duration generates passing result above threshold',
+      () async {
+        final analyzer = LocalPronunciationAnalyzer();
+        final result = await analyzer.analyze(
+          expectedArabic: 'سُبْحَانَ اللَّهِ',
+          expectedTransliteration: 'Subḥān Allāh',
+          durationSeconds: 6,
+          minDurationSeconds: 4,
+          unlockThreshold: 75,
+        );
 
-      expect(result.isPassing, true);
-      expect(result.overallScore, greaterThanOrEqualTo(75));
-      expect(result.earnedUnlockMinutes, greaterThanOrEqualTo(5));
-      expect(result.wordRecognitionScore, greaterThan(0));
-      expect(result.timingScore, greaterThan(0));
-      expect(result.audioSimilarityScore, greaterThan(0));
-    });
+        expect(result.isPassing, true);
+        expect(result.overallScore, greaterThanOrEqualTo(75));
+        expect(result.earnedUnlockMinutes, greaterThanOrEqualTo(5));
+        expect(result.wordRecognitionScore, greaterThan(0));
+        expect(result.timingScore, greaterThan(0));
+        expect(result.audioSimilarityScore, greaterThan(0));
+      },
+    );
   });
 
   group('ScheduleModel Tests', () {
@@ -278,5 +286,202 @@ void main() {
       expect(inProgress.progressPercentage, 0.5);
       expect(inProgress.isUnlocked, false);
     });
+  });
+
+  group('Bengali Pronunciation & Localization Tests', () {
+    test(
+      'All lessons contain authentic Bengali pronunciation, title and translation',
+      () {
+        for (final lesson in LearningRepository.allLessons) {
+          expect(lesson.banglaTitle, isNotNull);
+          expect(lesson.banglaTitle!.trim(), isNotEmpty);
+          expect(lesson.banglaPronunciation, isNotNull);
+          expect(lesson.banglaPronunciation!.trim(), isNotEmpty);
+          expect(lesson.banglaTranslation, isNotNull);
+          expect(lesson.banglaTranslation!.trim(), isNotEmpty);
+
+          // Verify localization getters
+          expect(lesson.getTitle(true), lesson.banglaTitle);
+          expect(lesson.getTitle(false), lesson.title);
+          expect(lesson.getPronunciation(true), lesson.banglaPronunciation);
+          expect(lesson.getPronunciation(false), lesson.transliteration);
+          expect(lesson.getTranslation(true), lesson.banglaTranslation);
+          expect(lesson.getTranslation(false), lesson.translation);
+        }
+      },
+    );
+
+    test('Category localized names for Bengali and English', () {
+      expect(LearningCategory.dailyDhikr.getLocalizedName(true), 'দৈনিক যিকির');
+      expect(
+        LearningCategory.dailyDhikr.getLocalizedName(false),
+        'Daily Dhikr',
+      );
+      expect(LearningCategory.dailyDuas.getLocalizedName(true), 'দৈনিক দোয়া');
+      expect(
+        LearningCategory.salahLearning.getLocalizedName(true),
+        'নামাজ শিক্ষা',
+      );
+      expect(
+        LearningCategory.shortSurahs.getLocalizedName(true),
+        'ছোট সূরাসমূহ',
+      );
+    });
+  });
+
+  group('Responsive & Cross-Device Layout Tests', () {
+    testWidgets('ResponsiveContext categorizes screen breakpoints accurately', (
+      tester,
+    ) async {
+      // 1. Test Compact breakpoint (< 600)
+      tester.view.physicalSize = const Size(360, 800);
+      tester.view.devicePixelRatio = 1.0;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
+
+      late ScreenType detectedScreen;
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (ctx) {
+              detectedScreen = ctx.screenType;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      expect(detectedScreen, ScreenType.compact);
+
+      // 2. Test Medium breakpoint (600 - 839)
+      tester.view.physicalSize = const Size(720, 1000);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (ctx) {
+              detectedScreen = ctx.screenType;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      expect(detectedScreen, ScreenType.medium);
+
+      // 3. Test Expanded/Tablet breakpoint (>= 840)
+      tester.view.physicalSize = const Size(1024, 768);
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (ctx) {
+              detectedScreen = ctx.screenType;
+              return const SizedBox();
+            },
+          ),
+        ),
+      );
+      expect(detectedScreen, ScreenType.expanded);
+    });
+
+    testWidgets(
+      'ResponsiveScaffoldBody renders cleanly without overflow on compact 320x568 screen',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ResponsiveScaffoldBody(
+                child: ListView(
+                  children: const [
+                    Text('Header Title', style: TextStyle(fontSize: 24)),
+                    SizedBox(height: 16),
+                    Text('DeenFlow mindful screen-time and recitation coach.'),
+                    SizedBox(height: 24),
+                    ElevatedButton(
+                      onPressed: null,
+                      child: Text('Start Session'),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Header Title'), findsOneWidget);
+        expect(find.text('Start Session'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'ResponsiveScaffoldBody constrains content width to 700dp max on tablet',
+      (tester) async {
+        tester.view.physicalSize = const Size(1200, 800);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: Scaffold(
+              body: ResponsiveScaffoldBody(
+                child: Container(
+                  key: const ValueKey('tablet_container'),
+                  height: 200,
+                  color: Colors.green,
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        final box = tester.renderObject<RenderBox>(
+          find.byKey(const ValueKey('tablet_container')),
+        );
+        // On 1200dp width screen, the content is centered and constrained to max 700dp (minus horizontal padding)
+        expect(box.size.width, lessThanOrEqualTo(700.0));
+        expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'ResponsiveScaffoldBody handles 200% text scale without exceptions',
+      (tester) async {
+        tester.view.physicalSize = const Size(375, 667);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        await tester.pumpWidget(
+          MaterialApp(
+            home: MediaQuery(
+              data: const MediaQueryData(
+                size: Size(375, 667),
+                textScaler: TextScaler.linear(2.0),
+              ),
+              child: Scaffold(
+                body: ResponsiveScaffoldBody(
+                  child: ListView(
+                    children: const [
+                      Text('Large Scaled Title'),
+                      Text('Educational recitation and mindfulness content'),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+        await tester.pumpAndSettle();
+
+        expect(find.text('Large Scaled Title'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
   });
 }

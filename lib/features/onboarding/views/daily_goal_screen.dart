@@ -24,7 +24,11 @@ class _DailyGoalScreenState extends State<DailyGoalScreen> {
         backgroundColor: Colors.transparent,
         elevation: 0,
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
+          icon: const Icon(
+            Icons.arrow_back_ios_new,
+            size: 20,
+            color: AppColors.textPrimary,
+          ),
           onPressed: () => Get.back(),
         ),
       ),
@@ -46,10 +50,7 @@ class _DailyGoalScreenState extends State<DailyGoalScreen> {
               const SizedBox(height: 8),
               const Text(
                 'Set a mindful daily limit. You can always adjust this later.',
-                style: TextStyle(
-                  fontSize: 14,
-                  color: AppColors.textSecondary,
-                ),
+                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
               ),
               const SizedBox(height: 32),
 
@@ -68,14 +69,26 @@ class _DailyGoalScreenState extends State<DailyGoalScreen> {
                           '$mins minutes',
                           style: TextStyle(
                             fontSize: 17,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
-                            color: isSelected ? AppColors.brightGreen : AppColors.textPrimary,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.w500,
+                            color: isSelected
+                                ? AppColors.brightGreen
+                                : AppColors.textPrimary,
                           ),
                         ),
                         if (isSelected)
-                          const Icon(Icons.check_circle_rounded, color: AppColors.brightGreen, size: 22)
+                          const Icon(
+                            Icons.check_circle_rounded,
+                            color: AppColors.brightGreen,
+                            size: 22,
+                          )
                         else
-                          const Icon(Icons.circle_outlined, color: AppColors.border, size: 22),
+                          const Icon(
+                            Icons.circle_outlined,
+                            color: AppColors.border,
+                            size: 22,
+                          ),
                       ],
                     ),
                   ),
@@ -108,7 +121,10 @@ class _DailyGoalScreenState extends State<DailyGoalScreen> {
                     children: [
                       Text(
                         'Continue',
-                        style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       SizedBox(width: 8),
                       Icon(Icons.arrow_forward_rounded, size: 18),

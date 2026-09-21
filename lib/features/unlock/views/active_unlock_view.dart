@@ -2,6 +2,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../models/unlock_session_model.dart';
@@ -13,42 +16,67 @@ class ActiveUnlockView extends StatefulWidget {
   State<ActiveUnlockView> createState() => _ActiveUnlockViewState();
 }
 
-class _ActiveUnlockViewState extends State<ActiveUnlockView> {
+class _ActiveUnlockViewState extends State<ActiveUnlockView>
+    with WidgetsBindingObserver {
   late UnlockSessionModel _session;
   Timer? _countdownTimer;
   int _secondsRemaining = 30 * 60;
-  final int _totalSeconds = 30 * 60;
+  late int _totalSeconds;
 
   @override
   void initState() {
     super.initState();
-    if (Get.arguments is Map && Get.arguments['session'] is UnlockSessionModel) {
+    WidgetsBinding.instance.addObserver(this);
+
+    if (Get.arguments is Map &&
+        Get.arguments['session'] is UnlockSessionModel) {
       _session = Get.arguments['session'] as UnlockSessionModel;
-      _secondsRemaining = _session.remainingSeconds > 0
-          ? _session.remainingSeconds
-          : _session.durationMinutes * 60;
     } else {
+      final now = DateTime.now().millisecondsSinceEpoch;
+      final expires = now + (30 * 60 * 1000);
       _session = UnlockSessionModel(
         packageName: 'com.zhiliaoapp.musically',
         appName: 'TikTok',
         durationMinutes: 30,
-        expiresAtTimestamp: DateTime.now().add(const Duration(minutes: 30)).millisecondsSinceEpoch,
+        expiresAtTimestamp: expires,
       );
-      _secondsRemaining = 30 * 60;
     }
 
-    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
-      if (_secondsRemaining > 0) {
-        setState(() => _secondsRemaining--);
-      } else {
-        _countdownTimer?.cancel();
-        Get.offAllNamed('/home');
-      }
+    _totalSeconds = _session.durationMinutes * 60;
+    _updateRemainingTime();
+
+    _countdownTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+      _updateRemainingTime();
     });
   }
 
   @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) {
+      _updateRemainingTime();
+    }
+  }
+
+  void _updateRemainingTime() {
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final diff = ((_session.expiresAtTimestamp - now) / 1000).ceil();
+    if (diff <= 0) {
+      _countdownTimer?.cancel();
+      if (mounted) {
+        Get.offAllNamed('/home');
+      }
+    } else {
+      if (mounted) {
+        setState(() {
+          _secondsRemaining = diff;
+        });
+      }
+    }
+  }
+
+  @override
   void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
     _countdownTimer?.cancel();
     super.dispose();
   }
@@ -62,35 +90,44 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
     existing.removeWhere((s) => s.packageName == _session.packageName);
     storage.saveUnlockSessions(existing);
 
-    Get.offAllNamed('/home');
+    if (mounted) {
+      Get.offAllNamed('/home');
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final languageService = LanguageService.to;
     final mins = _secondsRemaining ~/ 60;
     final secs = _secondsRemaining % 60;
-    final timeStr = '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+    final timeStr =
+        '${mins.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
     final progress = (_secondsRemaining / _totalSeconds).clamp(0.0, 1.0);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      appBar: AppBar(
-        backgroundColor: Colors.transparent,
-        elevation: 0,
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new, size: 20, color: AppColors.textPrimary),
-          onPressed: () => Get.offAllNamed('/home'),
+    return Obx(() {
+      final isBn = languageService.isBangla;
+
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          leading: IconButton(
+            icon: const Icon(
+              Icons.arrow_back_ios_new,
+              size: 20,
+              color: AppColors.textPrimary,
+            ),
+            onPressed: () => Get.offAllNamed('/home'),
+          ),
         ),
-      ),
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
+        body: ResponsiveScaffoldBody(
           child: Column(
             children: [
               // Target App Icon
               Container(
-                width: 72,
-                height: 72,
+                width: context.responsiveSize(72, minSize: 56, maxSize: 84),
+                height: context.responsiveSize(72, minSize: 56, maxSize: 84),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   shape: BoxShape.circle,
@@ -104,7 +141,7 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
+              const SizedBox(height: AppSpacing.md),
 
               Text(
                 _session.appName,
@@ -114,10 +151,13 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 4),
-              const Text(
-                'Access remaining',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              const SizedBox(height: AppSpacing.xs),
+              Text(
+                isBn ? 'ব্যবহারের অবশিষ্ট সময়' : 'Access remaining',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
               ),
 
               const Spacer(),
@@ -125,14 +165,18 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
               // Giant Countdown Display
               Text(
                 timeStr,
-                style: const TextStyle(
-                  fontSize: 56,
+                style: TextStyle(
+                  fontSize: context.responsiveSize(
+                    56,
+                    minSize: 42,
+                    maxSize: 68,
+                  ),
                   fontWeight: FontWeight.w800,
                   letterSpacing: 2.0,
                   color: AppColors.brightGreen,
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
 
               // Linear Progress Bar
               ClipRRect(
@@ -141,7 +185,9 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
                   value: progress,
                   minHeight: 10,
                   backgroundColor: AppColors.border,
-                  valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryGreen),
+                  valueColor: const AlwaysStoppedAnimation<Color>(
+                    AppColors.primaryGreen,
+                  ),
                 ),
               ),
 
@@ -150,11 +196,17 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
               // Primary CTA: Open App
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 54,
                 child: ElevatedButton(
                   onPressed: () {
                     ScaffoldMessenger.of(context).showSnackBar(
-                      SnackBar(content: Text('Launching ${_session.appName}...')),
+                      SnackBar(
+                        content: Text(
+                          isBn
+                              ? '${_session.appName} খোলা হচ্ছে...'
+                              : 'Launching ${_session.appName}...',
+                        ),
+                      ),
                     );
                   },
                   style: ElevatedButton.styleFrom(
@@ -166,17 +218,22 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
                     elevation: 0,
                   ),
                   child: Text(
-                    'Open ${_session.appName}',
-                    style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    isBn
+                        ? '${_session.appName} চালু করুন'
+                        : 'Open ${_session.appName}',
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.md),
 
               // Secondary Action: Lock Now
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 54,
                 child: OutlinedButton(
                   onPressed: _lockNow,
                   style: OutlinedButton.styleFrom(
@@ -186,17 +243,17 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView> {
                       borderRadius: BorderRadius.circular(28),
                     ),
                   ),
-                  child: const Text(
-                    'Lock Now',
-                    style: TextStyle(fontWeight: FontWeight.w600),
+                  child: Text(
+                    isBn ? 'এখনই লক করুন' : 'Lock Now',
+                    style: const TextStyle(fontWeight: FontWeight.w600),
                   ),
                 ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

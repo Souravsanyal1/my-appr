@@ -34,7 +34,8 @@ class DhikrController extends GetxController {
       transliteration: 'Allahu Akbar',
       translation: 'Allah is the Greatest',
       targetCount: 34,
-      virtue: 'Better than a servant for the home, taught by Prophet ﷺ to Fatimah (RA).',
+      virtue:
+          'Better than a servant for the home, taught by Prophet ﷺ to Fatimah (RA).',
     ),
     DhikrModel(
       id: 'astaghfirullah',
@@ -88,13 +89,18 @@ class DhikrController extends GetxController {
     _box.write(_keyTotalCount, totalLifetimeCount.value);
 
     // Sync to Firebase Realtime Database & Cloud Firestore every 5 counts or on target
-    if (currentCount.value % 5 == 0 || currentCount.value == currentDhikr.targetCount) {
+    if (currentCount.value % 5 == 0 ||
+        currentCount.value == currentDhikr.targetCount) {
       try {
         if (Get.isRegistered<FirebaseRealtimeService>()) {
-          Get.find<FirebaseRealtimeService>().syncTasbihLive(totalLifetimeCount.value);
+          Get.find<FirebaseRealtimeService>().syncTasbihLive(
+            totalLifetimeCount.value,
+          );
         }
         if (Get.isRegistered<FirestoreSyncService>()) {
-          Get.find<FirestoreSyncService>().saveTasbihStats(totalLifetimeCount.value);
+          Get.find<FirestoreSyncService>().saveTasbihStats(
+            totalLifetimeCount.value,
+          );
         }
       } catch (e) {
         debugPrint('Error syncing tasbih to Firebase: $e');

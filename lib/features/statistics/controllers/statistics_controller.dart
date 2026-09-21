@@ -8,7 +8,9 @@ import '../models/daily_stats_model.dart';
 class StatisticsController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
 
-  final Rx<DailyStatsModel> todayStats = const DailyStatsModel(dateString: '').obs;
+  final Rx<DailyStatsModel> todayStats = const DailyStatsModel(
+    dateString: '',
+  ).obs;
   final RxList<DailyStatsModel> weeklyStats = <DailyStatsModel>[].obs;
   final RxInt focusScore = 78.obs;
   final RxInt learningStreakDays = 7.obs;
@@ -26,17 +28,22 @@ class StatisticsController extends GetxController {
     final todayStr = DateFormat('yyyy-MM-dd').format(DateTime.now());
 
     // Completed lessons count
-    final completedLessons = (_storageService.read<List<dynamic>>('completed_lesson_ids') ?? []).length;
-    final totalRecitations = _storageService.read<int>('total_recitations') ?? 8;
-    final totalFocusSessions = _storageService.read<int>('total_focus_sessions') ?? 5;
-    final blockedAttempts = _storageService.read<int>('blocked_attempts_today') ?? 14;
+    final completedLessons =
+        (_storageService.read<List<dynamic>>('completed_lesson_ids') ?? [])
+            .length;
+    final totalRecitations =
+        _storageService.read<int>('total_recitations') ?? 8;
+    final totalFocusSessions =
+        _storageService.read<int>('total_focus_sessions') ?? 5;
+    final blockedAttempts =
+        _storageService.read<int>('blocked_attempts_today') ?? 14;
 
     // Build today stats
     todayStats.value = DailyStatsModel(
       dateString: todayStr,
       totalScreenTimeMinutes: 134, // 2h 14m
-      socialMediaMinutes: 84,     // 1h 24m
-      focusMinutes: 50,          // 2 Pomodoro sessions
+      socialMediaMinutes: 84, // 1h 24m
+      focusMinutes: 50, // 2 Pomodoro sessions
       blockedAttempts: blockedAttempts,
       lessonsCompleted: completedLessons > 0 ? completedLessons : 3,
       recitationsCount: totalRecitations,
@@ -49,16 +56,18 @@ class StatisticsController extends GetxController {
     for (int i = 6; i >= 0; i--) {
       final d = now.subtract(Duration(days: i));
       final dStr = DateFormat('yyyy-MM-dd').format(d);
-      history.add(DailyStatsModel(
-        dateString: dStr,
-        totalScreenTimeMinutes: 120 + (i * 12) % 45,
-        socialMediaMinutes: 60 + (i * 9) % 35,
-        focusMinutes: 25 * ((i % 3) + 1),
-        blockedAttempts: 8 + (i * 3),
-        lessonsCompleted: 2 + (i % 2),
-        recitationsCount: 4 + (i % 3),
-        averagePracticeScore: 80 + (i % 8),
-      ));
+      history.add(
+        DailyStatsModel(
+          dateString: dStr,
+          totalScreenTimeMinutes: 120 + (i * 12) % 45,
+          socialMediaMinutes: 60 + (i * 9) % 35,
+          focusMinutes: 25 * ((i % 3) + 1),
+          blockedAttempts: 8 + (i * 3),
+          lessonsCompleted: 2 + (i % 2),
+          recitationsCount: 4 + (i % 3),
+          averagePracticeScore: 80 + (i % 8),
+        ),
+      );
     }
     weeklyStats.assignAll(history);
 

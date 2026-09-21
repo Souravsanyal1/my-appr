@@ -17,29 +17,30 @@ class AppTheme {
         onSecondary: Colors.white,
         onSurface: AppColors.textPrimaryDark,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimaryDark,
-          letterSpacing: -0.5,
-        ),
-        titleLarge: GoogleFonts.outfit(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimaryDark,
-        ),
-        bodyLarge: GoogleFonts.outfit(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textPrimaryDark,
-        ),
-        bodyMedium: GoogleFonts.outfit(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondaryDark,
-        ),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.dark().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.outfit(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimaryDark,
+              letterSpacing: -0.5,
+            ),
+            titleLarge: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimaryDark,
+            ),
+            bodyLarge: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textPrimaryDark,
+            ),
+            bodyMedium: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondaryDark,
+            ),
+          ),
       cardTheme: CardThemeData(
         color: AppColors.darkCard,
         elevation: 0,
@@ -64,7 +65,9 @@ class AppTheme {
           backgroundColor: AppColors.primaryGold,
           foregroundColor: Colors.black,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -77,7 +80,9 @@ class AppTheme {
           foregroundColor: AppColors.textPrimaryDark,
           side: const BorderSide(color: AppColors.darkCardBorder, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -101,29 +106,30 @@ class AppTheme {
         onSecondary: Colors.black,
         onSurface: AppColors.textPrimaryLight,
       ),
-      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme).copyWith(
-        displayLarge: GoogleFonts.outfit(
-          fontSize: 32,
-          fontWeight: FontWeight.bold,
-          color: AppColors.textPrimaryLight,
-          letterSpacing: -0.5,
-        ),
-        titleLarge: GoogleFonts.outfit(
-          fontSize: 20,
-          fontWeight: FontWeight.w600,
-          color: AppColors.textPrimaryLight,
-        ),
-        bodyLarge: GoogleFonts.outfit(
-          fontSize: 16,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textPrimaryLight,
-        ),
-        bodyMedium: GoogleFonts.outfit(
-          fontSize: 14,
-          fontWeight: FontWeight.w400,
-          color: AppColors.textSecondaryLight,
-        ),
-      ),
+      textTheme: GoogleFonts.outfitTextTheme(ThemeData.light().textTheme)
+          .copyWith(
+            displayLarge: GoogleFonts.outfit(
+              fontSize: 32,
+              fontWeight: FontWeight.bold,
+              color: AppColors.textPrimaryLight,
+              letterSpacing: -0.5,
+            ),
+            titleLarge: GoogleFonts.outfit(
+              fontSize: 20,
+              fontWeight: FontWeight.w600,
+              color: AppColors.textPrimaryLight,
+            ),
+            bodyLarge: GoogleFonts.outfit(
+              fontSize: 16,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textPrimaryLight,
+            ),
+            bodyMedium: GoogleFonts.outfit(
+              fontSize: 14,
+              fontWeight: FontWeight.w400,
+              color: AppColors.textSecondaryLight,
+            ),
+          ),
       cardTheme: CardThemeData(
         color: AppColors.lightCard,
         elevation: 0,
@@ -148,7 +154,9 @@ class AppTheme {
           backgroundColor: AppColors.emeraldDark,
           foregroundColor: Colors.white,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,
@@ -161,7 +169,9 @@ class AppTheme {
           foregroundColor: AppColors.textPrimaryLight,
           side: const BorderSide(color: AppColors.lightCardBorder, width: 1.5),
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 14),
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(14),
+          ),
           textStyle: GoogleFonts.outfit(
             fontSize: 16,
             fontWeight: FontWeight.w600,

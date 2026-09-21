@@ -47,7 +47,10 @@ class AuthController extends GetxController {
       }
       Get.offAllNamed('/dashboard');
     } catch (e) {
-      Get.snackbar('Authentication Failed', e.toString().split(']').last.trim());
+      Get.snackbar(
+        'Authentication Failed',
+        e.toString().split(']').last.trim(),
+      );
     } finally {
       isLoading.value = false;
     }
@@ -59,7 +62,9 @@ class AuthController extends GetxController {
       await authService.signInAnonymously();
       Get.offAllNamed('/dashboard');
     } catch (e) {
-      Get.offAllNamed('/dashboard'); // Allow offline guest even if network fails
+      Get.offAllNamed(
+        '/dashboard',
+      ); // Allow offline guest even if network fails
     } finally {
       isLoading.value = false;
     }
@@ -70,11 +75,17 @@ class AuthController extends GetxController {
     try {
       final success = await syncService.backupToCloud();
       if (success) {
-        Get.snackbar('Backup Complete', 'Your limits and rules are saved in Cloud Firestore.',
-            snackPosition: SnackPosition.TOP);
+        Get.snackbar(
+          'Backup Complete',
+          'Your limits and rules are saved in Cloud Firestore.',
+          snackPosition: SnackPosition.TOP,
+        );
       } else {
-        Get.snackbar('Backup Failed', 'Could not sync to cloud.',
-            snackPosition: SnackPosition.TOP);
+        Get.snackbar(
+          'Backup Failed',
+          'Could not sync to cloud.',
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } finally {
       isLoading.value = false;
@@ -86,11 +97,17 @@ class AuthController extends GetxController {
     try {
       final success = await syncService.restoreFromCloud();
       if (success) {
-        Get.snackbar('Restored', 'Your limits were restored from Cloud Firestore.',
-            snackPosition: SnackPosition.TOP);
+        Get.snackbar(
+          'Restored',
+          'Your limits were restored from Cloud Firestore.',
+          snackPosition: SnackPosition.TOP,
+        );
       } else {
-        Get.snackbar('Restore Failed', 'No backup found or sync error.',
-            snackPosition: SnackPosition.TOP);
+        Get.snackbar(
+          'Restore Failed',
+          'No backup found or sync error.',
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } finally {
       isLoading.value = false;
@@ -100,13 +117,21 @@ class AuthController extends GetxController {
   Future<void> testRealtimeSync() async {
     try {
       if (Get.isRegistered<FirebaseRealtimeService>()) {
-        await Get.find<FirebaseRealtimeService>().updateUserPresence(isOnline: true);
-        Get.snackbar('Realtime DB Connected', 'Live presence and sync confirmed.',
-            snackPosition: SnackPosition.TOP);
+        await Get.find<FirebaseRealtimeService>().updateUserPresence(
+          isOnline: true,
+        );
+        Get.snackbar(
+          'Realtime DB Connected',
+          'Live presence and sync confirmed.',
+          snackPosition: SnackPosition.TOP,
+        );
       }
     } catch (e) {
-      Get.snackbar('Realtime DB Error', e.toString(),
-          snackPosition: SnackPosition.TOP);
+      Get.snackbar(
+        'Realtime DB Error',
+        e.toString(),
+        snackPosition: SnackPosition.TOP,
+      );
     }
   }
 

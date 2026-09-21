@@ -39,7 +39,10 @@ class AuthScreen extends StatelessWidget {
   }
 
   Widget _buildSyncHub(
-      BuildContext context, AuthController controller, bool isDark) {
+    BuildContext context,
+    AuthController controller,
+    bool isDark,
+  ) {
     final auth = controller.authService;
     final sync = controller.syncService;
 
@@ -56,7 +59,9 @@ class AuthScreen extends StatelessWidget {
               color: isDark ? null : AppColors.lightCard,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
             child: Row(
@@ -64,7 +69,11 @@ class AuthScreen extends StatelessWidget {
                 CircleAvatar(
                   radius: 26,
                   backgroundColor: AppColors.emerald.withValues(alpha: 0.2),
-                  child: const Icon(Icons.person, color: AppColors.emerald, size: 28),
+                  child: const Icon(
+                    Icons.person,
+                    color: AppColors.emerald,
+                    size: 28,
+                  ),
                 ),
                 const SizedBox(width: 14),
                 Expanded(
@@ -75,9 +84,12 @@ class AuthScreen extends StatelessWidget {
                         auth.isAnonymous
                             ? 'Guest User (Anonymous)'
                             : (auth.email != null && auth.email!.isNotEmpty
-                                ? auth.email!
-                                : 'Authenticated User'),
-                        style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ? auth.email!
+                                  : 'Authenticated User'),
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          fontSize: 16,
+                        ),
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
@@ -85,14 +97,19 @@ class AuthScreen extends StatelessWidget {
                         'UID: ${auth.uid.length > 12 ? "${auth.uid.substring(0, 12)}..." : auth.uid}',
                         style: TextStyle(
                           fontSize: 12,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: Colors.green.withValues(alpha: 0.2),
                     borderRadius: BorderRadius.circular(12),
@@ -101,7 +118,14 @@ class AuthScreen extends StatelessWidget {
                     children: [
                       Icon(Icons.circle, color: Colors.green, size: 8),
                       SizedBox(width: 4),
-                      Text('Online', style: TextStyle(color: Colors.green, fontSize: 11, fontWeight: FontWeight.bold)),
+                      Text(
+                        'Online',
+                        style: TextStyle(
+                          color: Colors.green,
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -123,7 +147,9 @@ class AuthScreen extends StatelessWidget {
               color: isDark ? AppColors.darkCard : AppColors.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
             child: Column(
@@ -131,11 +157,18 @@ class AuthScreen extends StatelessWidget {
               children: [
                 const Row(
                   children: [
-                    Icon(Icons.folder_shared_outlined, color: AppColors.primaryGold, size: 22),
+                    Icon(
+                      Icons.folder_shared_outlined,
+                      color: AppColors.primaryGold,
+                      size: 22,
+                    ),
                     SizedBox(width: 8),
                     Text(
                       'Cloud Firestore',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -144,16 +177,23 @@ class AuthScreen extends StatelessWidget {
                   'Persistent document collections for limits, daily screen time history, and lifetime dhikr counts.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 12),
-                Obx(() => Text(
-                      sync.lastSyncTime.value != null
-                          ? 'Last Synced: ${sync.lastSyncTime.value!.toLocal().toString().split('.').first}'
-                          : 'Not synced yet this session',
-                      style: const TextStyle(fontSize: 12, fontStyle: FontStyle.italic),
-                    )),
+                Obx(
+                  () => Text(
+                    sync.lastSyncTime.value != null
+                        ? 'Last Synced: ${sync.lastSyncTime.value!.toLocal().toString().split('.').first}'
+                        : 'Not synced yet this session',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 14),
                 Row(
                   children: [
@@ -165,15 +205,22 @@ class AuthScreen extends StatelessWidget {
                         ),
                         icon: const Icon(Icons.cloud_upload_outlined, size: 18),
                         label: const Text('Backup Now'),
-                        onPressed: controller.isLoading.value ? null : controller.backupNow,
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : controller.backupNow,
                       ),
                     ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: OutlinedButton.icon(
-                        icon: const Icon(Icons.cloud_download_outlined, size: 18),
+                        icon: const Icon(
+                          Icons.cloud_download_outlined,
+                          size: 18,
+                        ),
                         label: const Text('Restore'),
-                        onPressed: controller.isLoading.value ? null : controller.restoreNow,
+                        onPressed: controller.isLoading.value
+                            ? null
+                            : controller.restoreNow,
                       ),
                     ),
                   ],
@@ -190,7 +237,9 @@ class AuthScreen extends StatelessWidget {
               color: isDark ? AppColors.darkCard : AppColors.lightCard,
               borderRadius: BorderRadius.circular(16),
               border: Border.all(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
             child: Column(
@@ -202,7 +251,10 @@ class AuthScreen extends StatelessWidget {
                     SizedBox(width: 8),
                     Text(
                       'Firebase Realtime Database',
-                      style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        fontSize: 16,
+                      ),
                     ),
                   ],
                 ),
@@ -211,7 +263,9 @@ class AuthScreen extends StatelessWidget {
                   'Ultra-low-latency real-time synchronization for active unlock passes, live Pomodoro status, and instantaneous app-blocked events.',
                   style: TextStyle(
                     fontSize: 13,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 14),
@@ -244,7 +298,10 @@ class AuthScreen extends StatelessWidget {
   }
 
   Widget _buildAuthForm(
-      BuildContext context, AuthController controller, bool isDark) {
+    BuildContext context,
+    AuthController controller,
+    bool isDark,
+  ) {
     return SingleChildScrollView(
       padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 20.0),
       child: Column(
@@ -268,22 +325,30 @@ class AuthScreen extends StatelessWidget {
               ],
             ),
             child: const Center(
-              child: Icon(Icons.cloud_sync_outlined, size: 40, color: Colors.white),
+              child: Icon(
+                Icons.cloud_sync_outlined,
+                size: 40,
+                color: Colors.white,
+              ),
             ),
           ),
           const SizedBox(height: 20),
 
-          Obx(() => Text(
-                controller.isSignUpMode.value ? 'Create Account' : 'Welcome Back',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-              )),
+          Obx(
+            () => Text(
+              controller.isSignUpMode.value ? 'Create Account' : 'Welcome Back',
+              style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+            ),
+          ),
           const SizedBox(height: 6),
           Text(
             'Sync your limits, focus stats, and passes securely across your devices.',
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
             ),
           ),
           const SizedBox(height: 28),
@@ -295,7 +360,9 @@ class AuthScreen extends StatelessWidget {
               color: isDark ? AppColors.darkCard : AppColors.lightCard,
               borderRadius: BorderRadius.circular(20),
               border: Border.all(
-                color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                color: isDark
+                    ? AppColors.darkCardBorder
+                    : AppColors.lightCardBorder,
               ),
             ),
             child: Column(
@@ -320,28 +387,38 @@ class AuthScreen extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(height: 24),
-                Obx(() => SizedBox(
-                      width: double.infinity,
-                      height: 50,
-                      child: ElevatedButton(
-                        onPressed: controller.isLoading.value ? null : controller.submit,
-                        child: controller.isLoading.value
-                            ? const CircularProgressIndicator(color: Colors.black)
-                            : Text(
-                                controller.isSignUpMode.value ? 'Create Account' : 'Sign In',
-                                style: const TextStyle(fontWeight: FontWeight.bold),
+                Obx(
+                  () => SizedBox(
+                    width: double.infinity,
+                    height: 50,
+                    child: ElevatedButton(
+                      onPressed: controller.isLoading.value
+                          ? null
+                          : controller.submit,
+                      child: controller.isLoading.value
+                          ? const CircularProgressIndicator(color: Colors.black)
+                          : Text(
+                              controller.isSignUpMode.value
+                                  ? 'Create Account'
+                                  : 'Sign In',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.bold,
                               ),
-                      ),
-                    )),
+                            ),
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 12),
                 TextButton(
                   onPressed: controller.toggleMode,
-                  child: Obx(() => Text(
-                        controller.isSignUpMode.value
-                            ? 'Already have an account? Sign In'
-                            : "Don't have an account? Sign Up",
-                        style: const TextStyle(color: AppColors.primaryGold),
-                      )),
+                  child: Obx(
+                    () => Text(
+                      controller.isSignUpMode.value
+                          ? 'Already have an account? Sign In'
+                          : "Don't have an account? Sign Up",
+                      style: const TextStyle(color: AppColors.primaryGold),
+                    ),
+                  ),
                 ),
               ],
             ),

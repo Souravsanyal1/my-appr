@@ -26,14 +26,15 @@ class _WaveformViewState extends State<WaveformView>
   @override
   void initState() {
     super.initState();
-    _controller = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 180),
-    )..addListener(() {
-        if (widget.isRecording && mounted) {
-          setState(() {});
-        }
-      });
+    _controller =
+        AnimationController(
+          vsync: this,
+          duration: const Duration(milliseconds: 180),
+        )..addListener(() {
+          if (widget.isRecording && mounted) {
+            setState(() {});
+          }
+        });
 
     if (widget.isRecording) {
       _controller.repeat();
@@ -68,14 +69,19 @@ class _WaveformViewState extends State<WaveformView>
           final double normalized = widget.isRecording
               ? (0.2 + 0.8 * _random.nextDouble())
               : 0.15;
-          final barHeight = (widget.height * normalized).clamp(4.0, widget.height);
+          final barHeight = (widget.height * normalized).clamp(
+            4.0,
+            widget.height,
+          );
 
           return Container(
             margin: const EdgeInsets.symmetric(horizontal: 2.5),
             width: 3.5,
             height: barHeight,
             decoration: BoxDecoration(
-              color: widget.isRecording ? AppColors.brightGreen : AppColors.border,
+              color: widget.isRecording
+                  ? AppColors.brightGreen
+                  : AppColors.border,
               borderRadius: BorderRadius.circular(3),
             ),
           );

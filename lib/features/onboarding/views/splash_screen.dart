@@ -25,11 +25,17 @@ class _SplashScreenState extends State<SplashScreen>
     );
 
     _fadeAnimation = Tween<double>(begin: 0.0, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.0, 0.6, curve: Curves.easeIn)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.0, 0.6, curve: Curves.easeIn),
+      ),
     );
 
     _scaleAnimation = Tween<double>(begin: 0.92, end: 1.0).animate(
-      CurvedAnimation(parent: _controller, curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic)),
+      CurvedAnimation(
+        parent: _controller,
+        curve: const Interval(0.2, 0.8, curve: Curves.easeOutCubic),
+      ),
     );
 
     _controller.forward();
@@ -76,7 +82,9 @@ class _SplashScreenState extends State<SplashScreen>
                         border: Border.all(color: AppColors.border, width: 1.5),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primaryGreen.withOpacity(0.25),
+                            color: AppColors.primaryGreen.withValues(
+                              alpha: 0.25,
+                            ),
                             blurRadius: 36,
                             spreadRadius: 4,
                           ),

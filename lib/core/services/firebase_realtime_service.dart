@@ -10,7 +10,8 @@ class FirebaseRealtimeService extends GetxService {
   final FirebaseAuthService _authService = Get.find<FirebaseAuthService>();
 
   StreamSubscription? _unlockSub;
-  final RxList<UnlockSessionModel> remoteActiveUnlocks = <UnlockSessionModel>[].obs;
+  final RxList<UnlockSessionModel> remoteActiveUnlocks =
+      <UnlockSessionModel>[].obs;
 
   @override
   void onInit() {
@@ -18,7 +19,9 @@ class FirebaseRealtimeService extends GetxService {
     try {
       _database.setPersistenceEnabled(true);
     } catch (e) {
-      debugPrint('Realtime Database persistence already enabled or not supported: $e');
+      debugPrint(
+        'Realtime Database persistence already enabled or not supported: $e',
+      );
     }
     _listenToAuthChanges();
   }
@@ -47,7 +50,9 @@ class FirebaseRealtimeService extends GetxService {
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref('active_unlocks/$uid/${session.packageName.replaceAll('.', '_')}');
+      final ref = _database.ref(
+        'active_unlocks/$uid/${session.packageName.replaceAll('.', '_')}',
+      );
       await ref.set({
         'packageName': session.packageName,
         'appName': session.appName,
@@ -66,7 +71,9 @@ class FirebaseRealtimeService extends GetxService {
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref('active_unlocks/$uid/${packageName.replaceAll('.', '_')}');
+      final ref = _database.ref(
+        'active_unlocks/$uid/${packageName.replaceAll('.', '_')}',
+      );
       await ref.remove();
     } catch (e) {
       debugPrint('Error removing unlock from Realtime Database: $e');
@@ -88,7 +95,8 @@ class FirebaseRealtimeService extends GetxService {
               packageName: val['packageName']?.toString() ?? '',
               appName: val['appName']?.toString() ?? '',
               durationMinutes: (val['durationMinutes'] as num?)?.toInt() ?? 5,
-              expiresAtTimestamp: (val['expiresAtTimestamp'] as num?)?.toInt() ?? 0,
+              expiresAtTimestamp:
+                  (val['expiresAtTimestamp'] as num?)?.toInt() ?? 0,
             );
             if (session.expiresAtTimestamp > now) {
               list.add(session);

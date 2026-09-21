@@ -1,9 +1,4 @@
-enum ScheduleRepeatType {
-  daily,
-  weekdays,
-  weekends,
-  custom,
-}
+enum ScheduleRepeatType { daily, weekdays, weekends, custom }
 
 extension ScheduleRepeatTypeExtension on ScheduleRepeatType {
   String get displayName {
@@ -48,8 +43,12 @@ class ScheduleModel {
   String get timeRangeString {
     final startPeriod = startHour >= 12 ? 'PM' : 'AM';
     final endPeriod = endHour >= 12 ? 'PM' : 'AM';
-    final displayStartH = startHour == 0 ? 12 : (startHour > 12 ? startHour - 12 : startHour);
-    final displayEndH = endHour == 0 ? 12 : (endHour > 12 ? endHour - 12 : endHour);
+    final displayStartH = startHour == 0
+        ? 12
+        : (startHour > 12 ? startHour - 12 : startHour);
+    final displayEndH = endHour == 0
+        ? 12
+        : (endHour > 12 ? endHour - 12 : endHour);
     final startMinStr = startMinute.toString().padLeft(2, '0');
     final endMinStr = endMinute.toString().padLeft(2, '0');
     return '$displayStartH:$startMinStr $startPeriod – $displayEndH:$endMinStr $endPeriod';
@@ -118,8 +117,16 @@ class ScheduleModel {
         (e) => e.name == map['repeatType'],
         orElse: () => ScheduleRepeatType.daily,
       ),
-      customDays: (map['customDays'] as List<dynamic>?)?.map((e) => e as int).toList() ?? [1, 2, 3, 4, 5, 6, 7],
-      blockedPackages: (map['blockedPackages'] as List<dynamic>?)?.map((e) => e.toString()).toList() ?? [],
+      customDays:
+          (map['customDays'] as List<dynamic>?)
+              ?.map((e) => e as int)
+              .toList() ??
+          [1, 2, 3, 4, 5, 6, 7],
+      blockedPackages:
+          (map['blockedPackages'] as List<dynamic>?)
+              ?.map((e) => e.toString())
+              .toList() ??
+          [],
       isEnabled: map['isEnabled'] as bool? ?? true,
     );
   }

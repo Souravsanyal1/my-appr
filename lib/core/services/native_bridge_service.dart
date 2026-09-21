@@ -8,10 +8,12 @@ import '../../features/app_selection/models/installed_app_model.dart';
 import '../../features/limits/models/app_limit_model.dart';
 
 class NativeBridgeService extends GetxService {
-  static const MethodChannel _methodChannel =
-      MethodChannel(ChannelConstants.methodChannel);
-  static const EventChannel _eventChannel =
-      EventChannel(ChannelConstants.eventChannel);
+  static const MethodChannel _methodChannel = MethodChannel(
+    ChannelConstants.methodChannel,
+  );
+  static const EventChannel _eventChannel = EventChannel(
+    ChannelConstants.eventChannel,
+  );
 
   final _foregroundAppController = StreamController<String>.broadcast();
   Stream<String> get foregroundAppStream => _foregroundAppController.stream;
@@ -88,7 +90,9 @@ class NativeBridgeService extends GetxService {
     }
 
     try {
-      final res = await _methodChannel.invokeMethod<Map>(ChannelConstants.checkPermissions);
+      final res = await _methodChannel.invokeMethod<Map>(
+        ChannelConstants.checkPermissions,
+      );
       if (res != null) {
         return res.map((key, value) => MapEntry(key.toString(), value == true));
       }
@@ -124,9 +128,12 @@ class NativeBridgeService extends GetxService {
     await requestPermission('appSettings');
   }
 
-  Future<bool> checkUsageAccess() async => (await checkPermissions())['usageStats'] ?? false;
-  Future<bool> checkAccessibilityPermission() async => (await checkPermissions())['accessibility'] ?? false;
-  Future<bool> checkOverlayPermission() async => (await checkPermissions())['overlay'] ?? false;
+  Future<bool> checkUsageAccess() async =>
+      (await checkPermissions())['usageStats'] ?? false;
+  Future<bool> checkAccessibilityPermission() async =>
+      (await checkPermissions())['accessibility'] ?? false;
+  Future<bool> checkOverlayPermission() async =>
+      (await checkPermissions())['overlay'] ?? false;
   Future<bool> requestUsageAccess() async => requestPermission('usageStats');
 
   /// Get installed launcher apps
@@ -137,13 +144,15 @@ class NativeBridgeService extends GetxService {
     }
 
     try {
-      final List<dynamic>? res =
-          await _methodChannel.invokeMethod<List<dynamic>>(
-        ChannelConstants.getInstalledApps,
-      );
+      final List<dynamic>? res = await _methodChannel
+          .invokeMethod<List<dynamic>>(ChannelConstants.getInstalledApps);
       if (res != null) {
         return res
-            .map((e) => InstalledAppModel.fromMap(Map<String, dynamic>.from(e as Map)))
+            .map(
+              (e) => InstalledAppModel.fromMap(
+                Map<String, dynamic>.from(e as Map),
+              ),
+            )
             .toList();
       }
     } catch (e) {
@@ -171,11 +180,7 @@ class NativeBridgeService extends GetxService {
     try {
       final res = await _methodChannel.invokeMethod<Map>(
         ChannelConstants.getAppUsage,
-        {
-          'packages': packages,
-          'startTime': startTime,
-          'endTime': endTime,
-        },
+        {'packages': packages, 'startTime': startTime, 'endTime': endTime},
       );
       if (res != null) {
         return res.map((k, v) => MapEntry(k.toString(), (v as num).toInt()));
@@ -203,15 +208,15 @@ class NativeBridgeService extends GetxService {
   }
 
   /// Set temporary unlock duration for an app
-  Future<bool> setTemporaryUnlock(String packageName, int durationMinutes) async {
+  Future<bool> setTemporaryUnlock(
+    String packageName,
+    int durationMinutes,
+  ) async {
     if (!Platform.isAndroid) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.setTemporaryUnlock,
-        {
-          'packageName': packageName,
-          'durationMinutes': durationMinutes,
-        },
+        {'packageName': packageName, 'durationMinutes': durationMinutes},
       );
       return res ?? false;
     } catch (e) {
@@ -253,7 +258,9 @@ class NativeBridgeService extends GetxService {
   Future<bool> isBatteryOptimizationIgnored() async {
     if (!Platform.isAndroid) return true;
     try {
-      final res = await _methodChannel.invokeMethod<bool>('isBatteryOptimizationIgnored');
+      final res = await _methodChannel.invokeMethod<bool>(
+        'isBatteryOptimizationIgnored',
+      );
       return res ?? false;
     } catch (e) {
       debugPrint('Error checking battery optimization: $e');
@@ -265,7 +272,9 @@ class NativeBridgeService extends GetxService {
   Future<bool> requestIgnoreBatteryOptimizations() async {
     if (!Platform.isAndroid) return true;
     try {
-      final res = await _methodChannel.invokeMethod<bool>('requestIgnoreBatteryOptimizations');
+      final res = await _methodChannel.invokeMethod<bool>(
+        'requestIgnoreBatteryOptimizations',
+      );
       return res ?? false;
     } catch (e) {
       debugPrint('Error requesting battery optimization exemption: $e');

@@ -6,13 +6,16 @@ abstract class AppRoutes {
   static const String dailyGoal = '/daily-goal';
   static const String home = '/home';
   static const String intention = '/intention';
+  static const String intentionComplete = '/intention-complete';
   static const String deedDetail = '/deed-detail';
   static const String learningMode = '/learning-mode';
   static const String recording = '/recording';
   static const String analysis = '/analysis';
   static const String result = '/result';
+  static const String retryResult = '/retry-result';
   static const String unlockSuccess = '/unlock-success';
   static const String activeUnlock = '/active-unlock';
+  static const String endScreen = '/end-screen';
   static const String deeds = '/deeds';
   static const String progress = '/progress';
   static const String profile = '/profile';

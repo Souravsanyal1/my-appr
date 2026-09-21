@@ -92,9 +92,22 @@ class ProgressView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Total Deeds', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          'Total Deeds',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         SizedBox(height: 6),
-                        Text('42', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text(
+                          '42',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -106,9 +119,22 @@ class ProgressView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Completed', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          'Completed',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         SizedBox(height: 6),
-                        Text('37', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brightGreen)),
+                        Text(
+                          '37',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brightGreen,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -124,9 +150,22 @@ class ProgressView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Average Score', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          'Average Score',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         SizedBox(height: 6),
-                        Text('87%', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.brightGreen)),
+                        Text(
+                          '87%',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brightGreen,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -138,9 +177,22 @@ class ProgressView extends StatelessWidget {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: const [
-                        Text('Unlocked Time', style: TextStyle(fontSize: 12, color: AppColors.textSecondary)),
+                        Text(
+                          'Unlocked Time',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: AppColors.textSecondary,
+                          ),
+                        ),
                         SizedBox(height: 6),
-                        Text('11h 20m', style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                        Text(
+                          '11h 20m',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
+                        ),
                       ],
                     ),
                   ),
@@ -159,7 +211,11 @@ class ProgressView extends StatelessWidget {
       children: [
         Text(
           day,
-          style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: AppColors.textSecondary),
+          style: const TextStyle(
+            fontSize: 12,
+            fontWeight: FontWeight.bold,
+            color: AppColors.textSecondary,
+          ),
         ),
         const SizedBox(height: 8),
         Container(

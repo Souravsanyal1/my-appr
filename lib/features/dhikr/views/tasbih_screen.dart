@@ -41,7 +41,8 @@ class TasbihScreen extends StatelessWidget {
                 itemCount: controller.dhikrList.length,
                 itemBuilder: (context, index) {
                   return Obx(() {
-                    final isSelected = controller.selectedDhikrIndex.value == index;
+                    final isSelected =
+                        controller.selectedDhikrIndex.value == index;
                     final dhikr = controller.dhikrList[index];
 
                     return Padding(
@@ -49,7 +50,9 @@ class TasbihScreen extends StatelessWidget {
                       child: ChoiceChip(
                         label: Text(dhikr.transliteration),
                         selected: isSelected,
-                        selectedColor: AppColors.primaryGold.withValues(alpha: 0.2),
+                        selectedColor: AppColors.primaryGold.withValues(
+                          alpha: 0.2,
+                        ),
                         onSelected: (_) => controller.selectDhikr(index),
                       ),
                     );
@@ -71,7 +74,9 @@ class TasbihScreen extends StatelessWidget {
                     color: isDark ? AppColors.darkCard : AppColors.lightCard,
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
-                      color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                      color: isDark
+                          ? AppColors.darkCardBorder
+                          : AppColors.lightCardBorder,
                     ),
                   ),
                   child: Column(
@@ -100,7 +105,9 @@ class TasbihScreen extends StatelessWidget {
                         textAlign: TextAlign.center,
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -129,8 +136,12 @@ class TasbihScreen extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: progress,
                         strokeWidth: 10,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
-                        valueColor: const AlwaysStoppedAnimation<Color>(AppColors.emerald),
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.black12,
+                        valueColor: const AlwaysStoppedAnimation<Color>(
+                          AppColors.emerald,
+                        ),
                       ),
                     ),
                     // Inner Circle
@@ -174,7 +185,9 @@ class TasbihScreen extends StatelessWidget {
                             style: TextStyle(
                               fontSize: 14,
                               fontWeight: FontWeight.w600,
-                              color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                              color: isDark
+                                  ? AppColors.textMutedDark
+                                  : AppColors.textMutedLight,
                             ),
                           ),
                           const SizedBox(height: 6),
@@ -213,7 +226,11 @@ class TasbihScreen extends StatelessWidget {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.star_outline, size: 20, color: AppColors.primaryGold),
+                      const Icon(
+                        Icons.star_outline,
+                        size: 20,
+                        color: AppColors.primaryGold,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
@@ -221,7 +238,9 @@ class TasbihScreen extends StatelessWidget {
                           style: TextStyle(
                             fontSize: 12,
                             fontStyle: FontStyle.italic,
-                            color: isDark ? AppColors.primaryGoldLight : Colors.brown.shade800,
+                            color: isDark
+                                ? AppColors.primaryGoldLight
+                                : Colors.brown.shade800,
                           ),
                         ),
                       ),

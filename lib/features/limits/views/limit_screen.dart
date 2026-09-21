@@ -21,7 +21,9 @@ class LimitScreen extends GetView<LimitController> {
             tooltip: 'Security Settings',
             icon: Icon(
               pinService.isStrictModeActive() ? Icons.lock : Icons.lock_open,
-              color: pinService.isStrictModeActive() ? AppColors.primaryGold : Colors.grey,
+              color: pinService.isStrictModeActive()
+                  ? AppColors.primaryGold
+                  : Colors.grey,
             ),
             onPressed: () => _showSecurityDialog(context, pinService),
           ),
@@ -37,7 +39,11 @@ class LimitScreen extends GetView<LimitController> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                const Icon(Icons.timer_off_outlined, size: 64, color: Colors.grey),
+                const Icon(
+                  Icons.timer_off_outlined,
+                  size: 64,
+                  color: Colors.grey,
+                ),
                 const SizedBox(height: 16),
                 Text(
                   'No app limits configured yet',
@@ -78,14 +84,19 @@ class LimitScreen extends GetView<LimitController> {
             const SizedBox(height: 12),
 
             // Limits List
-            ...controller.limits.map((limit) => _buildLimitCard(context, limit)),
+            ...controller.limits.map(
+              (limit) => _buildLimitCard(context, limit),
+            ),
           ],
         );
       }),
     );
   }
 
-  Widget _buildStrictModeBanner(BuildContext context, PinSecurityService pinService) {
+  Widget _buildStrictModeBanner(
+    BuildContext context,
+    PinSecurityService pinService,
+  ) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isActive = pinService.isStrictModeActive();
 
@@ -95,7 +106,9 @@ class LimitScreen extends GetView<LimitController> {
         color: isDark ? AppColors.darkCard : AppColors.lightCard,
         borderRadius: BorderRadius.circular(16),
         border: Border.all(
-          color: isActive ? AppColors.primaryGold.withValues(alpha: 0.5) : AppColors.darkCardBorder,
+          color: isActive
+              ? AppColors.primaryGold.withValues(alpha: 0.5)
+              : AppColors.darkCardBorder,
         ),
       ),
       child: Row(
@@ -103,7 +116,8 @@ class LimitScreen extends GetView<LimitController> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (isActive ? AppColors.primaryGold : Colors.grey).withValues(alpha: 0.15),
+              color: (isActive ? AppColors.primaryGold : Colors.grey)
+                  .withValues(alpha: 0.15),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -119,7 +133,10 @@ class LimitScreen extends GetView<LimitController> {
               children: [
                 Text(
                   isActive ? 'Strict Mode Active' : 'Strict Mode Disabled',
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 15),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 15,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
@@ -128,7 +145,9 @@ class LimitScreen extends GetView<LimitController> {
                       : 'Enable PIN protection to prevent impulsive edits.',
                   style: TextStyle(
                     fontSize: 12,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -160,7 +179,8 @@ class LimitScreen extends GetView<LimitController> {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: (isBlock ? AppColors.danger : AppColors.warning).withValues(alpha: 0.15),
+                    color: (isBlock ? AppColors.danger : AppColors.warning)
+                        .withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   alignment: Alignment.center,
@@ -186,7 +206,9 @@ class LimitScreen extends GetView<LimitController> {
                         'Limit: ${limit.dailyLimitMinutes} min / day  •  Warn at ${limit.warningThresholdMinutes}m',
                         style: TextStyle(
                           fontSize: 13,
-                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                          color: isDark
+                              ? AppColors.textSecondaryDark
+                              : AppColors.textSecondaryLight,
                         ),
                       ),
                     ],
@@ -195,7 +217,8 @@ class LimitScreen extends GetView<LimitController> {
                 Switch(
                   value: limit.isEnabled,
                   activeThumbColor: AppColors.primaryGold,
-                  onChanged: (val) => controller.toggleLimit(limit.packageName, val),
+                  onChanged: (val) =>
+                      controller.toggleLimit(limit.packageName, val),
                 ),
               ],
             ),
@@ -204,9 +227,14 @@ class LimitScreen extends GetView<LimitController> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: isBlock ? AppColors.danger.withValues(alpha: 0.1) : AppColors.warning.withValues(alpha: 0.1),
+                    color: isBlock
+                        ? AppColors.danger.withValues(alpha: 0.1)
+                        : AppColors.warning.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(
@@ -222,11 +250,17 @@ class LimitScreen extends GetView<LimitController> {
                   children: [
                     IconButton(
                       icon: const Icon(Icons.edit_outlined, size: 20),
-                      onPressed: () => _showEditLimitBottomSheet(context, limit),
+                      onPressed: () =>
+                          _showEditLimitBottomSheet(context, limit),
                     ),
                     IconButton(
-                      icon: const Icon(Icons.delete_outline, size: 20, color: AppColors.danger),
-                      onPressed: () => controller.removeLimit(limit.packageName),
+                      icon: const Icon(
+                        Icons.delete_outline,
+                        size: 20,
+                        color: AppColors.danger,
+                      ),
+                      onPressed: () =>
+                          controller.removeLimit(limit.packageName),
                     ),
                   ],
                 ),
@@ -238,7 +272,10 @@ class LimitScreen extends GetView<LimitController> {
     );
   }
 
-  void _showSecurityDialog(BuildContext context, PinSecurityService pinService) async {
+  void _showSecurityDialog(
+    BuildContext context,
+    PinSecurityService pinService,
+  ) async {
     if (!pinService.hasPin()) {
       final set = await PinDialog.show(
         title: 'Set Security PIN',
@@ -263,7 +300,11 @@ class LimitScreen extends GetView<LimitController> {
     }
   }
 
-  void _toggleStrictMode(BuildContext context, PinSecurityService pinService, bool enable) async {
+  void _toggleStrictMode(
+    BuildContext context,
+    PinSecurityService pinService,
+    bool enable,
+  ) async {
     if (enable) {
       if (!pinService.hasPin()) {
         final set = await PinDialog.show(
@@ -287,7 +328,10 @@ class LimitScreen extends GetView<LimitController> {
     }
   }
 
-  void _showEditLimitBottomSheet(BuildContext context, AppLimitModel? existing) {
+  void _showEditLimitBottomSheet(
+    BuildContext context,
+    AppLimitModel? existing,
+  ) {
     int dailyMinutes = existing?.dailyLimitMinutes ?? 30;
     int warningMinutes = existing?.warningThresholdMinutes ?? 5;
     String mode = existing?.mode ?? 'block';
@@ -303,7 +347,9 @@ class LimitScreen extends GetView<LimitController> {
             padding: const EdgeInsets.all(24),
             decoration: BoxDecoration(
               color: isDark ? AppColors.darkSurface : AppColors.lightSurface,
-              borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -311,8 +357,13 @@ class LimitScreen extends GetView<LimitController> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    existing == null ? 'Create App Rule' : 'Edit Rule: ${existing.appName}',
-                    style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                    existing == null
+                        ? 'Create App Rule'
+                        : 'Edit Rule: ${existing.appName}',
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                   const SizedBox(height: 16),
                   if (existing == null) ...[
@@ -327,7 +378,8 @@ class LimitScreen extends GetView<LimitController> {
                     TextField(
                       controller: pkgCtrl,
                       decoration: const InputDecoration(
-                        labelText: 'Package Name (e.g. com.google.android.youtube)',
+                        labelText:
+                            'Package Name (e.g. com.google.android.youtube)',
                         border: OutlineInputBorder(),
                       ),
                     ),
@@ -338,7 +390,13 @@ class LimitScreen extends GetView<LimitController> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Daily Limit:'),
-                      Text('$dailyMinutes minutes', style: const TextStyle(fontWeight: FontWeight.bold, color: AppColors.primaryGold)),
+                      Text(
+                        '$dailyMinutes minutes',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.primaryGold,
+                        ),
+                      ),
                     ],
                   ),
                   Slider(
@@ -347,7 +405,8 @@ class LimitScreen extends GetView<LimitController> {
                     max: 180,
                     divisions: 34,
                     activeColor: AppColors.primaryGold,
-                    onChanged: (v) => setSheetState(() => dailyMinutes = v.round()),
+                    onChanged: (v) =>
+                        setSheetState(() => dailyMinutes = v.round()),
                   ),
                   const SizedBox(height: 8),
 
@@ -356,7 +415,10 @@ class LimitScreen extends GetView<LimitController> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Warning Alert:'),
-                      Text('$warningMinutes min before limit', style: const TextStyle(fontWeight: FontWeight.bold)),
+                      Text(
+                        '$warningMinutes min before limit',
+                        style: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
                     ],
                   ),
                   Slider(
@@ -365,7 +427,8 @@ class LimitScreen extends GetView<LimitController> {
                     max: 20,
                     divisions: 18,
                     activeColor: AppColors.warning,
-                    onChanged: (v) => setSheetState(() => warningMinutes = v.round()),
+                    onChanged: (v) =>
+                        setSheetState(() => warningMinutes = v.round()),
                   ),
                   const SizedBox(height: 12),
 
@@ -378,8 +441,11 @@ class LimitScreen extends GetView<LimitController> {
                         child: ChoiceChip(
                           label: const Center(child: Text('Block Screen')),
                           selected: mode == 'block',
-                          selectedColor: AppColors.danger.withValues(alpha: 0.2),
-                          onSelected: (s) => setSheetState(() => mode = 'block'),
+                          selectedColor: AppColors.danger.withValues(
+                            alpha: 0.2,
+                          ),
+                          onSelected: (s) =>
+                              setSheetState(() => mode = 'block'),
                         ),
                       ),
                       const SizedBox(width: 12),
@@ -387,8 +453,11 @@ class LimitScreen extends GetView<LimitController> {
                         child: ChoiceChip(
                           label: const Center(child: Text('Warning Only')),
                           selected: mode == 'warning',
-                          selectedColor: AppColors.warning.withValues(alpha: 0.2),
-                          onSelected: (s) => setSheetState(() => mode = 'warning'),
+                          selectedColor: AppColors.warning.withValues(
+                            alpha: 0.2,
+                          ),
+                          onSelected: (s) =>
+                              setSheetState(() => mode = 'warning'),
                         ),
                       ),
                     ],
@@ -400,10 +469,14 @@ class LimitScreen extends GetView<LimitController> {
                     width: double.infinity,
                     child: ElevatedButton(
                       onPressed: () {
-                        final pkg = existing?.packageName ?? pkgCtrl.text.trim();
+                        final pkg =
+                            existing?.packageName ?? pkgCtrl.text.trim();
                         final name = existing?.appName ?? nameCtrl.text.trim();
                         if (pkg.isEmpty || name.isEmpty) {
-                          Get.snackbar('Error', 'Please fill app name and package.');
+                          Get.snackbar(
+                            'Error',
+                            'Please fill app name and package.',
+                          );
                           return;
                         }
 

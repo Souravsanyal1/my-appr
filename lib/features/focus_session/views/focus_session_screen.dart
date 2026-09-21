@@ -22,36 +22,54 @@ class FocusSessionScreen extends StatelessWidget {
           child: Column(
             children: [
               // Top session type indicator
-              Obx(() => Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: (controller.isBreak.value ? AppColors.emerald : AppColors.primaryGold)
-                          .withValues(alpha: 0.15),
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: controller.isBreak.value ? AppColors.emerald : AppColors.primaryGold,
+              Obx(
+                () => Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 8,
+                  ),
+                  decoration: BoxDecoration(
+                    color:
+                        (controller.isBreak.value
+                                ? AppColors.emerald
+                                : AppColors.primaryGold)
+                            .withValues(alpha: 0.15),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: controller.isBreak.value
+                          ? AppColors.emerald
+                          : AppColors.primaryGold,
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Icon(
+                        controller.isBreak.value
+                            ? Icons.spa
+                            : Icons.self_improvement,
+                        size: 18,
+                        color: controller.isBreak.value
+                            ? AppColors.emerald
+                            : AppColors.primaryGold,
                       ),
-                    ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Icon(
-                          controller.isBreak.value ? Icons.spa : Icons.self_improvement,
-                          size: 18,
-                          color: controller.isBreak.value ? AppColors.emerald : AppColors.primaryGold,
+                      const SizedBox(width: 8),
+                      Text(
+                        controller.isBreak.value
+                            ? 'Sunnah Reflection Break'
+                            : 'Deep Barakah Work',
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.bold,
+                          color: controller.isBreak.value
+                              ? AppColors.emerald
+                              : AppColors.primaryGold,
                         ),
-                        const SizedBox(width: 8),
-                        Text(
-                          controller.isBreak.value ? 'Sunnah Reflection Break' : 'Deep Barakah Work',
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: FontWeight.bold,
-                            color: controller.isBreak.value ? AppColors.emerald : AppColors.primaryGold,
-                          ),
-                        ),
-                      ],
-                    ),
-                  )),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const Spacer(),
 
               // Circular Countdown Timer
@@ -69,7 +87,9 @@ class FocusSessionScreen extends StatelessWidget {
                       child: CircularProgressIndicator(
                         value: progress,
                         strokeWidth: 12,
-                        backgroundColor: isDark ? Colors.white12 : Colors.black12,
+                        backgroundColor: isDark
+                            ? Colors.white12
+                            : Colors.black12,
                         valueColor: AlwaysStoppedAnimation<Color>(
                           isBreak ? AppColors.emerald : AppColors.primaryGold,
                         ),
@@ -91,7 +111,9 @@ class FocusSessionScreen extends StatelessWidget {
                           isBreak ? 'Breathe & Reflect' : 'Remaining',
                           style: TextStyle(
                             fontSize: 14,
-                            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            color: isDark
+                                ? AppColors.textSecondaryDark
+                                : AppColors.textSecondaryLight,
                           ),
                         ),
                       ],
@@ -110,13 +132,16 @@ class FocusSessionScreen extends StatelessWidget {
                 return Row(
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [15, 25, 45, 60].map((mins) {
-                    final isSelected = controller.selectedDurationMinutes.value == mins;
+                    final isSelected =
+                        controller.selectedDurationMinutes.value == mins;
                     return Padding(
                       padding: const EdgeInsets.symmetric(horizontal: 6.0),
                       child: ChoiceChip(
                         label: Text('${mins}m'),
                         selected: isSelected,
-                        selectedColor: AppColors.primaryGold.withValues(alpha: 0.2),
+                        selectedColor: AppColors.primaryGold.withValues(
+                          alpha: 0.2,
+                        ),
                         onSelected: (_) => controller.setDuration(mins),
                       ),
                     );
@@ -127,14 +152,17 @@ class FocusSessionScreen extends StatelessWidget {
 
               // Mindful Reflection Box
               Obx(() {
-                final reminder = controller.mindfulReminders[controller.currentReminderIndex.value];
+                final reminder = controller
+                    .mindfulReminders[controller.currentReminderIndex.value];
                 return Container(
                   padding: const EdgeInsets.all(16),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkCard : AppColors.lightCard,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                      color: isDark
+                          ? AppColors.darkCardBorder
+                          : AppColors.lightCardBorder,
                     ),
                   ),
                   child: Text(
@@ -144,7 +172,9 @@ class FocusSessionScreen extends StatelessWidget {
                       fontSize: 13,
                       height: 1.4,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? AppColors.primaryGoldLight : Colors.brown.shade800,
+                      color: isDark
+                          ? AppColors.primaryGoldLight
+                          : Colors.brown.shade800,
                     ),
                   ),
                 );
@@ -167,19 +197,34 @@ class FocusSessionScreen extends StatelessWidget {
                     const SizedBox(width: 24),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: isRunning ? AppColors.warning : AppColors.primaryGold,
+                        backgroundColor: isRunning
+                            ? AppColors.warning
+                            : AppColors.primaryGold,
                         foregroundColor: Colors.black,
-                        padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 16),
-                        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 40,
+                          vertical: 16,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
                       ),
-                      onPressed: isRunning ? controller.pauseSession : controller.startSession,
+                      onPressed: isRunning
+                          ? controller.pauseSession
+                          : controller.startSession,
                       child: Row(
                         children: [
-                          Icon(isRunning ? Icons.pause : Icons.play_arrow, size: 24),
+                          Icon(
+                            isRunning ? Icons.pause : Icons.play_arrow,
+                            size: 24,
+                          ),
                           const SizedBox(width: 8),
                           Text(
                             isRunning ? 'Pause' : 'Begin Focus',
-                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                            ),
                           ),
                         ],
                       ),

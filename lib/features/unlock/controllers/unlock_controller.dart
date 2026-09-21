@@ -31,10 +31,13 @@ class UnlockController extends GetxController {
   final RxInt selectedVerseIndex = 0.obs;
   final RxBool isRecording = false.obs;
   final RxInt recordingSeconds = 0.obs;
-  final Rx<PronunciationResult?> recitationResult = Rx<PronunciationResult?>(null);
+  final Rx<PronunciationResult?> recitationResult = Rx<PronunciationResult?>(
+    null,
+  );
   Timer? _recordingTimer;
 
-  List<QuranVerseToRecite> get verses => RecitationScoringService.challengeVerses;
+  List<QuranVerseToRecite> get verses =>
+      RecitationScoringService.challengeVerses;
   QuranVerseToRecite get currentVerse => verses[selectedVerseIndex.value];
 
   int get configuredThreshold =>
@@ -116,7 +119,8 @@ class UnlockController extends GetxController {
       selectedScore.value = result.overallScore;
 
       // Update recitation stats
-      final totalRecitations = (_storageService.read<int>('total_recitations') ?? 0) + 1;
+      final totalRecitations =
+          (_storageService.read<int>('total_recitations') ?? 0) + 1;
       _storageService.write('total_recitations', totalRecitations);
     } finally {
       isAnalyzing.value = false;
@@ -148,7 +152,8 @@ class UnlockController extends GetxController {
     isUnlocking.value = true;
 
     try {
-      final expiresAt = DateTime.now().millisecondsSinceEpoch + (durationMinutes * 60 * 1000);
+      final expiresAt =
+          DateTime.now().millisecondsSinceEpoch + (durationMinutes * 60 * 1000);
       final newSession = UnlockSessionModel(
         packageName: targetPackage,
         appName: targetAppName,

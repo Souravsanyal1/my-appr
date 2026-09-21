@@ -20,10 +20,15 @@ class BlockedScreen extends StatelessWidget {
         }
       },
       child: Scaffold(
-        backgroundColor: isDark ? AppColors.darkBackground : AppColors.lightBackground,
+        backgroundColor: isDark
+            ? AppColors.darkBackground
+            : AppColors.lightBackground,
         body: SafeArea(
           child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 28.0, vertical: 24.0),
+            padding: const EdgeInsets.symmetric(
+              horizontal: 28.0,
+              vertical: 24.0,
+            ),
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -68,13 +73,15 @@ class BlockedScreen extends StatelessWidget {
                 const SizedBox(height: 12),
 
                 // App Name
-                Obx(() => Text(
-                      controller.appName.value,
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                            fontSize: 22,
-                            fontWeight: FontWeight.bold,
-                          ),
-                    )),
+                Obx(
+                  () => Text(
+                    controller.appName.value,
+                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
                 const SizedBox(height: 6),
 
                 // Subtitle
@@ -83,19 +90,26 @@ class BlockedScreen extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 15,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
                 const SizedBox(height: 28),
 
                 // Usage Box
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 24,
+                    vertical: 16,
+                  ),
                   decoration: BoxDecoration(
                     color: isDark ? AppColors.darkCard : AppColors.lightCard,
                     borderRadius: BorderRadius.circular(16),
                     border: Border.all(
-                      color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                      color: isDark
+                          ? AppColors.darkCardBorder
+                          : AppColors.lightCardBorder,
                     ),
                   ),
                   child: Column(
@@ -105,18 +119,22 @@ class BlockedScreen extends StatelessWidget {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w500,
-                          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          color: isDark
+                              ? AppColors.textMutedDark
+                              : AppColors.textMutedLight,
                         ),
                       ),
                       const SizedBox(height: 6),
-                      Obx(() => Text(
-                            '${controller.usedMinutes.value} / ${controller.limitMinutes.value} minutes',
-                            style: const TextStyle(
-                              fontSize: 20,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.danger,
-                            ),
-                          )),
+                      Obx(
+                        () => Text(
+                          '${controller.usedMinutes.value} / ${controller.limitMinutes.value} minutes',
+                          style: const TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.danger,
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 ),
@@ -138,7 +156,9 @@ class BlockedScreen extends StatelessWidget {
                     style: TextStyle(
                       fontSize: 12,
                       fontStyle: FontStyle.italic,
-                      color: isDark ? AppColors.primaryGoldLight : Colors.brown.shade800,
+                      color: isDark
+                          ? AppColors.primaryGoldLight
+                          : Colors.brown.shade800,
                       height: 1.4,
                     ),
                   ),
@@ -169,7 +189,10 @@ class BlockedScreen extends StatelessWidget {
                         SizedBox(width: 8),
                         Text(
                           AppStrings.learnToUnlock,
-                          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
@@ -183,7 +206,10 @@ class BlockedScreen extends StatelessWidget {
                   height: 50,
                   child: OutlinedButton(
                     style: OutlinedButton.styleFrom(
-                      side: const BorderSide(color: AppColors.emerald, width: 1.5),
+                      side: const BorderSide(
+                        color: AppColors.emerald,
+                        width: 1.5,
+                      ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(14),
                       ),
@@ -192,7 +218,11 @@ class BlockedScreen extends StatelessWidget {
                     child: const Row(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        Icon(Icons.self_improvement, color: AppColors.emerald, size: 20),
+                        Icon(
+                          Icons.self_improvement,
+                          color: AppColors.emerald,
+                          size: 20,
+                        ),
                         SizedBox(width: 8),
                         Text(
                           AppStrings.startFocusSession,
@@ -218,7 +248,9 @@ class BlockedScreen extends StatelessWidget {
                       AppStrings.closeApp,
                       style: TextStyle(
                         fontSize: 15,
-                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ),

@@ -58,7 +58,9 @@ class AppSelectionController extends GetxController {
     var list = allApps.toList();
 
     if (selectedFilter.value == 'monitored') {
-      list = list.where((a) => monitoredPackages.contains(a.packageName)).toList();
+      list = list
+          .where((a) => monitoredPackages.contains(a.packageName))
+          .toList();
     } else if (selectedFilter.value == 'user_only') {
       list = list.where((a) => !a.isSystemApp).toList();
     }

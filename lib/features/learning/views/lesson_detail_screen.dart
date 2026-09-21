@@ -26,7 +26,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
       setState(() => _isPlayingAudio = false);
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Audio recitation preview completed. Now practice reciting!'),
+          content: Text(
+            'Audio recitation preview completed. Now practice reciting!',
+          ),
           duration: Duration(seconds: 2),
         ),
       );
@@ -57,7 +59,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
           IconButton(
             tooltip: 'Audio Playback',
             icon: Icon(
-              _isPlayingAudio ? Icons.volume_up_rounded : Icons.volume_mute_rounded,
+              _isPlayingAudio
+                  ? Icons.volume_up_rounded
+                  : Icons.volume_mute_rounded,
               color: _isPlayingAudio ? AppColors.secondaryGold : null,
             ),
             onPressed: _simulateAudioPlayback,
@@ -74,9 +78,12 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryEmerald.withOpacity(0.15),
+                    color: AppColors.primaryEmerald.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -90,9 +97,12 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                   ),
                 ),
                 Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 10,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
-                    color: AppColors.secondaryGold.withOpacity(0.15),
+                    color: AppColors.secondaryGold.withValues(alpha: 0.15),
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
@@ -112,15 +122,17 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
             Container(
               padding: const EdgeInsets.all(22),
               decoration: BoxDecoration(
-                color: isDark ? const Color(0xFF131D19) : const Color(0xFFF7FAF8),
+                color: isDark
+                    ? const Color(0xFF131D19)
+                    : const Color(0xFFF7FAF8),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: AppColors.secondaryGold.withOpacity(0.35),
+                  color: AppColors.secondaryGold.withValues(alpha: 0.35),
                   width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withOpacity(0.04),
+                    color: Colors.black.withValues(alpha: 0.04),
                     blurRadius: 10,
                     offset: const Offset(0, 4),
                   ),
@@ -144,7 +156,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                   OutlinedButton.icon(
                     onPressed: _simulateAudioPlayback,
                     icon: Icon(
-                      _isPlayingAudio ? Icons.graphic_eq_rounded : Icons.volume_up_rounded,
+                      _isPlayingAudio
+                          ? Icons.graphic_eq_rounded
+                          : Icons.volume_up_rounded,
                       size: 18,
                       color: AppColors.secondaryGold,
                     ),
@@ -157,7 +171,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                     ),
                     style: OutlinedButton.styleFrom(
                       side: BorderSide(
-                        color: AppColors.secondaryGold.withOpacity(0.5),
+                        color: AppColors.secondaryGold.withValues(alpha: 0.5),
                       ),
                       shape: RoundedRectangleBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -223,10 +237,7 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               ),
               child: Text(
                 widget.lesson.translation,
-                style: const TextStyle(
-                  fontSize: 14,
-                  height: 1.5,
-                ),
+                style: const TextStyle(fontSize: 14, height: 1.5),
               ),
             ),
             const SizedBox(height: 24),
@@ -236,7 +247,9 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
               Container(
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF1A2621) : const Color(0xFFEDF4F0),
+                  color: isDark
+                      ? const Color(0xFF1A2621)
+                      : const Color(0xFFEDF4F0),
                   borderRadius: BorderRadius.circular(16),
                 ),
                 child: Row(
@@ -266,7 +279,10 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
                       onPressed: _incrementRepetition,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primaryEmerald,
-                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 16,
+                          vertical: 10,
+                        ),
                       ),
                       child: const Text('+ 1 Count'),
                     ),

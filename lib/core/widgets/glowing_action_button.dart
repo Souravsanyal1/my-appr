@@ -1,15 +1,8 @@
-import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../constants/app_colors.dart';
 
-enum GlowingButtonState {
-  idle,
-  holding,
-  recording,
-  success,
-  error,
-}
+enum GlowingButtonState { idle, holding, recording, success, error }
 
 class GlowingActionButton extends StatefulWidget {
   final IconData icon;
@@ -72,14 +65,14 @@ class _GlowingActionButtonState extends State<GlowingActionButton>
         return AppColors.error;
       case GlowingButtonState.holding:
       case GlowingButtonState.idle:
-      default:
         return AppColors.primaryGreen;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isPulsing = widget.state == GlowingButtonState.recording ||
+    final isPulsing =
+        widget.state == GlowingButtonState.recording ||
         widget.state == GlowingButtonState.holding;
 
     return Column(
@@ -124,7 +117,9 @@ class _GlowingActionButtonState extends State<GlowingActionButton>
                     boxShadow: [
                       // Soft ambient glow
                       BoxShadow(
-                        color: _glowColor.withOpacity(isPulsing ? 0.45 : 0.25),
+                        color: _glowColor.withValues(
+                          alpha: isPulsing ? 0.45 : 0.25,
+                        ),
                         blurRadius: isPulsing ? 32 : 20,
                         spreadRadius: isPulsing ? 8 : 2,
                       ),
@@ -142,7 +137,9 @@ class _GlowingActionButtonState extends State<GlowingActionButton>
                             value: widget.progress.clamp(0.0, 1.0),
                             strokeWidth: 4.5,
                             backgroundColor: AppColors.border,
-                            valueColor: AlwaysStoppedAnimation<Color>(_glowColor),
+                            valueColor: AlwaysStoppedAnimation<Color>(
+                              _glowColor,
+                            ),
                           ),
                         ),
 
@@ -155,7 +152,10 @@ class _GlowingActionButtonState extends State<GlowingActionButton>
                           gradient: LinearGradient(
                             colors: widget.state == GlowingButtonState.recording
                                 ? [AppColors.error, const Color(0xFFB91C1C)]
-                                : [AppColors.brightGreen, AppColors.primaryGreen],
+                                : [
+                                    AppColors.brightGreen,
+                                    AppColors.primaryGreen,
+                                  ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                           ),

@@ -36,7 +36,7 @@ class ScheduleScreen extends StatelessWidget {
                 Icon(
                   Icons.alarm_off_outlined,
                   size: 56,
-                  color: Colors.grey.withOpacity(0.4),
+                  color: Colors.grey.withValues(alpha: 0.4),
                 ),
                 const SizedBox(height: 12),
                 const Text(
@@ -57,7 +57,7 @@ class ScheduleScreen extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: list.length,
-          separatorBuilder: (_, __) => const SizedBox(height: 12),
+          separatorBuilder: (_, _) => const SizedBox(height: 12),
           itemBuilder: (context, index) {
             final schedule = list[index];
             final isCurrentlyActive = schedule.isTimeActive(DateTime.now());
@@ -102,7 +102,10 @@ class ScheduleScreen extends StatelessWidget {
                                   if (isCurrentlyActive) ...[
                                     const SizedBox(width: 8),
                                     Container(
-                                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 8,
+                                        vertical: 2,
+                                      ),
                                       decoration: BoxDecoration(
                                         color: AppColors.primaryEmerald,
                                         borderRadius: BorderRadius.circular(10),
@@ -133,8 +136,9 @@ class ScheduleScreen extends StatelessWidget {
                         ),
                         Switch(
                           value: schedule.isEnabled,
-                          activeColor: AppColors.primaryEmerald,
-                          onChanged: (_) => controller.toggleSchedule(schedule.id),
+                          activeThumbColor: AppColors.primaryEmerald,
+                          onChanged: (_) =>
+                              controller.toggleSchedule(schedule.id),
                         ),
                       ],
                     ),
@@ -142,38 +146,60 @@ class ScheduleScreen extends StatelessWidget {
                     Row(
                       children: [
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             schedule.repeatType.displayName,
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         const SizedBox(width: 8),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: isDark ? Colors.white.withOpacity(0.06) : Colors.black.withOpacity(0.05),
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.06)
+                                : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
                             '${schedule.blockedPackages.length} Apps Blocked',
-                            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
                           ),
                         ),
                         const Spacer(),
                         IconButton(
                           icon: const Icon(Icons.edit_outlined, size: 18),
                           tooltip: 'Edit',
-                          onPressed: () => _showEditScheduleDialog(context, schedule),
+                          onPressed: () =>
+                              _showEditScheduleDialog(context, schedule),
                         ),
                         IconButton(
-                          icon: const Icon(Icons.delete_outline, size: 18, color: AppColors.danger),
+                          icon: const Icon(
+                            Icons.delete_outline,
+                            size: 18,
+                            color: AppColors.danger,
+                          ),
                           tooltip: 'Delete',
-                          onPressed: () => controller.deleteSchedule(schedule.id),
+                          onPressed: () =>
+                              controller.deleteSchedule(schedule.id),
                         ),
                       ],
                     ),
@@ -197,7 +223,9 @@ class ScheduleScreen extends StatelessWidget {
   void _showEditScheduleDialog(BuildContext context, ScheduleModel? existing) {
     final controller = Get.find<ScheduleController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final nameCtrl = TextEditingController(text: existing?.name ?? 'Study Time');
+    final nameCtrl = TextEditingController(
+      text: existing?.name ?? 'Study Time',
+    );
 
     TimeOfDay startTime = TimeOfDay(
       hour: existing?.startHour ?? 14,
@@ -207,124 +235,141 @@ class ScheduleScreen extends StatelessWidget {
       hour: existing?.endHour ?? 17,
       minute: existing?.endMinute ?? 0,
     );
-    ScheduleRepeatType repeatType = existing?.repeatType ?? ScheduleRepeatType.daily;
+    ScheduleRepeatType repeatType =
+        existing?.repeatType ?? ScheduleRepeatType.daily;
 
     Get.bottomSheet(
-      StatefulBuilder(builder: (context, setState) {
-        return Container(
-          decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF14201C) : Colors.white,
-            borderRadius: const BorderRadius.vertical(top: Radius.circular(24)),
-          ),
-          padding: const EdgeInsets.all(20),
-          child: SingleChildScrollView(
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Text(
-                      existing == null ? 'New Schedule' : 'Edit Schedule',
-                      style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                    ),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Get.back(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                TextField(
-                  controller: nameCtrl,
-                  decoration: const InputDecoration(
-                    labelText: 'Schedule Name',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Row(
-                  children: [
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: startTime,
-                          );
-                          if (picked != null) {
-                            setState(() => startTime = picked);
-                          }
-                        },
-                        child: Text('Start: ${startTime.format(context)}'),
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: OutlinedButton(
-                        onPressed: () async {
-                          final picked = await showTimePicker(
-                            context: context,
-                            initialTime: endTime,
-                          );
-                          if (picked != null) {
-                            setState(() => endTime = picked);
-                          }
-                        },
-                        child: Text('End: ${endTime.format(context)}'),
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 16),
-                DropdownButtonFormField<ScheduleRepeatType>(
-                  value: repeatType,
-                  decoration: const InputDecoration(
-                    labelText: 'Repeat Schedule',
-                    border: OutlineInputBorder(),
-                  ),
-                  items: ScheduleRepeatType.values.map((t) {
-                    return DropdownMenuItem(value: t, child: Text(t.displayName));
-                  }).toList(),
-                  onChanged: (val) {
-                    if (val != null) setState(() => repeatType = val);
-                  },
-                ),
-                const SizedBox(height: 24),
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: ElevatedButton(
-                    onPressed: () {
-                      final name = nameCtrl.text.trim().isEmpty ? 'Block Schedule' : nameCtrl.text.trim();
-                      final id = existing?.id ?? 'schedule_${DateTime.now().millisecondsSinceEpoch}';
-                      final updated = ScheduleModel(
-                        id: id,
-                        name: name,
-                        startHour: startTime.hour,
-                        startMinute: startTime.minute,
-                        endHour: endTime.hour,
-                        endMinute: endTime.minute,
-                        repeatType: repeatType,
-                        blockedPackages: existing?.blockedPackages ?? [
-                          'com.zhiliaoapp.musically',
-                          'com.instagram.android',
-                          'com.facebook.katana',
-                        ],
-                        isEnabled: existing?.isEnabled ?? true,
-                      );
-                      controller.addOrUpdateSchedule(updated);
-                      Get.back();
-                    },
-                    child: const Text('Save Schedule'),
-                  ),
-                ),
-              ],
+      StatefulBuilder(
+        builder: (context, setState) {
+          return Container(
+            decoration: BoxDecoration(
+              color: isDark ? const Color(0xFF14201C) : Colors.white,
+              borderRadius: const BorderRadius.vertical(
+                top: Radius.circular(24),
+              ),
             ),
-          ),
-        );
-      }),
+            padding: const EdgeInsets.all(20),
+            child: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Text(
+                        existing == null ? 'New Schedule' : 'Edit Schedule',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () => Get.back(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: nameCtrl,
+                    decoration: const InputDecoration(
+                      labelText: 'Schedule Name',
+                      border: OutlineInputBorder(),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            final picked = await showTimePicker(
+                              context: context,
+                              initialTime: startTime,
+                            );
+                            if (picked != null) {
+                              setState(() => startTime = picked);
+                            }
+                          },
+                          child: Text('Start: ${startTime.format(context)}'),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: OutlinedButton(
+                          onPressed: () async {
+                            final picked = await showTimePicker(
+                              context: context,
+                              initialTime: endTime,
+                            );
+                            if (picked != null) {
+                              setState(() => endTime = picked);
+                            }
+                          },
+                          child: Text('End: ${endTime.format(context)}'),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+                  DropdownButtonFormField<ScheduleRepeatType>(
+                    initialValue: repeatType,
+                    decoration: const InputDecoration(
+                      labelText: 'Repeat Schedule',
+                      border: OutlineInputBorder(),
+                    ),
+                    items: ScheduleRepeatType.values.map((t) {
+                      return DropdownMenuItem(
+                        value: t,
+                        child: Text(t.displayName),
+                      );
+                    }).toList(),
+                    onChanged: (val) {
+                      if (val != null) setState(() => repeatType = val);
+                    },
+                  ),
+                  const SizedBox(height: 24),
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: ElevatedButton(
+                      onPressed: () {
+                        final name = nameCtrl.text.trim().isEmpty
+                            ? 'Block Schedule'
+                            : nameCtrl.text.trim();
+                        final id =
+                            existing?.id ??
+                            'schedule_${DateTime.now().millisecondsSinceEpoch}';
+                        final updated = ScheduleModel(
+                          id: id,
+                          name: name,
+                          startHour: startTime.hour,
+                          startMinute: startTime.minute,
+                          endHour: endTime.hour,
+                          endMinute: endTime.minute,
+                          repeatType: repeatType,
+                          blockedPackages:
+                              existing?.blockedPackages ??
+                              [
+                                'com.zhiliaoapp.musically',
+                                'com.instagram.android',
+                                'com.facebook.katana',
+                              ],
+                          isEnabled: existing?.isEnabled ?? true,
+                        );
+                        controller.addOrUpdateSchedule(updated);
+                        Get.back();
+                      },
+                      child: const Text('Save Schedule'),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          );
+        },
+      ),
       isScrollControlled: true,
     );
   }

@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/constants/app_spacing.dart';
+import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../models/unlock_session_model.dart';
@@ -11,12 +14,13 @@ class UnlockSuccessView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final languageService = LanguageService.to;
     final duration = (Get.arguments is Map)
         ? (Get.arguments['durationMinutes'] as int? ?? 30)
         : 30;
 
-    final targetPackage = 'com.zhiliaoapp.musically';
-    final targetAppName = 'TikTok';
+    const targetPackage = 'com.zhiliaoapp.musically';
+    const targetAppName = 'TikTok';
 
     final expiresAt = DateTime.now().add(Duration(minutes: duration));
     final expireTimeStr = DateFormat('hh:mm a').format(expiresAt);
@@ -37,11 +41,12 @@ class UnlockSuccessView extends StatelessWidget {
     storage.saveUnlockSessions(existing);
     nativeBridge.setTemporaryUnlock(targetPackage, duration);
 
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 24.0),
+    return Obx(() {
+      final isBn = languageService.isBangla;
+
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: ResponsiveScaffoldBody(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -49,14 +54,14 @@ class UnlockSuccessView extends StatelessWidget {
 
               // Green Check Circle
               Container(
-                width: 90,
-                height: 90,
+                width: context.responsiveSize(90, minSize: 72, maxSize: 110),
+                height: context.responsiveSize(90, minSize: 72, maxSize: 110),
                 decoration: BoxDecoration(
-                  color: AppColors.primaryGreen.withOpacity(0.18),
+                  color: AppColors.primaryGreen.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
                   boxShadow: [
                     BoxShadow(
-                      color: AppColors.primaryGreen.withOpacity(0.35),
+                      color: AppColors.primaryGreen.withValues(alpha: 0.35),
                       blurRadius: 36,
                       spreadRadius: 4,
                     ),
@@ -70,29 +75,34 @@ class UnlockSuccessView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 32),
+              const SizedBox(height: AppSpacing.xl),
 
               // Headline
-              const Text(
-                'Access Unlocked',
-                style: TextStyle(
+              Text(
+                isBn ? 'ব্যবহারের অনুমতি আনলক হয়েছে' : 'Access Unlocked',
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: AppSpacing.sm),
 
               // Duration Badge
               Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppColors.surface,
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: AppColors.border),
                 ),
                 child: Text(
-                  '$duration minutes granted',
+                  isBn
+                      ? '$duration মিনিট সময় বরাদ্দ'
+                      : '$duration minutes granted',
                   style: const TextStyle(
                     fontSize: 14,
                     fontWeight: FontWeight.bold,
@@ -100,10 +110,12 @@ class UnlockSuccessView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: AppSpacing.lg),
 
               Text(
-                '$targetAppName is available until\n$expireTimeStr',
+                isBn
+                    ? '$targetAppName ব্যবহারের মেয়াদ শেষ হবে:\n$expireTimeStr'
+                    : '$targetAppName is available until\n$expireTimeStr',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 16,
@@ -117,11 +129,12 @@ class UnlockSuccessView extends StatelessWidget {
               // Primary CTA: Open App
               SizedBox(
                 width: double.infinity,
-                height: 56,
+                height: 54,
                 child: ElevatedButton(
-                  onPressed: () => Get.offNamed('/active-unlock', arguments: {
-                    'session': session,
-                  }),
+                  onPressed: () => Get.offNamed(
+                    '/active-unlock',
+                    arguments: {'session': session},
+                  ),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,
                     foregroundColor: Colors.black,
@@ -134,8 +147,11 @@ class UnlockSuccessView extends StatelessWidget {
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Open $targetAppName',
-                        style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                        isBn ? '$targetAppName খুলুন' : 'Open $targetAppName',
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                        ),
                       ),
                       const SizedBox(width: 8),
                       const Icon(Icons.arrow_forward_rounded, size: 18),
@@ -143,19 +159,24 @@ class UnlockSuccessView extends StatelessWidget {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
+              const SizedBox(height: AppSpacing.md),
 
               // Subtext
-              const Text(
-                'Your access will automatically\nexpire when the timer ends.',
+              Text(
+                isBn
+                    ? 'সময়সীমা শেষ হলে স্বয়ংক্রিয়ভাবে সুরক্ষা পুনরায় কার্যকর হবে।'
+                    : 'Your access will automatically\nexpire when the timer ends.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textMuted,
+                ),
               ),
-              const SizedBox(height: 12),
+              const SizedBox(height: AppSpacing.sm),
             ],
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

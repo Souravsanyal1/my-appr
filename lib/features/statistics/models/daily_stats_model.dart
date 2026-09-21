@@ -57,7 +57,8 @@ class DailyStatsModel {
   }) {
     return DailyStatsModel(
       dateString: dateString ?? this.dateString,
-      totalScreenTimeMinutes: totalScreenTimeMinutes ?? this.totalScreenTimeMinutes,
+      totalScreenTimeMinutes:
+          totalScreenTimeMinutes ?? this.totalScreenTimeMinutes,
       socialMediaMinutes: socialMediaMinutes ?? this.socialMediaMinutes,
       focusMinutes: focusMinutes ?? this.focusMinutes,
       blockedAttempts: blockedAttempts ?? this.blockedAttempts,

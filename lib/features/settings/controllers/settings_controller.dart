@@ -32,16 +32,21 @@ class SettingsController extends GetxController {
 
   void loadSettings() {
     isStrictMode.value = _pinService.isStrictModeActive();
-    requirePinForLimits.value = _storageService.read<bool>('require_pin_limits') ?? false;
-    notifyBeforeLimit.value = _storageService.read<bool>('notify_before_limit') ?? true;
-    notifyStreakReminder.value = _storageService.read<bool>('notify_streak') ?? true;
-    unlockThreshold.value = _storageService.read<int>('unlock_threshold_percentage') ?? 80;
+    requirePinForLimits.value =
+        _storageService.read<bool>('require_pin_limits') ?? false;
+    notifyBeforeLimit.value =
+        _storageService.read<bool>('notify_before_limit') ?? true;
+    notifyStreakReminder.value =
+        _storageService.read<bool>('notify_streak') ?? true;
+    unlockThreshold.value =
+        _storageService.read<int>('unlock_threshold_percentage') ?? 80;
   }
 
   Future<void> checkPermissions() async {
     try {
       hasUsagePermission.value = await _nativeBridge.checkUsageAccess();
-      hasAccessibility.value = await _nativeBridge.checkAccessibilityPermission();
+      hasAccessibility.value = await _nativeBridge
+          .checkAccessibilityPermission();
       hasOverlay.value = await _nativeBridge.checkOverlayPermission();
     } catch (_) {}
   }

@@ -15,9 +15,7 @@ class UnlockScreen extends GetView<UnlockController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text(AppStrings.unlockTitle),
-      ),
+      appBar: AppBar(title: const Text(AppStrings.unlockTitle)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
@@ -30,7 +28,9 @@ class UnlockScreen extends GetView<UnlockController> {
                 color: isDark ? AppColors.darkCard : AppColors.lightCard,
                 borderRadius: BorderRadius.circular(16),
                 border: Border.all(
-                  color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                  color: isDark
+                      ? AppColors.darkCardBorder
+                      : AppColors.lightCardBorder,
                 ),
               ),
               child: Row(
@@ -45,19 +45,24 @@ class UnlockScreen extends GetView<UnlockController> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Obx(() => Text(
-                              controller.appName.value.isEmpty
-                                  ? 'Restricted App'
-                                  : controller.appName.value,
-                              style: const TextStyle(
-                                fontSize: 17,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            )),
+                        Obx(
+                          () => Text(
+                            controller.appName.value.isEmpty
+                                ? 'Restricted App'
+                                : controller.appName.value,
+                            style: const TextStyle(
+                              fontSize: 17,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
                         const SizedBox(height: 2),
                         const Text(
                           'Recite to Earn an Unlock Pass',
-                          style: TextStyle(fontSize: 13, color: AppColors.warning),
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: AppColors.warning,
+                          ),
                         ),
                       ],
                     ),
@@ -70,28 +75,35 @@ class UnlockScreen extends GetView<UnlockController> {
             // Surah Selection Pills
             Text(
               'Select Challenge Surah',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 17),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontSize: 17),
             ),
             const SizedBox(height: 8),
             SizedBox(
               height: 40,
-              child: Obx(() => ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: controller.verses.length,
-                    itemBuilder: (context, index) {
-                      final verse = controller.verses[index];
-                      final isSelected = controller.selectedVerseIndex.value == index;
-                      return Padding(
-                        padding: const EdgeInsets.only(right: 8.0),
-                        child: ChoiceChip(
-                          label: Text(verse.surahName.split('(').first.trim()),
-                          selected: isSelected,
-                          selectedColor: AppColors.primaryGold.withValues(alpha: 0.2),
-                          onSelected: (_) => controller.selectVerse(index),
+              child: Obx(
+                () => ListView.builder(
+                  scrollDirection: Axis.horizontal,
+                  itemCount: controller.verses.length,
+                  itemBuilder: (context, index) {
+                    final verse = controller.verses[index];
+                    final isSelected =
+                        controller.selectedVerseIndex.value == index;
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(verse.surahName.split('(').first.trim()),
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryGold.withValues(
+                          alpha: 0.2,
                         ),
-                      );
-                    },
-                  )),
+                        onSelected: (_) => controller.selectVerse(index),
+                      ),
+                    );
+                  },
+                ),
+              ),
             ),
             const SizedBox(height: 16),
 
@@ -114,7 +126,9 @@ class UnlockScreen extends GetView<UnlockController> {
                           end: Alignment.bottomRight,
                         ),
                   borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: AppColors.emerald.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.emerald.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: Column(
                   children: [
@@ -143,7 +157,9 @@ class UnlockScreen extends GetView<UnlockController> {
                       style: TextStyle(
                         fontSize: 13,
                         fontStyle: FontStyle.italic,
-                        color: isDark ? AppColors.textSecondaryDark : Colors.black87,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 8),
@@ -174,11 +190,16 @@ class UnlockScreen extends GetView<UnlockController> {
                         height: isRec ? 88 : 76,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
-                          color: isRec ? AppColors.danger : AppColors.primaryGold,
+                          color: isRec
+                              ? AppColors.danger
+                              : AppColors.primaryGold,
                           boxShadow: [
                             BoxShadow(
-                              color: (isRec ? AppColors.danger : AppColors.primaryGold)
-                                  .withValues(alpha: 0.4),
+                              color:
+                                  (isRec
+                                          ? AppColors.danger
+                                          : AppColors.primaryGold)
+                                      .withValues(alpha: 0.4),
                               blurRadius: isRec ? 24 : 12,
                               spreadRadius: isRec ? 6 : 0,
                             ),
@@ -214,7 +235,7 @@ class UnlockScreen extends GetView<UnlockController> {
                   padding: const EdgeInsets.all(16),
                   margin: const EdgeInsets.only(bottom: 20),
                   decoration: BoxDecoration(
-                    color: Colors.white.withOpacity(0.05),
+                    color: Colors.white.withValues(alpha: 0.05),
                     borderRadius: BorderRadius.circular(16),
                   ),
                   child: const Row(
@@ -240,11 +261,13 @@ class UnlockScreen extends GetView<UnlockController> {
                 margin: const EdgeInsets.only(bottom: 20),
                 decoration: BoxDecoration(
                   color: res.isPassing
-                      ? AppColors.primaryEmerald.withOpacity(0.12)
-                      : AppColors.danger.withOpacity(0.12),
+                      ? AppColors.primaryEmerald.withValues(alpha: 0.12)
+                      : AppColors.danger.withValues(alpha: 0.12),
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
-                    color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
+                    color: res.isPassing
+                        ? AppColors.primaryEmerald
+                        : AppColors.danger,
                   ),
                 ),
                 child: Column(
@@ -258,17 +281,26 @@ class UnlockScreen extends GetView<UnlockController> {
                           style: TextStyle(
                             fontSize: 18,
                             fontWeight: FontWeight.bold,
-                            color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
+                            color: res.isPassing
+                                ? AppColors.primaryEmerald
+                                : AppColors.danger,
                           ),
                         ),
                         Container(
-                          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 4,
+                          ),
                           decoration: BoxDecoration(
-                            color: res.isPassing ? AppColors.primaryEmerald : AppColors.danger,
+                            color: res.isPassing
+                                ? AppColors.primaryEmerald
+                                : AppColors.danger,
                             borderRadius: BorderRadius.circular(8),
                           ),
                           child: Text(
-                            res.isPassing ? '${res.earnedUnlockMinutes}m Pass' : 'Try Again',
+                            res.isPassing
+                                ? '${res.earnedUnlockMinutes}m Pass'
+                                : 'Try Again',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 12,
@@ -283,9 +315,15 @@ class UnlockScreen extends GetView<UnlockController> {
                     Row(
                       mainAxisAlignment: MainAxisAlignment.spaceAround,
                       children: [
-                        _buildMetricCol('Words', '${res.wordRecognitionScore}%'),
+                        _buildMetricCol(
+                          'Words',
+                          '${res.wordRecognitionScore}%',
+                        ),
                         _buildMetricCol('Timing', '${res.timingScore}%'),
-                        _buildMetricCol('Similarity', '${res.audioSimilarityScore}%'),
+                        _buildMetricCol(
+                          'Similarity',
+                          '${res.audioSimilarityScore}%',
+                        ),
                       ],
                     ),
                     const SizedBox(height: 10),
@@ -311,20 +349,39 @@ class UnlockScreen extends GetView<UnlockController> {
             // Unlock Duration Tiers Guide
             Text(
               'Unlock Duration Tiers',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(fontSize: 16),
+              style: Theme.of(
+                context,
+              ).textTheme.titleLarge?.copyWith(fontSize: 16),
             ),
             const SizedBox(height: 8),
-            _buildTierRow('70% – 79%', '5 minutes unlock', Icons.looks_one_outlined),
+            _buildTierRow(
+              '70% – 79%',
+              '5 minutes unlock',
+              Icons.looks_one_outlined,
+            ),
             const SizedBox(height: 6),
-            _buildTierRow('80% – 89%', '10 minutes unlock', Icons.looks_two_outlined),
+            _buildTierRow(
+              '80% – 89%',
+              '10 minutes unlock',
+              Icons.looks_two_outlined,
+            ),
             const SizedBox(height: 6),
-            _buildTierRow('90%+ Score', '15 minutes unlock', Icons.looks_3_outlined, isHighlighted: true),
+            _buildTierRow(
+              '90%+ Score',
+              '15 minutes unlock',
+              Icons.looks_3_outlined,
+              isHighlighted: true,
+            ),
             const SizedBox(height: 24),
 
             // Submit Button
             Obx(() {
               final res = controller.recitationResult.value;
-              final duration = res != null ? res.earnedUnlockMinutes : controller.getDurationForScore(controller.selectedScore.value);
+              final duration = res != null
+                  ? res.earnedUnlockMinutes
+                  : controller.getDurationForScore(
+                      controller.selectedScore.value,
+                    );
               final canUnlock = duration > 0 && !controller.isUnlocking.value;
 
               return SizedBox(
@@ -332,7 +389,9 @@ class UnlockScreen extends GetView<UnlockController> {
                 height: 52,
                 child: ElevatedButton(
                   style: ElevatedButton.styleFrom(
-                    backgroundColor: canUnlock ? AppColors.primaryGold : Colors.grey,
+                    backgroundColor: canUnlock
+                        ? AppColors.primaryGold
+                        : Colors.grey,
                   ),
                   onPressed: canUnlock
                       ? () {
@@ -373,11 +432,18 @@ class UnlockScreen extends GetView<UnlockController> {
     );
   }
 
-  Widget _buildTierRow(String scoreRange, String duration, IconData icon, {bool isHighlighted = false}) {
+  Widget _buildTierRow(
+    String scoreRange,
+    String duration,
+    IconData icon, {
+    bool isHighlighted = false,
+  }) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
-        color: isHighlighted ? AppColors.primaryGold.withValues(alpha: 0.1) : Colors.white.withValues(alpha: 0.04),
+        color: isHighlighted
+            ? AppColors.primaryGold.withValues(alpha: 0.1)
+            : Colors.white.withValues(alpha: 0.04),
         borderRadius: BorderRadius.circular(12),
         border: Border.all(
           color: isHighlighted ? AppColors.primaryGold : Colors.white12,
@@ -385,7 +451,11 @@ class UnlockScreen extends GetView<UnlockController> {
       ),
       child: Row(
         children: [
-          Icon(icon, size: 20, color: isHighlighted ? AppColors.primaryGold : Colors.grey),
+          Icon(
+            icon,
+            size: 20,
+            color: isHighlighted ? AppColors.primaryGold : Colors.grey,
+          ),
           const SizedBox(width: 12),
           Expanded(
             child: Text(
@@ -418,13 +488,7 @@ class UnlockScreen extends GetView<UnlockController> {
           ),
         ),
         const SizedBox(height: 2),
-        Text(
-          label,
-          style: const TextStyle(
-            fontSize: 11,
-            color: Colors.grey,
-          ),
-        ),
+        Text(label, style: const TextStyle(fontSize: 11, color: Colors.grey)),
       ],
     );
   }

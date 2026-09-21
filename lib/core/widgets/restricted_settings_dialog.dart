@@ -15,7 +15,9 @@ class RestrictedSettingsDialog {
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(20),
           side: BorderSide(
-            color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+            color: isDark
+                ? AppColors.darkCardBorder
+                : AppColors.lightCardBorder,
           ),
         ),
         title: const Row(
@@ -39,7 +41,9 @@ class RestrictedSettingsDialog {
                 'Android 13, 14, and 15 temporarily restrict Accessibility for apps installed outside Google Play. Follow these 3 quick steps to enable it:',
                 style: TextStyle(
                   fontSize: 13,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
               const SizedBox(height: 16),
@@ -54,7 +58,8 @@ class RestrictedSettingsDialog {
               _buildStep(
                 number: '2',
                 title: 'Allow Restricted Settings',
-                description: 'In the top-right corner, tap the 3 dots (⋮) and choose "Allow restricted settings" (সীমাবদ্ধ সেটিংস অনুমতি দিন).',
+                description:
+                    'In the top-right corner, tap the 3 dots (⋮) and choose "Allow restricted settings" (সীমাবদ্ধ সেটিংস অনুমতি দিন).',
                 icon: Icons.more_vert,
                 isDark: isDark,
               ),
@@ -62,7 +67,8 @@ class RestrictedSettingsDialog {
               _buildStep(
                 number: '3',
                 title: 'Turn ON Accessibility',
-                description: 'Verify with your phone PIN/fingerprint, then return and switch FocusDeen ON.',
+                description:
+                    'Verify with your phone PIN/fingerprint, then return and switch FocusDeen ON.',
                 icon: Icons.check_circle_outline,
                 isDark: isDark,
               ),
@@ -72,17 +78,26 @@ class RestrictedSettingsDialog {
                 decoration: BoxDecoration(
                   color: AppColors.primaryGold.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.primaryGold.withValues(alpha: 0.3)),
+                  border: Border.all(
+                    color: AppColors.primaryGold.withValues(alpha: 0.3),
+                  ),
                 ),
                 child: const Row(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(Icons.info_outline, color: AppColors.primaryGold, size: 16),
+                    Icon(
+                      Icons.info_outline,
+                      color: AppColors.primaryGold,
+                      size: 16,
+                    ),
                     SizedBox(width: 8),
                     Expanded(
                       child: Text(
                         'Play Protect Warning: If Google Play Protect blocked installation, tap "More details" -> "Install anyway".',
-                        style: TextStyle(fontSize: 11, color: AppColors.primaryGold),
+                        style: TextStyle(
+                          fontSize: 11,
+                          color: AppColors.primaryGold,
+                        ),
                       ),
                     ),
                   ],
@@ -142,14 +157,19 @@ class RestrictedSettingsDialog {
             children: [
               Text(
                 title,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                style: const TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.bold,
+                ),
               ),
               const SizedBox(height: 2),
               Text(
                 description,
                 style: TextStyle(
                   fontSize: 11,
-                  color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
                 ),
               ),
             ],

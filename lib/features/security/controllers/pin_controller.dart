@@ -18,7 +18,10 @@ class PinController extends GetxController {
 
   void backspace() {
     if (enteredPin.value.isNotEmpty) {
-      enteredPin.value = enteredPin.value.substring(0, enteredPin.value.length - 1);
+      enteredPin.value = enteredPin.value.substring(
+        0,
+        enteredPin.value.length - 1,
+      );
       errorMessage.value = '';
     }
   }

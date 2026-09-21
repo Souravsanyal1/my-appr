@@ -20,35 +20,44 @@ class LearningCatalogScreen extends StatelessWidget {
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
         actions: [
-          Obx(() => Center(
-                child: Container(
-                  margin: const EdgeInsets.only(right: 16),
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryEmerald.withOpacity(0.15),
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(
-                      color: AppColors.secondaryGold.withOpacity(0.4),
-                      width: 1,
-                    ),
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      const Icon(Icons.check_circle, size: 14, color: AppColors.secondaryGold),
-                      const SizedBox(width: 6),
-                      Text(
-                        '${controller.totalCompletedCount} Done',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.secondaryGold,
-                        ),
-                      ),
-                    ],
+          Obx(
+            () => Center(
+              child: Container(
+                margin: const EdgeInsets.only(right: 16),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryEmerald.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: AppColors.secondaryGold.withValues(alpha: 0.4),
+                    width: 1,
                   ),
                 ),
-              )),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      Icons.check_circle,
+                      size: 14,
+                      color: AppColors.secondaryGold,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      '${controller.totalCompletedCount} Done',
+                      style: const TextStyle(
+                        fontSize: 12,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.secondaryGold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ],
       ),
       body: Column(
@@ -70,7 +79,7 @@ class LearningCatalogScreen extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: AppColors.primaryEmerald.withOpacity(0.2),
+                    color: AppColors.primaryEmerald.withValues(alpha: 0.2),
                     shape: BoxShape.circle,
                   ),
                   child: const Icon(
@@ -115,7 +124,10 @@ class LearningCatalogScreen extends StatelessWidget {
               decoration: InputDecoration(
                 hintText: 'Search Dhikr, Duas, Surahs...',
                 prefixIcon: const Icon(Icons.search, size: 20),
-                contentPadding: const EdgeInsets.symmetric(vertical: 10, horizontal: 16),
+                contentPadding: const EdgeInsets.symmetric(
+                  vertical: 10,
+                  horizontal: 16,
+                ),
                 filled: true,
                 fillColor: isDark ? const Color(0xFF16201C) : Colors.white,
                 border: OutlineInputBorder(
@@ -138,31 +150,37 @@ class LearningCatalogScreen extends StatelessWidget {
           SingleChildScrollView(
             scrollDirection: Axis.horizontal,
             padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            child: Obx(() => Row(
-                  children: LearningCategory.values.map((cat) {
-                    final isSelected = controller.selectedCategory.value == cat;
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: ChoiceChip(
-                        label: Text(
-                          cat.displayName,
-                          style: TextStyle(
-                            fontSize: 13,
-                            fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                            color: isSelected ? Colors.white : null,
-                          ),
-                        ),
-                        selected: isSelected,
-                        selectedColor: AppColors.primaryEmerald,
-                        backgroundColor: isDark ? const Color(0xFF1A2621) : const Color(0xFFEDF2EE),
-                        onSelected: (_) => controller.selectCategory(cat),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+            child: Obx(
+              () => Row(
+                children: LearningCategory.values.map((cat) {
+                  final isSelected = controller.selectedCategory.value == cat;
+                  return Padding(
+                    padding: const EdgeInsets.only(right: 8.0),
+                    child: ChoiceChip(
+                      label: Text(
+                        cat.displayName,
+                        style: TextStyle(
+                          fontSize: 13,
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected ? Colors.white : null,
                         ),
                       ),
-                    );
-                  }).toList(),
-                )),
+                      selected: isSelected,
+                      selectedColor: AppColors.primaryEmerald,
+                      backgroundColor: isDark
+                          ? const Color(0xFF1A2621)
+                          : const Color(0xFFEDF2EE),
+                      onSelected: (_) => controller.selectCategory(cat),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                  );
+                }).toList(),
+              ),
+            ),
           ),
 
           const SizedBox(height: 6),
@@ -179,7 +197,7 @@ class LearningCatalogScreen extends StatelessWidget {
                       Icon(
                         Icons.menu_book_outlined,
                         size: 48,
-                        color: Colors.grey.withOpacity(0.5),
+                        color: Colors.grey.withValues(alpha: 0.5),
                       ),
                       const SizedBox(height: 12),
                       const Text(
@@ -194,7 +212,7 @@ class LearningCatalogScreen extends StatelessWidget {
               return ListView.separated(
                 padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
                 itemCount: list.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 10),
+                separatorBuilder: (_, _) => const SizedBox(height: 10),
                 itemBuilder: (context, index) {
                   final lesson = list[index];
                   return _buildLessonCard(context, lesson, isDark, controller);
@@ -217,9 +235,7 @@ class LearningCatalogScreen extends StatelessWidget {
       elevation: 0,
       shape: RoundedRectangleBorder(
         borderRadius: BorderRadius.circular(16),
-        side: BorderSide(
-          color: isDark ? Colors.white12 : Colors.black12,
-        ),
+        side: BorderSide(color: isDark ? Colors.white12 : Colors.black12),
       ),
       color: isDark ? const Color(0xFF131D19) : Colors.white,
       child: InkWell(
@@ -276,9 +292,14 @@ class LearningCatalogScreen extends StatelessWidget {
               // Arabic preview snippet
               Container(
                 width: double.infinity,
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 10,
+                ),
                 decoration: BoxDecoration(
-                  color: isDark ? const Color(0xFF0D1714) : const Color(0xFFF7FAF8),
+                  color: isDark
+                      ? const Color(0xFF0D1714)
+                      : const Color(0xFFF7FAF8),
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Text(

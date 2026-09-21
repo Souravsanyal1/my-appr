@@ -8,7 +8,9 @@ class BlockingService extends GetxService {
   bool isAppBlocked(String packageName, int usedMinutes) {
     // 1. Check if temporarily unlocked
     final unlocks = _storageService.getUnlockSessions();
-    final activeUnlock = unlocks.firstWhereOrNull((u) => u.packageName == packageName && !u.isExpired);
+    final activeUnlock = unlocks.firstWhereOrNull(
+      (u) => u.packageName == packageName && !u.isExpired,
+    );
     if (activeUnlock != null) return false;
 
     // 2. Check active scheduled restriction
@@ -17,8 +19,11 @@ class BlockingService extends GetxService {
       final now = DateTime.now();
       for (final raw in rawSchedules) {
         try {
-          final schedule = ScheduleModel.fromMap(Map<String, dynamic>.from(raw as Map));
-          if (schedule.isTimeActive(now) && schedule.blockedPackages.contains(packageName)) {
+          final schedule = ScheduleModel.fromMap(
+            Map<String, dynamic>.from(raw as Map),
+          );
+          if (schedule.isTimeActive(now) &&
+              schedule.blockedPackages.contains(packageName)) {
             return true;
           }
         } catch (_) {}

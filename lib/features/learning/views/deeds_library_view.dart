@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/widgets/arabic_text.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../models/learning_lesson_model.dart';
@@ -14,155 +15,286 @@ class DeedsLibraryView extends StatefulWidget {
 }
 
 class _DeedsLibraryViewState extends State<DeedsLibraryView> {
-  String _selectedTab = 'All';
-  final List<String> _tabs = ['All', 'Dhikr', 'Dua', 'Quran', 'Prayer'];
+  int _selectedCategoryIndex = 0;
 
-  List<LearningLessonModel> get _filteredLessons {
+  final List<Map<String, String>> _categories = [
+    {'en': 'All', 'bn': 'সব'},
+    {'en': 'Dhikr', 'bn': 'যিকির'},
+    {'en': 'Dua', 'bn': 'দোয়া'},
+    {'en': 'Quran', 'bn': 'কুরআন'},
+    {'en': 'Prayer', 'bn': 'নামাজ'},
+  ];
+
+  List<LearningLessonModel> _getFilteredLessons(int index) {
     final all = LearningRepository.allLessons;
-    if (_selectedTab == 'All') return all;
-    if (_selectedTab == 'Dhikr') {
-      return all.where((l) => l.category == LearningCategory.dailyDhikr).toList();
+    switch (index) {
+      case 1:
+        return all
+            .where((l) => l.category == LearningCategory.dailyDhikr)
+            .toList();
+      case 2:
+        return all
+            .where((l) => l.category == LearningCategory.dailyDuas)
+            .toList();
+      case 3:
+        return all
+            .where((l) => l.category == LearningCategory.shortSurahs)
+            .toList();
+      case 4:
+        return all
+            .where((l) => l.category == LearningCategory.salahLearning)
+            .toList();
+      default:
+        return all;
     }
-    if (_selectedTab == 'Dua') {
-      return all.where((l) => l.category == LearningCategory.dailyDuas).toList();
-    }
-    if (_selectedTab == 'Quran') {
-      return all.where((l) => l.category == LearningCategory.shortSurahs).toList();
-    }
-    if (_selectedTab == 'Prayer') {
-      return all.where((l) => l.category == LearningCategory.salahLearning).toList();
-    }
-    return all;
   }
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'Deeds Library',
-              style: TextStyle(
-                fontSize: 26,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 6),
-            const Text(
-              'Select a mindful good deed to learn and unlock.',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 20),
+    final languageService = LanguageService.to;
 
-            // Horizontal Category Pills
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: _tabs.map((tab) {
-                  final isSelected = _selectedTab == tab;
-                  return Padding(
-                    padding: const EdgeInsets.only(right: 8.0),
-                    child: ChoiceChip(
-                      label: Text(
-                        tab,
-                        style: TextStyle(
+    return Obx(() {
+      final isBn = languageService.isBangla;
+      final filteredLessons = _getFilteredLessons(_selectedCategoryIndex);
+
+      return SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Header with Title and Language Switcher
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isBn ? 'আমল লাইব্রেরি' : 'Deeds Library',
+                        style: const TextStyle(
+                          fontSize: 26,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        isBn
+                            ? 'শিখতে ও অ্যাপ আনলক করতে আমল বেছে নিন'
+                            : 'Select a good deed to learn and unlock.',
+                        style: const TextStyle(
                           fontSize: 13,
-                          fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
-                          color: isSelected ? Colors.black : AppColors.textSecondary,
+                          color: AppColors.textSecondary,
                         ),
                       ),
-                      selected: isSelected,
-                      selectedColor: AppColors.primaryGreen,
-                      backgroundColor: AppColors.surface,
-                      shape: RoundedRectangleBorder(
+                    ],
+                  ),
+                  GestureDetector(
+                    onTap: () => languageService.showLanguageSelector(context),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
                         borderRadius: BorderRadius.circular(20),
-                        side: BorderSide(
-                          color: isSelected ? AppColors.primaryGreen : AppColors.border,
-                        ),
+                        border: Border.all(color: AppColors.border),
                       ),
-                      onSelected: (_) => setState(() => _selectedTab = tab),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            isBn ? '🇧🇩 বাং' : '🇬🇧 EN',
+                            style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.brightGreen,
+                            ),
+                          ),
+                          const SizedBox(width: 4),
+                          const Icon(
+                            Icons.arrow_drop_down,
+                            size: 16,
+                            color: AppColors.textSecondary,
+                          ),
+                        ],
+                      ),
                     ),
-                  );
-                }).toList(),
+                  ),
+                ],
               ),
-            ),
-            const SizedBox(height: 20),
+              const SizedBox(height: 18),
 
-            // Deeds List
-            Expanded(
-              child: ListView.separated(
-                itemCount: _filteredLessons.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 12),
-                itemBuilder: (context, index) {
-                  final lesson = _filteredLessons[index];
+              // Horizontal Category Pills
+              SingleChildScrollView(
+                scrollDirection: Axis.horizontal,
+                child: Row(
+                  children: List.generate(_categories.length, (index) {
+                    final cat = _categories[index];
+                    final label = isBn ? (cat['bn'] ?? cat['en']!) : cat['en']!;
+                    final isSelected = _selectedCategoryIndex == index;
 
-                  return AppCard(
-                    onTap: () => Get.toNamed('/deed-detail'),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: AppColors.primaryGreen.withOpacity(0.12),
-                                borderRadius: BorderRadius.circular(10),
-                              ),
-                              child: Text(
-                                lesson.category.displayName.toUpperCase(),
-                                style: const TextStyle(
-                                  fontSize: 10,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.brightGreen,
-                                  letterSpacing: 0.5,
-                                ),
-                              ),
-                            ),
-                            Text(
-                              '~ ${lesson.minRecitationSeconds * 5} sec',
-                              style: const TextStyle(fontSize: 12, color: AppColors.textMuted),
-                            ),
-                          ],
-                        ),
-                        const SizedBox(height: 14),
-                        Text(
-                          lesson.title,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: ChoiceChip(
+                        label: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isSelected
+                                ? FontWeight.bold
+                                : FontWeight.normal,
+                            color: isSelected
+                                ? Colors.black
+                                : AppColors.textSecondary,
                           ),
                         ),
-                        const SizedBox(height: 8),
-                        ArabicText(
-                          lesson.arabicText,
-                          fontSize: 20,
-                          textAlign: TextAlign.left,
-                          maxLines: 1,
-                          color: AppColors.brightGreen,
+                        selected: isSelected,
+                        selectedColor: AppColors.primaryGreen,
+                        backgroundColor: AppColors.surface,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                          side: BorderSide(
+                            color: isSelected
+                                ? AppColors.primaryGreen
+                                : AppColors.border,
+                          ),
                         ),
-                        const SizedBox(height: 8),
-                        Text(
-                          lesson.translation,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(fontSize: 12, color: AppColors.textSecondary),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                        onSelected: (_) =>
+                            setState(() => _selectedCategoryIndex = index),
+                      ),
+                    );
+                  }),
+                ),
               ),
-            ),
-          ],
+              const SizedBox(height: 18),
+
+              // Deeds List
+              Expanded(
+                child: ListView.separated(
+                  itemCount: filteredLessons.length,
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  itemBuilder: (context, index) {
+                    final lesson = filteredLessons[index];
+
+                    return AppCard(
+                      onTap: () =>
+                          Get.toNamed('/deed-detail', arguments: lesson),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 10,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryGreen.withValues(
+                                    alpha: 0.12,
+                                  ),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: Text(
+                                  lesson.category
+                                      .getLocalizedName(isBn)
+                                      .toUpperCase(),
+                                  style: const TextStyle(
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.brightGreen,
+                                    letterSpacing: 0.5,
+                                  ),
+                                ),
+                              ),
+                              Text(
+                                isBn
+                                    ? '~ ${lesson.minRecitationSeconds * 4} সেকেন্ড'
+                                    : '~ ${lesson.minRecitationSeconds * 4} sec',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          Text(
+                            lesson.getTitle(isBn),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          ArabicText(
+                            lesson.arabicText,
+                            fontSize: 20,
+                            textAlign: TextAlign.left,
+                            maxLines: 1,
+                            color: AppColors.brightGreen,
+                          ),
+                          const SizedBox(height: 8),
+
+                          // Pronunciation (উচ্চারণ) Highlight
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.surfaceLight,
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: Row(
+                              children: [
+                                const Icon(
+                                  Icons.volume_up,
+                                  size: 14,
+                                  color: AppColors.brightGreen,
+                                ),
+                                const SizedBox(width: 6),
+                                Expanded(
+                                  child: Text(
+                                    '${isBn ? "উচ্চারণ: " : "Pronunciation: "}${lesson.getPronunciation(isBn)}',
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+
+                          Text(
+                            lesson.getTranslation(isBn),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 12,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ],
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 }

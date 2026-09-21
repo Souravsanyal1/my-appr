@@ -69,7 +69,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
       width: isActive ? 28 : 10,
       height: 8,
       decoration: BoxDecoration(
-        color: isActive ? AppColors.primaryGold : Colors.grey.withValues(alpha: 0.3),
+        color: isActive
+            ? AppColors.primaryGold
+            : Colors.grey.withValues(alpha: 0.3),
         borderRadius: BorderRadius.circular(4),
       ),
     );
@@ -95,11 +97,7 @@ class OnboardingScreen extends GetView<OnboardingController> {
             ],
           ),
           child: const Center(
-            child: Icon(
-              Icons.mosque,
-              size: 56,
-              color: Colors.white,
-            ),
+            child: Icon(Icons.mosque, size: 56, color: Colors.white),
           ),
         ),
         const SizedBox(height: 32),
@@ -120,7 +118,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
           style: TextStyle(
             fontSize: 15,
             fontWeight: FontWeight.w500,
-            color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+            color: isDark
+                ? AppColors.textSecondaryDark
+                : AppColors.textSecondaryLight,
           ),
         ),
         const SizedBox(height: 28),
@@ -132,7 +132,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
             color: isDark ? AppColors.darkCard : AppColors.lightCard,
             borderRadius: BorderRadius.circular(16),
             border: Border.all(
-              color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+              color: isDark
+                  ? AppColors.darkCardBorder
+                  : AppColors.lightCardBorder,
             ),
           ),
           child: Column(
@@ -144,7 +146,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
                   fontSize: 13,
                   height: 1.5,
                   fontStyle: FontStyle.italic,
-                  color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
                 ),
               ),
               const SizedBox(height: 10),
@@ -170,38 +174,48 @@ class OnboardingScreen extends GetView<OnboardingController> {
         children: [
           Text(
             AppStrings.permissionsTitle,
-            style: Theme.of(context).textTheme.displayLarge?.copyWith(fontSize: 24),
+            style: Theme.of(
+              context,
+            ).textTheme.displayLarge?.copyWith(fontSize: 24),
           ),
           const SizedBox(height: 8),
           Text(
             AppStrings.permissionsSubtitle,
             style: TextStyle(
               fontSize: 13,
-              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              color: isDark
+                  ? AppColors.textSecondaryDark
+                  : AppColors.textSecondaryLight,
             ),
           ),
           const SizedBox(height: 20),
 
           // 1. Usage Stats Permission
-          Obx(() => _buildPermissionCard(
-                context,
-                title: 'Usage Access',
-                desc: 'Needed to measure screen time on restricted apps accurately.',
-                icon: Icons.bar_chart_rounded,
-                isGranted: controller.hasUsagePermission.value,
-                onRequest: () => controller.requestPermission('usageStats'),
-              )),
+          Obx(
+            () => _buildPermissionCard(
+              context,
+              title: 'Usage Access',
+              desc:
+                  'Needed to measure screen time on restricted apps accurately.',
+              icon: Icons.bar_chart_rounded,
+              isGranted: controller.hasUsagePermission.value,
+              onRequest: () => controller.requestPermission('usageStats'),
+            ),
+          ),
           const SizedBox(height: 12),
 
           // 2. Accessibility Service Permission
-          Obx(() => _buildPermissionCard(
-                context,
-                title: 'Accessibility Service',
-                desc: 'Detects active foreground app to enforce limits in real-time.',
-                icon: Icons.accessibility_new_rounded,
-                isGranted: controller.hasAccessibilityPermission.value,
-                onRequest: () => controller.requestPermission('accessibility'),
-              )),
+          Obx(
+            () => _buildPermissionCard(
+              context,
+              title: 'Accessibility Service',
+              desc:
+                  'Detects active foreground app to enforce limits in real-time.',
+              icon: Icons.accessibility_new_rounded,
+              isGranted: controller.hasAccessibilityPermission.value,
+              onRequest: () => controller.requestPermission('accessibility'),
+            ),
+          ),
           Obx(() {
             if (!controller.hasAccessibilityPermission.value) {
               return Padding(
@@ -213,11 +227,19 @@ class OnboardingScreen extends GetView<OnboardingController> {
                     child: const Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(Icons.help_outline, size: 14, color: AppColors.primaryGold),
+                        Icon(
+                          Icons.help_outline,
+                          size: 14,
+                          color: AppColors.primaryGold,
+                        ),
                         SizedBox(width: 4),
                         Text(
                           'Android 13+ "Restricted Setting"? Tap here',
-                          style: TextStyle(fontSize: 11, color: AppColors.primaryGold, fontWeight: FontWeight.w600),
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.primaryGold,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
@@ -230,25 +252,31 @@ class OnboardingScreen extends GetView<OnboardingController> {
           const SizedBox(height: 12),
 
           // 3. System Alert Overlay
-          Obx(() => _buildPermissionCard(
-                context,
-                title: 'Display Over Other Apps',
-                desc: 'Allows FocusDeen to present the blocked reflection screen.',
-                icon: Icons.layers_outlined,
-                isGranted: controller.hasOverlayPermission.value,
-                onRequest: () => controller.requestPermission('overlay'),
-              )),
+          Obx(
+            () => _buildPermissionCard(
+              context,
+              title: 'Display Over Other Apps',
+              desc:
+                  'Allows FocusDeen to present the blocked reflection screen.',
+              icon: Icons.layers_outlined,
+              isGranted: controller.hasOverlayPermission.value,
+              onRequest: () => controller.requestPermission('overlay'),
+            ),
+          ),
           const SizedBox(height: 12),
 
           // 4. Notifications
-          Obx(() => _buildPermissionCard(
-                context,
-                title: 'Warnings & Notifications',
-                desc: 'Alerts you 5 minutes before your daily limit is exhausted.',
-                icon: Icons.notifications_active_outlined,
-                isGranted: controller.hasNotificationPermission.value,
-                onRequest: () => controller.requestPermission('notifications'),
-              )),
+          Obx(
+            () => _buildPermissionCard(
+              context,
+              title: 'Warnings & Notifications',
+              desc:
+                  'Alerts you 5 minutes before your daily limit is exhausted.',
+              icon: Icons.notifications_active_outlined,
+              isGranted: controller.hasNotificationPermission.value,
+              onRequest: () => controller.requestPermission('notifications'),
+            ),
+          ),
         ],
       ),
     );
@@ -280,7 +308,9 @@ class OnboardingScreen extends GetView<OnboardingController> {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: (isGranted ? AppColors.emerald : Colors.grey).withValues(alpha: 0.12),
+              color: (isGranted ? AppColors.emerald : Colors.grey).withValues(
+                alpha: 0.12,
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -296,14 +326,19 @@ class OnboardingScreen extends GetView<OnboardingController> {
               children: [
                 Text(
                   title,
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                  style: const TextStyle(
+                    fontWeight: FontWeight.bold,
+                    fontSize: 14,
+                  ),
                 ),
                 const SizedBox(height: 2),
                 Text(
                   desc,
                   style: TextStyle(
                     fontSize: 11,
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                    color: isDark
+                        ? AppColors.textSecondaryDark
+                        : AppColors.textSecondaryLight,
                   ),
                 ),
               ],
@@ -315,7 +350,10 @@ class OnboardingScreen extends GetView<OnboardingController> {
           else
             TextButton(
               onPressed: onRequest,
-              child: const Text('Enable', style: TextStyle(fontWeight: FontWeight.bold)),
+              child: const Text(
+                'Enable',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
             ),
         ],
       ),

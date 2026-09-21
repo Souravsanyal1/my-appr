@@ -59,7 +59,10 @@ class StorageService extends GetxService {
     if (raw == null) return [];
     final now = DateTime.now().millisecondsSinceEpoch;
     final sessions = raw
-        .map((e) => UnlockSessionModel.fromMap(Map<String, dynamic>.from(e as Map)))
+        .map(
+          (e) =>
+              UnlockSessionModel.fromMap(Map<String, dynamic>.from(e as Map)),
+        )
         .where((s) => s.expiresAtTimestamp > now) // filter out expired
         .toList();
     return sessions;

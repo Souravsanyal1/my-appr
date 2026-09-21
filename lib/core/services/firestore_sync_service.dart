@@ -39,19 +39,22 @@ class FirestoreSyncService extends GetxService {
         .doc(uid)
         .collection('limits')
         .snapshots()
-        .listen((snapshot) {
-      if (snapshot.docs.isNotEmpty) {
-        final cloudLimits = snapshot.docs.map((doc) {
-          return AppLimitModel.fromMap(doc.data());
-        }).toList();
+        .listen(
+          (snapshot) {
+            if (snapshot.docs.isNotEmpty) {
+              final cloudLimits = snapshot.docs.map((doc) {
+                return AppLimitModel.fromMap(doc.data());
+              }).toList();
 
-        // Update local cache
-        _storageService.saveLimits(cloudLimits);
-        lastSyncTime.value = DateTime.now();
-      }
-    }, onError: (e) {
-      debugPrint('Error listening to cloud limits: $e');
-    });
+              // Update local cache
+              _storageService.saveLimits(cloudLimits);
+              lastSyncTime.value = DateTime.now();
+            }
+          },
+          onError: (e) {
+            debugPrint('Error listening to cloud limits: $e');
+          },
+        );
   }
 
   /// Back up local limits and configuration to Cloud Firestore
@@ -102,19 +105,22 @@ class FirestoreSyncService extends GetxService {
     if (uid.isEmpty) return;
 
     try {
-      final today = DateTime.now().toIso8601String().split('T').first; // YYYY-MM-DD
+      final today = DateTime.now()
+          .toIso8601String()
+          .split('T')
+          .first; // YYYY-MM-DD
       await _firestore
           .collection('users')
           .doc(uid)
           .collection('daily_stats')
           .doc(today)
           .set({
-        'date': today,
-        'totalScreenTimeMinutes': totalMinutes,
-        'focusScore': focusScore,
-        'completedFocusSessions': completedFocusSessions,
-        'timestamp': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
+            'date': today,
+            'totalScreenTimeMinutes': totalMinutes,
+            'focusScore': focusScore,
+            'completedFocusSessions': completedFocusSessions,
+            'timestamp': FieldValue.serverTimestamp(),
+          }, SetOptions(merge: true));
     } catch (e) {
       debugPrint('Error saving daily stats: $e');
     }

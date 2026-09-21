@@ -7,6 +7,7 @@ import 'core/routes/app_routes.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firebase_realtime_service.dart';
 import 'core/services/firestore_sync_service.dart';
+import 'core/services/language_service.dart';
 import 'core/services/native_bridge_service.dart';
 import 'core/services/pin_security_service.dart';
 import 'core/services/storage_service.dart';
@@ -32,6 +33,10 @@ void main() async {
   // Initialize Storage Service
   final storageService = await StorageService().init();
   Get.put<StorageService>(storageService, permanent: true);
+
+  // Initialize Language Service (Bengali & English)
+  final languageService = await LanguageService().init();
+  Get.put<LanguageService>(languageService, permanent: true);
 
   // Initialize Firebase & Cloud Sync Services (Auth, Firestore, Realtime Database)
   Get.put<FirebaseAuthService>(FirebaseAuthService(), permanent: true);

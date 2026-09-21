@@ -63,8 +63,8 @@ class PinDialog extends StatelessWidget {
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          fontWeight: FontWeight.bold,
-                        ),
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
                 IconButton(
@@ -152,10 +152,7 @@ class PinDialog extends StatelessWidget {
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
           children: [
-            _buildActionButton(
-              icon: Icons.refresh,
-              onTap: controller.clear,
-            ),
+            _buildActionButton(icon: Icons.refresh, onTap: controller.clear),
             _buildDigitButton('0', controller),
             _buildActionButton(
               icon: Icons.backspace_outlined,
@@ -203,10 +200,7 @@ class PinDialog extends StatelessWidget {
         ),
         child: Text(
           digit,
-          style: const TextStyle(
-            fontSize: 22,
-            fontWeight: FontWeight.w600,
-          ),
+          style: const TextStyle(fontSize: 22, fontWeight: FontWeight.w600),
         ),
       ),
     );

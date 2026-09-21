@@ -45,7 +45,10 @@ class InstalledAppModel {
     );
   }
 
-  factory InstalledAppModel.fromMap(Map<String, dynamic> map, {bool isMonitored = false}) {
+  factory InstalledAppModel.fromMap(
+    Map<String, dynamic> map, {
+    bool isMonitored = false,
+  }) {
     return InstalledAppModel(
       packageName: map['packageName'] as String? ?? '',
       appName: map['appName'] as String? ?? '',

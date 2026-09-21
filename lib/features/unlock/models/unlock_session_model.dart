@@ -11,7 +11,8 @@ class UnlockSessionModel {
     required this.expiresAtTimestamp,
   });
 
-  bool get isExpired => DateTime.now().millisecondsSinceEpoch >= expiresAtTimestamp;
+  bool get isExpired =>
+      DateTime.now().millisecondsSinceEpoch >= expiresAtTimestamp;
 
   int get remainingSeconds {
     final diff = expiresAtTimestamp - DateTime.now().millisecondsSinceEpoch;

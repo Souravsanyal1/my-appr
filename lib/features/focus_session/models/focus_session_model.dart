@@ -26,7 +26,9 @@ class FocusSessionModel {
   factory FocusSessionModel.fromMap(Map<String, dynamic> map) {
     return FocusSessionModel(
       id: map['id'] as String? ?? '',
-      startTime: DateTime.tryParse(map['startTime'] as String? ?? '') ?? DateTime.now(),
+      startTime:
+          DateTime.tryParse(map['startTime'] as String? ?? '') ??
+          DateTime.now(),
       durationMinutes: (map['durationMinutes'] as num?)?.toInt() ?? 25,
       isCompleted: map['isCompleted'] as bool? ?? false,
       reflectionNote: map['reflectionNote'] as String?,

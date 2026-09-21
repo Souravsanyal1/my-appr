@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/widgets/progress_ring.dart';
 
 class ProfileView extends StatelessWidget {
@@ -8,116 +9,169 @@ class ProfileView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return SafeArea(
-      child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-        child: Column(
-          children: [
-            // Header
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  'Profile',
-                  style: TextStyle(
-                    fontSize: 26,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                IconButton(
-                  icon: const Icon(Icons.settings_outlined, color: AppColors.textPrimary),
-                  onPressed: () => Get.toNamed('/settings'),
-                ),
-              ],
-            ),
-            const SizedBox(height: 20),
+    final languageService = LanguageService.to;
 
-            // Avatar & User Title
-            Container(
-              width: 84,
-              height: 84,
-              decoration: BoxDecoration(
-                color: AppColors.surface,
-                shape: BoxShape.circle,
-                border: Border.all(color: AppColors.primaryGreen, width: 2),
-              ),
-              child: const Center(
-                child: Icon(Icons.person_rounded, size: 44, color: AppColors.brightGreen),
-              ),
-            ),
-            const SizedBox(height: 12),
-            const Text(
-              'Sourav Sanyal',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 4),
-            const Text(
-              'Your Mindful Journey',
-              style: TextStyle(fontSize: 13, color: AppColors.textSecondary),
-            ),
-            const SizedBox(height: 24),
+    return Obx(() {
+      final isBn = languageService.isBangla;
 
-            // Summary Journey Card
-            AppCard(
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 18),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
+      return SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+          child: Column(
+            children: [
+              // Header
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  _buildJourneyItem('Daily Goal', '30m'),
-                  Container(width: 1, height: 36, color: AppColors.border),
-                  _buildJourneyItem('Protected', '3 Apps'),
-                  Container(width: 1, height: 36, color: AppColors.border),
-                  _buildJourneyItem('Streak', '7 Days'),
+                  Text(
+                    isBn ? 'প্রোফাইল' : 'Profile',
+                    style: const TextStyle(
+                      fontSize: 26,
+                      fontWeight: FontWeight.bold,
+                      color: AppColors.textPrimary,
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(
+                      Icons.settings_outlined,
+                      color: AppColors.textPrimary,
+                    ),
+                    onPressed: () => Get.toNamed('/settings'),
+                  ),
                 ],
               ),
-            ),
-            const SizedBox(height: 24),
+              const SizedBox(height: 20),
 
-            // Settings Options List
-            _buildSettingTile(
-              icon: Icons.shield_outlined,
-              title: 'Protection & Strict Mode',
-              subtitle: 'PIN protection and bypass prevention',
-              onTap: () => Get.toNamed('/settings'),
-            ),
-            const SizedBox(height: 10),
-            _buildSettingTile(
-              icon: Icons.tune_rounded,
-              title: 'Unlock Rules & Passing Score',
-              subtitle: 'Current threshold: 80%',
-              onTap: () => Get.toNamed('/settings'),
-            ),
-            const SizedBox(height: 10),
-            _buildSettingTile(
-              icon: Icons.notifications_none_rounded,
-              title: 'Notifications & Reminders',
-              subtitle: 'Pre-limit alerts & daily streak prompts',
-              onTap: () => Get.toNamed('/settings'),
-            ),
-            const SizedBox(height: 10),
-            _buildSettingTile(
-              icon: Icons.privacy_tip_outlined,
-              title: 'Privacy & Offline Storage',
-              subtitle: 'Microphone permissions & local data controls',
-              onTap: () => Get.toNamed('/settings'),
-            ),
-            const SizedBox(height: 10),
-            _buildSettingTile(
-              icon: Icons.info_outline_rounded,
-              title: 'About DeenFlow',
-              subtitle: 'Version 1.0.0 • Learn Before You Scroll',
-              onTap: () => Get.toNamed('/settings'),
-            ),
-            const SizedBox(height: 24),
-          ],
+              // Avatar & User Title
+              Container(
+                width: 84,
+                height: 84,
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primaryGreen, width: 2),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    size: 44,
+                    color: AppColors.brightGreen,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Sourav Sanyal',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                isBn ? 'আপনার আত্মশুদ্ধির যাত্রা' : 'Your Mindful Journey',
+                style: const TextStyle(
+                  fontSize: 13,
+                  color: AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Summary Journey Card
+              AppCard(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 20,
+                  vertical: 18,
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
+                  children: [
+                    _buildJourneyItem(
+                      isBn ? 'দৈনিক লক্ষ্য' : 'Daily Goal',
+                      '30m',
+                    ),
+                    Container(width: 1, height: 36, color: AppColors.border),
+                    _buildJourneyItem(
+                      isBn ? 'সুরক্ষিত' : 'Protected',
+                      isBn ? '৩ টি অ্যাপ' : '3 Apps',
+                    ),
+                    Container(width: 1, height: 36, color: AppColors.border),
+                    _buildJourneyItem(
+                      isBn ? 'ধারাবাহিকতা' : 'Streak',
+                      isBn ? '৭ দিন' : '7 Days',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              // Settings Options List
+              _buildSettingTile(
+                icon: Icons.language_rounded,
+                title: isBn ? 'ভাষা নির্বাচন (Language)' : 'App Language',
+                subtitle: isBn
+                    ? 'বর্তমান ভাষা: বাংলা 🇧🇩 (ট্যাপ করে পরিবর্তন করুন)'
+                    : 'Current: English 🇬🇧 (Tap to switch)',
+                onTap: () => languageService.showLanguageSelector(context),
+              ),
+              const SizedBox(height: 10),
+              _buildSettingTile(
+                icon: Icons.shield_outlined,
+                title: isBn
+                    ? 'সুরক্ষা ও স্ট্রিক্ট মোড'
+                    : 'Protection & Strict Mode',
+                subtitle: isBn
+                    ? 'পিন কোড সুরক্ষা ও আনইনস্টল প্রতিরোধ'
+                    : 'PIN protection and bypass prevention',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+              const SizedBox(height: 10),
+              _buildSettingTile(
+                icon: Icons.tune_rounded,
+                title: isBn
+                    ? 'আনলক নিয়ম ও নূন্যতম স্কোর'
+                    : 'Unlock Rules & Passing Score',
+                subtitle: isBn ? 'বর্তমান সীমা: ৮০%' : 'Current threshold: 80%',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+              const SizedBox(height: 10),
+              _buildSettingTile(
+                icon: Icons.notifications_none_rounded,
+                title: isBn
+                    ? 'বিজ্ঞপ্তি ও রিমাইন্ডার'
+                    : 'Notifications & Reminders',
+                subtitle: isBn
+                    ? 'সময়সীমার পূর্ব সংকেত ও আমল রিমাইন্ডার'
+                    : 'Pre-limit alerts & daily streak prompts',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+              const SizedBox(height: 10),
+              _buildSettingTile(
+                icon: Icons.privacy_tip_outlined,
+                title: isBn
+                    ? 'প্রাইভেসি ও অফলাইন স্টোরেজ'
+                    : 'Privacy & Offline Storage',
+                subtitle: isBn
+                    ? 'মাইক্রোফোন পারমিশন ও লোকাল ডাটা নিয়ন্ত্রণ'
+                    : 'Microphone permissions & local data controls',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+              const SizedBox(height: 10),
+              _buildSettingTile(
+                icon: Icons.info_outline_rounded,
+                title: isBn ? 'দ্বীনফ্লো সম্পর্কে' : 'About DeenFlow',
+                subtitle: isBn
+                    ? 'ভার্সন ১.০.০ • স্ক্রল করার আগে শিখুন'
+                    : 'Version 1.0.0 • Learn Before You Scroll',
+                onTap: () => Get.toNamed('/settings'),
+              ),
+              const SizedBox(height: 24),
+            ],
+          ),
         ),
-      ),
-    );
+      );
+    });
   }
 
   Widget _buildJourneyItem(String label, String value) {
@@ -175,12 +229,19 @@ class ProfileView extends StatelessWidget {
                 const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style: const TextStyle(fontSize: 11, color: AppColors.textMuted),
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
                 ),
               ],
             ),
           ),
-          const Icon(Icons.arrow_forward_ios_rounded, size: 14, color: AppColors.textMuted),
+          const Icon(
+            Icons.arrow_forward_ios_rounded,
+            size: 14,
+            color: AppColors.textMuted,
+          ),
         ],
       ),
     );
