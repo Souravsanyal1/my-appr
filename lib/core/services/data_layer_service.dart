@@ -41,9 +41,6 @@ class DataLayerService extends GetxService {
     if (Get.isRegistered<DeviceIdentityService>()) {
       return DeviceIdentityService.to.deviceId;
     }
-    if (Get.isRegistered<StorageService>()) {
-      return StorageService.to.getDeviceId();
-    }
     return 'unknown_device';
   }
 
@@ -140,12 +137,12 @@ class DataLayerService extends GetxService {
 
   void _markActiveToday(FirebaseDatabase rtdb) {
     final todayKey = DateTime.now().toIso8601String().substring(0, 10);
-    final storage = Get.isRegistered<StorageService>() ? StorageService.to : null;
-    final lastMarkedDay = storage?.readString('last_active_day_marked') ?? '';
+    final storage = Get.isRegistered<StorageService>() ? Get.find<StorageService>() : null;
+    final lastMarkedDay = storage?.read<String>('last_active_day_marked') ?? '';
 
     if (lastMarkedDay != todayKey) {
       rtdb.ref('liveStats/activeToday').set(ServerValue.increment(1));
-      storage?.writeString('last_active_day_marked', todayKey);
+      storage?.write('last_active_day_marked', todayKey);
     }
   }
 
@@ -300,7 +297,7 @@ class DataLayerService extends GetxService {
           : null;
 
       final storage = Get.isRegistered<StorageService>()
-          ? StorageService.to
+          ? Get.find<StorageService>()
           : null;
 
       String appVersion = '1.0.0';
