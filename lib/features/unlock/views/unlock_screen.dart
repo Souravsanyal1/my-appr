@@ -82,14 +82,14 @@ class UnlockScreen extends GetView<UnlockController> {
             const SizedBox(height: 8),
             SizedBox(
               height: 40,
-              child: Obx(
-                () => ListView.builder(
+              child: Obx(() {
+                final selectedIndex = controller.selectedVerseIndex.value;
+                return ListView.builder(
                   scrollDirection: Axis.horizontal,
                   itemCount: controller.verses.length,
                   itemBuilder: (context, index) {
                     final verse = controller.verses[index];
-                    final isSelected =
-                        controller.selectedVerseIndex.value == index;
+                    final isSelected = selectedIndex == index;
                     return Padding(
                       padding: const EdgeInsets.only(right: 8.0),
                       child: ChoiceChip(
@@ -102,8 +102,8 @@ class UnlockScreen extends GetView<UnlockController> {
                       ),
                     );
                   },
-                ),
-              ),
+                );
+              }),
             ),
             const SizedBox(height: 16),
 
