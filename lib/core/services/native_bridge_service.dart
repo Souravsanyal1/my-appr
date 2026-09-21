@@ -44,10 +44,13 @@ class NativeBridgeService extends GetxService {
   void _setupMethodCallHandler() {
     _methodChannel.setMethodCallHandler((call) async {
       switch (call.method) {
+        case 'onAudioStart':
         case 'onTtsStart':
           isSpeakingRx.value = true;
           _ttsStateController.add(true);
           break;
+        case 'onAudioDone':
+        case 'onAudioError':
         case 'onTtsDone':
         case 'onTtsError':
           isSpeakingRx.value = false;
@@ -334,11 +337,49 @@ class NativeBridgeService extends GetxService {
     ];
   }
 
-  /// Recite text using on-device TextToSpeech
+  /// Play authentic recitation audio from URL, falling back to speech if offline or error
+  Future<bool> playAudio({
+    required String url,
+    required String fallbackText,
+    String language = 'ar',
+    String? fallbackPhonetic,
+  }) async {
+    if (kIsWeb || !Platform.isAndroid) {
+      isSpeakingRx.value = true;
+      _ttsStateController.add(true);
+      Future.delayed(const Duration(seconds: 3), () {
+        isSpeakingRx.value = false;
+        _ttsStateController.add(false);
+      });
+      return true;
+    }
+
+    try {
+      isSpeakingRx.value = true;
+      final res = await _methodChannel
+          .invokeMethod<bool>(ChannelConstants.playAudio, {
+            'url': url,
+            'fallbackText': fallbackText,
+            'language': language,
+            'fallbackPhonetic': fallbackPhonetic ?? '',
+          });
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error in playAudio: $e');
+      return speak(
+        text: fallbackText,
+        language: language,
+        fallbackPhonetic: fallbackPhonetic,
+      );
+    }
+  }
+
+  /// Recite text using on-device TextToSpeech with phonetic fallback
   Future<bool> speak({
     required String text,
     String language = 'ar',
     double rate = 0.85,
+    String? fallbackPhonetic,
   }) async {
     if (kIsWeb || !Platform.isAndroid) {
       // Fallback simulation for tests/web
@@ -353,10 +394,13 @@ class NativeBridgeService extends GetxService {
 
     try {
       isSpeakingRx.value = true;
-      final res = await _methodChannel.invokeMethod<bool>(
-        ChannelConstants.speak,
-        {'text': text, 'language': language, 'rate': rate},
-      );
+      final res = await _methodChannel
+          .invokeMethod<bool>(ChannelConstants.speak, {
+            'text': text,
+            'language': language,
+            'rate': rate,
+            'fallbackPhonetic': fallbackPhonetic ?? '',
+          });
       return res ?? false;
     } catch (e) {
       isSpeakingRx.value = false;
@@ -365,7 +409,7 @@ class NativeBridgeService extends GetxService {
     }
   }
 
-  /// Stop current audio speech playback
+  /// Stop current audio speech or recitation playback
   Future<void> stopSpeaking() async {
     isSpeakingRx.value = false;
     _ttsStateController.add(false);
@@ -373,13 +417,13 @@ class NativeBridgeService extends GetxService {
     if (kIsWeb || !Platform.isAndroid) return;
 
     try {
-      await _methodChannel.invokeMethod(ChannelConstants.stopSpeaking);
+      await _methodChannel.invokeMethod(ChannelConstants.stopAudio);
     } catch (e) {
       debugPrint('Error invoking stopSpeaking: $e');
     }
   }
 
-  /// Check if the engine is actively speaking
+  /// Check if the engine is actively speaking or playing audio
   Future<bool> isSpeaking() async {
     if (kIsWeb || !Platform.isAndroid) return isSpeakingRx.value;
     try {

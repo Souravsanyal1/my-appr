@@ -1,6 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../unlock/views/unlock_screen.dart';
 import '../controllers/learning_controller.dart';
@@ -18,9 +21,22 @@ class LessonDetailScreen extends StatefulWidget {
 class _LessonDetailScreenState extends State<LessonDetailScreen> {
   bool _isPlayingAudio = false;
   int _repetitionCount = 0;
+  StreamSubscription<bool>? _audioSub;
+
+  @override
+  void initState() {
+    super.initState();
+    final nativeBridge = Get.find<NativeBridgeService>();
+    _audioSub = nativeBridge.ttsStateStream.listen((playing) {
+      if (mounted) {
+        setState(() => _isPlayingAudio = playing);
+      }
+    });
+  }
 
   @override
   void dispose() {
+    _audioSub?.cancel();
     Get.find<NativeBridgeService>().stopSpeaking();
     super.dispose();
   }
@@ -34,20 +50,37 @@ class _LessonDetailScreenState extends State<LessonDetailScreen> {
     }
 
     setState(() => _isPlayingAudio = true);
+    HapticFeedback.lightImpact();
 
+    final isBn = LanguageService.to.isBangla;
+    final audioUrl = widget.lesson.audioUrl ?? '';
     final arabic = widget.lesson.arabicText.trim();
-    if (arabic.isNotEmpty) {
-      await nativeBridge.speak(text: arabic, language: 'ar', rate: 0.75);
+    final fallbackPhonetic = isBn
+        ? (widget.lesson.banglaPronunciation ??
+              widget.lesson.banglaTitle ??
+              widget.lesson.transliteration)
+        : widget.lesson.transliteration;
+
+    if (audioUrl.isNotEmpty) {
+      await nativeBridge.playAudio(
+        url: audioUrl,
+        fallbackText: arabic.isNotEmpty ? arabic : fallbackPhonetic,
+        language: 'ar',
+        fallbackPhonetic: fallbackPhonetic,
+      );
+    } else if (arabic.isNotEmpty) {
+      await nativeBridge.speak(
+        text: arabic,
+        language: 'ar',
+        rate: 0.75,
+        fallbackPhonetic: fallbackPhonetic,
+      );
     } else {
       await nativeBridge.speak(
-        text: widget.lesson.transliteration,
-        language: 'en',
+        text: fallbackPhonetic,
+        language: isBn ? 'bn' : 'en',
         rate: 0.85,
       );
-    }
-
-    if (mounted) {
-      setState(() => _isPlayingAudio = false);
     }
   }
 

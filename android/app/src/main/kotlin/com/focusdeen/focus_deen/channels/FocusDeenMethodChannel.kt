@@ -8,6 +8,9 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.drawable.BitmapDrawable
 import android.graphics.drawable.Drawable
+import android.media.AudioAttributes
+import android.media.AudioManager
+import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Build
 import android.os.Handler
@@ -40,11 +43,13 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
     private val backgroundExecutor = Executors.newSingleThreadExecutor()
     private val mainHandler = Handler(Looper.getMainLooper())
 
+    private var mediaPlayer: MediaPlayer? = null
     private var tts: TextToSpeech? = null
     private var isTtsInitialized = false
     private var pendingSpeakText: String? = null
     private var pendingLanguage: String? = null
     private var pendingRate: Float = 0.85f
+    private var pendingFallback: String = ""
 
     init {
         try {
@@ -60,37 +65,82 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
             tts?.setOnUtteranceProgressListener(object : UtteranceProgressListener() {
                 override fun onStart(utteranceId: String?) {
                     mainHandler.post {
-                        channel?.invokeMethod("onTtsStart", mapOf("utteranceId" to (utteranceId ?: "")))
+                        channel?.invokeMethod("onAudioStart", mapOf("utteranceId" to (utteranceId ?: "")))
                     }
                 }
 
                 override fun onDone(utteranceId: String?) {
                     mainHandler.post {
-                        channel?.invokeMethod("onTtsDone", mapOf("utteranceId" to (utteranceId ?: "")))
+                        channel?.invokeMethod("onAudioDone", mapOf("utteranceId" to (utteranceId ?: "")))
                     }
                 }
 
                 @Deprecated("Deprecated in Java")
                 override fun onError(utteranceId: String?) {
                     mainHandler.post {
-                        channel?.invokeMethod("onTtsError", mapOf("utteranceId" to (utteranceId ?: "")))
+                        channel?.invokeMethod("onAudioError", mapOf("utteranceId" to (utteranceId ?: "")))
                     }
                 }
             })
 
             pendingSpeakText?.let { text ->
-                speakText(text, pendingLanguage ?: "ar", pendingRate)
+                speakText(text, pendingLanguage ?: "ar", pendingRate, pendingFallback)
                 pendingSpeakText = null
                 pendingLanguage = null
+                pendingFallback = ""
             }
         }
     }
 
-    fun speakText(text: String, language: String, rate: Float): Boolean {
+    fun playAudio(url: String, fallbackText: String, language: String): Boolean {
+        stopAudio()
+
+        if (url.isEmpty()) {
+            return speakText(fallbackText, language, 0.85f, fallbackText)
+        }
+
+        return try {
+            mediaPlayer = MediaPlayer().apply {
+                setAudioAttributes(
+                    AudioAttributes.Builder()
+                        .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
+                        .setUsage(AudioAttributes.USAGE_MEDIA)
+                        .build()
+                )
+                setDataSource(url)
+                setOnPreparedListener { mp ->
+                    mp.start()
+                    mainHandler.post {
+                        channel?.invokeMethod("onAudioStart", mapOf("url" to url))
+                    }
+                }
+                setOnCompletionListener {
+                    stopAudio()
+                    mainHandler.post {
+                        channel?.invokeMethod("onAudioDone", mapOf("url" to url))
+                    }
+                }
+                setOnErrorListener { _, what, extra ->
+                    stopAudio()
+                    speakText(fallbackText, language, 0.85f, fallbackText)
+                    true
+                }
+                prepareAsync()
+            }
+            true
+        } catch (e: Exception) {
+            e.printStackTrace()
+            speakText(fallbackText, language, 0.85f, fallbackText)
+        }
+    }
+
+    fun speakText(text: String, language: String, rate: Float, fallbackPhonetic: String = ""): Boolean {
+        stopAudioOnly()
         if (!isTtsInitialized || tts == null) {
             pendingSpeakText = text
             pendingLanguage = language
             pendingRate = rate
+            pendingFallback = fallbackPhonetic
             return false
         }
 
@@ -101,22 +151,38 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 else -> Locale("en", "US")
             }
 
-            val avail = tts?.isLanguageAvailable(targetLocale)
+            var textToSpeak = text
+            val avail = tts?.isLanguageAvailable(targetLocale) ?: TextToSpeech.LANG_NOT_SUPPORTED
             if (avail != TextToSpeech.LANG_NOT_SUPPORTED && avail != TextToSpeech.LANG_MISSING_DATA) {
                 tts?.language = targetLocale
             } else {
-                val fallbackLocale = Locale(targetLocale.language)
-                val fallbackAvail = tts?.isLanguageAvailable(fallbackLocale)
-                if (fallbackAvail != TextToSpeech.LANG_NOT_SUPPORTED && fallbackAvail != TextToSpeech.LANG_MISSING_DATA) {
-                    tts?.language = fallbackLocale
+                // Arabic voice data is missing on many phones (e.g. Infinix / Xiaomi).
+                // If text is in Arabic script and Arabic TTS voice is not installed,
+                // the English/Default TTS engine will silently skip Arabic characters.
+                // In that case, we MUST speak the phonetic fallback (Bengali or English transliteration)!
+                if (fallbackPhonetic.isNotEmpty()) {
+                    textToSpeak = fallbackPhonetic
+                }
+
+                val bnLocale = Locale("bn", "BD")
+                val bnAvail = tts?.isLanguageAvailable(bnLocale) ?: TextToSpeech.LANG_NOT_SUPPORTED
+                if (bnAvail != TextToSpeech.LANG_NOT_SUPPORTED && bnAvail != TextToSpeech.LANG_MISSING_DATA) {
+                    tts?.language = bnLocale
+                } else {
+                    tts?.language = Locale.US
                 }
             }
 
             tts?.setSpeechRate(rate)
             tts?.setPitch(1.0f)
 
+            val params = android.os.Bundle().apply {
+                putInt(TextToSpeech.Engine.KEY_PARAM_STREAM, AudioManager.STREAM_MUSIC)
+                putFloat(TextToSpeech.Engine.KEY_PARAM_VOLUME, 1.0f)
+            }
+
             val utteranceId = "deenflow_${System.currentTimeMillis()}"
-            val result = tts?.speak(text, TextToSpeech.QUEUE_FLUSH, null, utteranceId)
+            val result = tts?.speak(textToSpeak, TextToSpeech.QUEUE_FLUSH, params, utteranceId)
             return result == TextToSpeech.SUCCESS
         } catch (e: Exception) {
             e.printStackTrace()
@@ -124,11 +190,29 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
         }
     }
 
-    fun stopSpeaking() {
+    private fun stopAudioOnly() {
+        try {
+            if (mediaPlayer != null) {
+                if (mediaPlayer?.isPlaying == true) {
+                    mediaPlayer?.stop()
+                }
+                mediaPlayer?.release()
+                mediaPlayer = null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+
+    fun stopAudio() {
+        stopAudioOnly()
         try {
             tts?.stop()
         } catch (e: Exception) {
             e.printStackTrace()
+        }
+        mainHandler.post {
+            channel?.invokeMethod("onAudioDone", null)
         }
     }
 
@@ -140,7 +224,7 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
     fun unregister() {
         channel?.setMethodCallHandler(null)
         channel = null
-        stopSpeaking()
+        stopAudio()
         try {
             tts?.shutdown()
         } catch (e: Exception) {
@@ -278,21 +362,30 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 }
             }
 
+            "playAudio" -> {
+                val url = call.argument<String>("url") ?: ""
+                val fallbackText = call.argument<String>("fallbackText") ?: ""
+                val language = call.argument<String>("language") ?: "ar"
+                val success = playAudio(url, fallbackText, language)
+                result.success(success)
+            }
+
             "speak" -> {
                 val text = call.argument<String>("text") ?: ""
                 val language = call.argument<String>("language") ?: "ar"
                 val rate = (call.argument<Double>("rate") ?: 0.85).toFloat()
-                val success = speakText(text, language, rate)
+                val fallbackPhonetic = call.argument<String>("fallbackPhonetic") ?: ""
+                val success = speakText(text, language, rate, fallbackPhonetic)
                 result.success(success)
             }
 
-            "stopSpeaking" -> {
-                stopSpeaking()
+            "stopSpeaking", "stopAudio" -> {
+                stopAudio()
                 result.success(true)
             }
 
             "isSpeaking" -> {
-                result.success(tts?.isSpeaking == true)
+                result.success(mediaPlayer?.isPlaying == true || tts?.isSpeaking == true)
             }
 
             else -> result.notImplemented()

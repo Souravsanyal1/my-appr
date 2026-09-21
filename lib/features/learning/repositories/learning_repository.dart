@@ -19,6 +19,7 @@ class LearningRepository {
       sourceReference: 'Sahih Muslim 2691',
       minRecitationSeconds: 3,
       targetRepetitions: 33,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/037180.mp3',
     ),
     LearningLessonModel(
       id: 'dhikr_alhamdulillah',
@@ -33,6 +34,7 @@ class LearningRepository {
       sourceReference: 'Sahih Muslim 223',
       minRecitationSeconds: 3,
       targetRepetitions: 33,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/001002.mp3',
     ),
     LearningLessonModel(
       id: 'dhikr_allahuakbar',
@@ -48,6 +50,7 @@ class LearningRepository {
       sourceReference: 'Sahih al-Bukhari 6329',
       minRecitationSeconds: 3,
       targetRepetitions: 34,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/017111.mp3',
     ),
     LearningLessonModel(
       id: 'dhikr_astaghfirullah',
@@ -64,6 +67,7 @@ class LearningRepository {
       sourceReference: 'Sahih al-Bukhari 6307',
       minRecitationSeconds: 4,
       targetRepetitions: 100,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/110003.mp3',
     ),
     LearningLessonModel(
       id: 'dhikr_salawat',
@@ -81,6 +85,7 @@ class LearningRepository {
       sourceReference: 'Sahih al-Bukhari 3370',
       minRecitationSeconds: 4,
       targetRepetitions: 10,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/033056.mp3',
     ),
 
     // ══════════════════════════════════════════════════════════════
@@ -98,6 +103,7 @@ class LearningRepository {
       banglaTranslation: 'আল্লাহর নামে শুরু করছি।',
       sourceReference: 'Sahih al-Bukhari 5376',
       minRecitationSeconds: 2,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/001001.mp3',
     ),
     LearningLessonModel(
       id: 'dua_after_eating',
@@ -227,6 +233,7 @@ class LearningRepository {
       banglaTranslation: 'আল্লাহ সর্বশ্রেষ্ঠ।',
       sourceReference: 'Sahih al-Bukhari 735',
       minRecitationSeconds: 2,
+      audioUrl: 'https://everyayah.com/data/Alafasy_128kbps/017111.mp3',
     ),
     LearningLessonModel(
       id: 'salah_sana',
@@ -368,6 +375,8 @@ class LearningRepository {
           'বলুন, তিনিই আল্লাহ, অদ্বিতীয়। আল্লাহ কারো মুখাপেক্ষী নন, সকলেই তাঁর মুখাপেক্ষী। তিনি কাউকে জন্ম দেননি এবং তাঁকেও জন্ম দেওয়া হয়নি। এবং তাঁর সমতুল্য কেউই নেই।',
       sourceReference: 'Quran 112:1-4',
       minRecitationSeconds: 5,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/112.mp3',
     ),
     LearningLessonModel(
       id: 'surah_falaq',
@@ -386,6 +395,8 @@ class LearningRepository {
           'বলুন, আমি আশ্রয় প্রার্থনা করছি প্রভাতের রবের কাছে। তাঁর সৃষ্টির সকল অনিষ্ট থেকে। অন্ধকার রাতের অনিষ্ট থেকে যখন তা সমাগত হয়। এবং গিরায় ফুঁকদানকারিণীদের অনিষ্ট থেকে। এবং হিংসুকের অনিষ্ট থেকে যখন সে হিংসা করে।',
       sourceReference: 'Quran 113:1-5',
       minRecitationSeconds: 7,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/113.mp3',
     ),
     LearningLessonModel(
       id: 'surah_nas',
@@ -404,6 +415,8 @@ class LearningRepository {
           'বলুন, আমি আশ্রয় প্রার্থনা করছি মানুষের প্রতিপালকের কাছে। মানুষের অধিপতির কাছে। মানুষের সত্য উপাস্যের কাছে। আত্মগোপনকারী কুমন্ত্রণাদাতার অনিষ্ট থেকে—যে মানুষের অন্তরে কুমন্ত্রণা দেয়—জিন ও মানুষের মধ্য থেকে।',
       sourceReference: 'Quran 114:1-6',
       minRecitationSeconds: 8,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/114.mp3',
     ),
     LearningLessonModel(
       id: 'surah_kawthar',
@@ -422,6 +435,8 @@ class LearningRepository {
           'নিশ্চয় আমি আপনাকে কাওসার (অফুরন্ত কল্যাণ) দান করেছি। অতএব আপনার রবের উদ্দেশ্যে নামাজ পড়ুন ও কোরবানি করুন। নিশ্চয় আপনার শত্রুই তো নির্বংশ।',
       sourceReference: 'Quran 108:1-3',
       minRecitationSeconds: 5,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/108.mp3',
     ),
     LearningLessonModel(
       id: 'surah_asr',
@@ -440,6 +455,8 @@ class LearningRepository {
           'সময়ের শপথ! নিশ্চয় সমগ্র মানবজাতি ক্ষতির মধ্যে নিমজ্জিত। তারা ব্যতীত যারা ঈমান এনেছে, সৎকাজ করেছে এবং পরস্পরকে সত্যের ও ধৈর্যের উপদেশ দিয়েছে।',
       sourceReference: 'Quran 103:1-3',
       minRecitationSeconds: 6,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/103.mp3',
     ),
     LearningLessonModel(
       id: 'surah_nasr',
@@ -458,6 +475,8 @@ class LearningRepository {
           'যখন আল্লাহর সাহায্য ও বিজয় আসবে, এবং আপনি মানুষকে দলে দলে আল্লাহর দ্বীনে প্রবেশ করতে দেখবেন, তখন আপনার রবের প্রশংসাসহ পবিত্রতা বর্ণনা করুন এবং তাঁর কাছে ক্ষমা প্রার্থনা করুন; নিশ্চয় তিনি মহা তওবা কবুলকারী।',
       sourceReference: 'Quran 110:1-3',
       minRecitationSeconds: 7,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/110.mp3',
     ),
     LearningLessonModel(
       id: 'surah_kafirun',
@@ -476,6 +495,8 @@ class LearningRepository {
           'বলুন, হে কাফেররা! আমি তার ইবাদত করি না যার ইবাদত তোমরা কর। আর তোমরাও তাঁর ইবাদতকারী নও যাঁর ইবাদত আমি করি। এবং আমি তার ইবাদতকারী নই যার ইবাদত তোমরা করে আসছ। আর তোমরাও তাঁর ইবাদতকারী নও যাঁর ইবাদত আমি করি। তোমাদের জন্য তোমাদের দ্বীন, আর আমার জন্য আমার দ্বীন।',
       sourceReference: 'Quran 109:1-6',
       minRecitationSeconds: 8,
+      audioUrl:
+          'https://cdn.islamic.network/quran/audio-surah/128/ar.alafasy/109.mp3',
     ),
   ];
 }

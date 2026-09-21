@@ -51,12 +51,27 @@ class _LearningModeViewState extends State<LearningModeView> {
     setState(() => _isPlaying = true);
     HapticFeedback.lightImpact();
 
+    final audioUrl = lesson.audioUrl ?? '';
     final arabic = lesson.arabicText.trim();
-    if (arabic.isNotEmpty) {
+    final fallbackPhonetic = isBn
+        ? (lesson.banglaPronunciation ??
+              lesson.banglaTitle ??
+              lesson.transliteration)
+        : lesson.transliteration;
+
+    if (audioUrl.isNotEmpty) {
+      await nativeBridge.playAudio(
+        url: audioUrl,
+        fallbackText: arabic.isNotEmpty ? arabic : fallbackPhonetic,
+        language: 'ar',
+        fallbackPhonetic: fallbackPhonetic,
+      );
+    } else if (arabic.isNotEmpty) {
       final success = await nativeBridge.speak(
         text: arabic,
         language: 'ar',
         rate: 0.75,
+        fallbackPhonetic: fallbackPhonetic,
       );
       if (!success && isBn && lesson.banglaPronunciation != null) {
         await nativeBridge.speak(
@@ -66,11 +81,8 @@ class _LearningModeViewState extends State<LearningModeView> {
         );
       }
     } else {
-      final fallbackText = isBn
-          ? (lesson.banglaPronunciation ?? lesson.banglaTitle ?? lesson.title)
-          : lesson.transliteration;
       await nativeBridge.speak(
-        text: fallbackText,
+        text: fallbackPhonetic,
         language: isBn ? 'bn' : 'en',
         rate: 0.85,
       );

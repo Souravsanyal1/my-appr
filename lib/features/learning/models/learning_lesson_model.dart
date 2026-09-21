@@ -58,6 +58,7 @@ class LearningLessonModel {
   final int minRecitationSeconds;
   final int targetRepetitions;
   final bool isCompleted;
+  final String? audioUrl;
 
   const LearningLessonModel({
     required this.id,
@@ -73,6 +74,7 @@ class LearningLessonModel {
     this.minRecitationSeconds = 4,
     this.targetRepetitions = 1,
     this.isCompleted = false,
+    this.audioUrl,
   });
 
   String getTitle(bool isBangla) =>
@@ -107,6 +109,7 @@ class LearningLessonModel {
       'minRecitationSeconds': minRecitationSeconds,
       'targetRepetitions': targetRepetitions,
       'isCompleted': isCompleted,
+      'audioUrl': audioUrl,
     };
   }
 
@@ -128,6 +131,7 @@ class LearningLessonModel {
       minRecitationSeconds: map['minRecitationSeconds'] as int? ?? 4,
       targetRepetitions: map['targetRepetitions'] as int? ?? 1,
       isCompleted: map['isCompleted'] as bool? ?? false,
+      audioUrl: map['audioUrl'] as String?,
     );
   }
 
@@ -145,6 +149,7 @@ class LearningLessonModel {
     int? minRecitationSeconds,
     int? targetRepetitions,
     bool? isCompleted,
+    String? audioUrl,
   }) {
     return LearningLessonModel(
       id: id ?? this.id,
@@ -160,6 +165,7 @@ class LearningLessonModel {
       minRecitationSeconds: minRecitationSeconds ?? this.minRecitationSeconds,
       targetRepetitions: targetRepetitions ?? this.targetRepetitions,
       isCompleted: isCompleted ?? this.isCompleted,
+      audioUrl: audioUrl ?? this.audioUrl,
     );
   }
 }

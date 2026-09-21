@@ -12,6 +12,8 @@ class ChannelConstants {
   static const String removeTemporaryUnlock = "removeTemporaryUnlock";
   static const String getUnlockSessions = "getUnlockSessions";
   static const String closeForegroundApp = "closeForegroundApp";
+  static const String playAudio = "playAudio";
+  static const String stopAudio = "stopAudio";
   static const String speak = "speak";
   static const String stopSpeaking = "stopSpeaking";
   static const String isSpeaking = "isSpeaking";
