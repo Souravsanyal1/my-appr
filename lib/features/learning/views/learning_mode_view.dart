@@ -312,7 +312,10 @@ class _LearningModeViewState extends State<LearningModeView> {
                     const SizedBox(width: 14),
                     Expanded(
                       child: ElevatedButton(
-                        onPressed: () => Get.offNamed('/recording'),
+                        onPressed: () => Get.offNamed(
+                          '/recording',
+                          arguments: Get.arguments,
+                        ),
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primaryGreen,
                           foregroundColor: Colors.black,

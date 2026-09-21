@@ -33,33 +33,53 @@ class RecitationScoreResult {
 class RecitationScoringService {
   static const List<QuranVerseToRecite> challengeVerses = [
     QuranVerseToRecite(
-      surahName: 'Surah Al-Asr (The Declining Day)',
-      arabic:
-          'وَالْعَصْرِ • إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ وَتَوَاصَوْا بِالْحَقِّ وَتَوَاصَوْا بِالصَّبْرِ',
-      transliteration:
-          'Wal-‘Asr. Innal-insana lafi khusr. Illal-ladhina amanu wa ‘amilus-salihati wa tawasaw bil-haqqi wa tawasaw bis-sabr.',
+      surahName: 'ইস্তিগফার (Astaghfirullah)',
+      arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
+      transliteration: 'Astaghfirullaha wa atubu ilayh',
       translation:
-          'By time, indeed mankind is in loss, except for those who believe and do righteous deeds and advise each other to truth and advise each other to patience.',
-      minRecitationSeconds: 5,
+          'আল্লাহর কাছে ক্ষমা প্রার্থনা করছি এবং তাঁরই দিকে প্রত্যাবর্তন করছি। (I seek forgiveness from Allah and repent to Him)',
+      minRecitationSeconds: 3,
     ),
     QuranVerseToRecite(
-      surahName: 'Surah Al-Ikhlas (Purity)',
-      arabic:
-          'قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ • لَمْ يَلِدْ وَلَمْ يُولَدْ • وَلَمْ يَكُنْ لَهُ كُفُوًا أَحَدٌ',
-      transliteration:
-          'Qul Huwallahu Ahad. Allahus-Samad. Lam yalid wa lam yulad. Wa lam yakun lahu kufuwan ahad.',
+      surahName: 'তাসবীহ (SubhanAllah)',
+      arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
+      transliteration: 'SubhanAllahi wa bihamdihi',
       translation:
-          'Say, He is Allah, [who is] One, Allah, the Eternal Refuge. He neither begets nor is born, nor is there to Him any equivalent.',
-      minRecitationSeconds: 4,
+          'আল্লাহ মহাপবিত্র এবং সকল প্রশংসা তাঁরই। (Glory and praise be to Allah)',
+      minRecitationSeconds: 3,
     ),
     QuranVerseToRecite(
-      surahName: 'Surah Al-Kawthar (Abundance)',
-      arabic:
-          'إِنَّا أَعْطَيْنَاكَ الْكَوْثَرَ • فَصَلِّ لِرَبِّكَ وَانْحَرْ • إِنَّ شَانِئَكَ هُوَ الْأَبْتَرُ',
-      transliteration:
-          'Inna a‘taynaka al-kawthar. Fasalli li-rabbika wanhar. Inna shani’aka huwal-abtar.',
+      surahName: 'তাহমীদ (Alhamdulillah)',
+      arabic: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
+      transliteration: 'Alhamdulillahi Rabbil ‘Alamin',
       translation:
-          'Indeed, We have granted you, [O Muhammad], al-Kawthar. So pray to your Lord and sacrifice. Indeed, your enemy is the one cut off.',
+          'সকল প্রশংসা মহান আল্লাহর, যিনি সকল সৃষ্টির প্রতিপালক। (All praise is for Allah, Lord of the worlds)',
+      minRecitationSeconds: 3,
+    ),
+    QuranVerseToRecite(
+      surahName: 'সূরা আল-ইখলাস (১-২ আয়াত)',
+      arabic: 'قُلْ هُوَ اللَّهُ أَحَدٌ • اللَّهُ الصَّمَدُ',
+      transliteration: 'Qul Huwallahu Ahad. Allahus-Samad.',
+      translation:
+          'বলুন: তিনিই আল্লাহ, একক ও অদ্বিতীয়। আল্লাহ কারো মুখাপেক্ষী নন। (Say: He is Allah, the One. Allah, the Eternal Refuge.)',
+      minRecitationSeconds: 3,
+    ),
+    QuranVerseToRecite(
+      surahName: 'সূরা ইনশিরাহ (সহজ আয়াত)',
+      arabic: 'فَإِنَّ مَعَ الْعُسْرِ يُسْرًا • إِنَّ مَعَ الْعُسْرِ يُسْرًا',
+      transliteration: 'Fa inna ma‘al-‘usri yusra. Inna ma‘al-‘usri yusra.',
+      translation:
+          'নিশ্চয়ই কষ্টের সাথেই স্বস্তি আছে। (Indeed, with hardship comes ease.)',
+      minRecitationSeconds: 3,
+    ),
+    QuranVerseToRecite(
+      surahName: 'সূরা আল-আসর (Surah Al-Asr)',
+      arabic:
+          'وَالْعَصْرِ • إِنَّ الْإِنْسَانَ لَفِي خُسْرٍ • إِلَّا الَّذِينَ آمَنُوا وَعَمِلُوا الصَّالِحَاتِ',
+      transliteration:
+          'Wal-‘Asr. Innal-insana lafi khusr. Illal-ladhina amanu wa ‘amilus-salihati.',
+      translation:
+          'কালের শপথ! নিশ্চয় মানুষ ক্ষতির মধ্যে নিমজ্জিত, তারা ছাড়া যারা ঈমান এনেছে ও সৎকাজ করেছে।',
       minRecitationSeconds: 4,
     ),
   ];

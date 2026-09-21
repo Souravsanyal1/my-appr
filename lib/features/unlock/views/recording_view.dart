@@ -91,10 +91,12 @@ class _RecordingViewState extends State<RecordingView>
     final languageService = LanguageService.to;
     final lesson = Get.arguments is LearningLessonModel
         ? Get.arguments as LearningLessonModel
-        : LearningRepository.allLessons.firstWhere(
-            (l) => l.id == 'dhikr_astaghfirullah',
-            orElse: () => LearningRepository.allLessons.first,
-          );
+        : (Get.arguments is Map && Get.arguments['lesson'] is LearningLessonModel)
+            ? Get.arguments['lesson'] as LearningLessonModel
+            : LearningRepository.allLessons.firstWhere(
+                (l) => l.id == 'dhikr_astaghfirullah',
+                orElse: () => LearningRepository.allLessons.first,
+              );
 
     return Obx(() {
       final isBn = languageService.isBangla;
