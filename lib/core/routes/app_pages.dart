@@ -5,22 +5,104 @@ import '../../features/auth/views/auth_screen.dart';
 import '../../features/blocking/views/blocked_screen.dart';
 import '../../features/dashboard/bindings/dashboard_binding.dart';
 import '../../features/dashboard/views/dashboard_screen.dart';
+import '../../features/dashboard/views/home_screen.dart';
 import '../../features/dhikr/views/adhkar_screen.dart';
 import '../../features/dhikr/views/tasbih_screen.dart';
 import '../../features/focus_session/views/focus_session_screen.dart';
+import '../../features/intention/views/intention_screen.dart';
+import '../../features/learning/views/deed_detail_view.dart';
+import '../../features/learning/views/deeds_library_view.dart';
 import '../../features/learning/views/learning_catalog_screen.dart';
+import '../../features/learning/views/learning_mode_view.dart';
 import '../../features/limits/bindings/limit_binding.dart';
 import '../../features/limits/views/limit_screen.dart';
 import '../../features/onboarding/bindings/onboarding_binding.dart';
+import '../../features/onboarding/views/choose_apps_screen.dart';
+import '../../features/onboarding/views/daily_goal_screen.dart';
 import '../../features/onboarding/views/onboarding_screen.dart';
+import '../../features/onboarding/views/splash_screen.dart';
+import '../../features/onboarding/views/welcome_screen.dart';
 import '../../features/schedule/views/schedule_screen.dart';
+import '../../features/settings/views/profile_view.dart';
 import '../../features/settings/views/settings_screen.dart';
+import '../../features/statistics/views/progress_view.dart';
 import '../../features/statistics/views/statistics_screen.dart';
+import '../../features/unlock/views/active_unlock_view.dart';
+import '../../features/unlock/views/analysis_view.dart';
+import '../../features/unlock/views/recording_view.dart';
+import '../../features/unlock/views/result_view.dart';
 import '../../features/unlock/views/unlock_screen.dart';
+import '../../features/unlock/views/unlock_success_view.dart';
 import 'app_routes.dart';
 
 class AppPages {
   static final List<GetPage> routes = [
+    GetPage(
+      name: AppRoutes.splash,
+      page: () => const SplashScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.welcome,
+      page: () => const WelcomeScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.chooseApps,
+      page: () => const ChooseAppsScreen(),
+      binding: AppSelectionBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.dailyGoal,
+      page: () => const DailyGoalScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.home,
+      page: () => const HomeScreen(),
+      binding: DashboardBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.intention,
+      page: () => const IntentionScreen(),
+    ),
+    GetPage(
+      name: AppRoutes.deedDetail,
+      page: () => const DeedDetailView(),
+    ),
+    GetPage(
+      name: AppRoutes.learningMode,
+      page: () => const LearningModeView(),
+    ),
+    GetPage(
+      name: AppRoutes.recording,
+      page: () => const RecordingView(),
+    ),
+    GetPage(
+      name: AppRoutes.analysis,
+      page: () => const AnalysisView(),
+    ),
+    GetPage(
+      name: AppRoutes.result,
+      page: () => const ResultView(),
+    ),
+    GetPage(
+      name: AppRoutes.unlockSuccess,
+      page: () => const UnlockSuccessView(),
+    ),
+    GetPage(
+      name: AppRoutes.activeUnlock,
+      page: () => const ActiveUnlockView(),
+    ),
+    GetPage(
+      name: AppRoutes.deeds,
+      page: () => const DeedsLibraryView(),
+    ),
+    GetPage(
+      name: AppRoutes.progress,
+      page: () => const ProgressView(),
+    ),
+    GetPage(
+      name: AppRoutes.profile,
+      page: () => const ProfileView(),
+    ),
     GetPage(
       name: AppRoutes.onboarding,
       page: () => const OnboardingScreen(),

@@ -47,11 +47,7 @@ void main() async {
   Get.put<LimitController>(LimitController(), permanent: true);
   Get.put<UsageController>(UsageController(), permanent: true);
 
-  final initialRoute = storageService.isOnboardingComplete()
-      ? AppRoutes.dashboard
-      : AppRoutes.onboarding;
-
-  runApp(FocusDeenApp(initialRoute: initialRoute));
+  runApp(const FocusDeenApp(initialRoute: AppRoutes.splash));
 }
 
 class FocusDeenApp extends StatelessWidget {

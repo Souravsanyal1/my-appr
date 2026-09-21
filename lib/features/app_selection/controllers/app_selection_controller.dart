@@ -91,4 +91,12 @@ class AppSelectionController extends GetxController {
     _storageService.saveMonitoredPackages(monitoredPackages.toList());
     applyFilter();
   }
+
+  // Convenience aliases for onboarding flows
+  RxList<InstalledAppModel> get installedApps => allApps;
+  RxSet<String> get selectedPackages => monitoredPackages;
+  void toggleAppSelection(String pkg) => toggleAppMonitored(pkg);
+  void saveSelection() {
+    _storageService.saveMonitoredPackages(monitoredPackages.toList());
+  }
 }

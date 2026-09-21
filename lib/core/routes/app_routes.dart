@@ -1,5 +1,21 @@
 abstract class AppRoutes {
   static const String initial = '/';
+  static const String splash = '/splash';
+  static const String welcome = '/welcome';
+  static const String chooseApps = '/choose-apps';
+  static const String dailyGoal = '/daily-goal';
+  static const String home = '/home';
+  static const String intention = '/intention';
+  static const String deedDetail = '/deed-detail';
+  static const String learningMode = '/learning-mode';
+  static const String recording = '/recording';
+  static const String analysis = '/analysis';
+  static const String result = '/result';
+  static const String unlockSuccess = '/unlock-success';
+  static const String activeUnlock = '/active-unlock';
+  static const String deeds = '/deeds';
+  static const String progress = '/progress';
+  static const String profile = '/profile';
   static const String onboarding = '/onboarding';
   static const String dashboard = '/dashboard';
   static const String appSelection = '/app-selection';
