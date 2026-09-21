@@ -4,7 +4,6 @@ import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
 import 'package:focus_deen/core/services/notification_service.dart';
-import 'package:focus_deen/core/theme/theme_controller.dart';
 import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
@@ -14,21 +13,13 @@ class DashboardScreen extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.mosque, color: AppColors.primaryGold, size: 22),
-            SizedBox(width: 8),
-            Text(
-              AppStrings.appName,
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-            ),
-          ],
+        title: const Text(
+          AppStrings.appName,
+          style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
         ),
         actions: [
           // Notification Bell with unread badge
@@ -73,31 +64,6 @@ class DashboardScreen extends GetView<DashboardController> {
               ],
             );
           }),
-          // Cloud Sync / Account
-          IconButton(
-            tooltip: 'Cloud Backup & Sync',
-            icon: const Icon(Icons.cloud_outlined),
-            onPressed: () => Get.toNamed('/auth'),
-          ),
-          // Settings & Privacy
-          IconButton(
-            tooltip: 'Settings & Privacy',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Get.toNamed('/settings'),
-          ),
-          // Theme Toggle
-          Obx(
-            () => IconButton(
-              tooltip: 'Toggle Theme',
-              icon: Icon(
-                themeController.isDarkMode.value
-                    ? Icons.light_mode
-                    : Icons.dark_mode,
-                color: AppColors.primaryGold,
-              ),
-              onPressed: themeController.toggleTheme,
-            ),
-          ),
         ],
       ),
       body: RefreshIndicator(
