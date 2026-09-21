@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
@@ -8,6 +7,10 @@ import '../../features/app_selection/models/installed_app_model.dart';
 import '../../features/limits/models/app_limit_model.dart';
 
 class NativeBridgeService extends GetxService {
+  /// Web-safe platform checker that never accesses dart:io Platform
+  bool get isAndroidNative =>
+      !kIsWeb && defaultTargetPlatform == TargetPlatform.android;
+
   static const MethodChannel _methodChannel = MethodChannel(
     ChannelConstants.methodChannel,
   );
@@ -72,7 +75,7 @@ class NativeBridgeService extends GetxService {
   }
 
   void _listenToNativeEvents() {
-    if (!Platform.isAndroid) return;
+    if (!isAndroidNative) return;
 
     try {
       _eventSubscription = _eventChannel.receiveBroadcastStream().listen(
@@ -106,7 +109,7 @@ class NativeBridgeService extends GetxService {
 
   /// Check system permissions: usageStats, accessibility, overlay, notifications
   Future<Map<String, bool>> checkPermissions() async {
-    if (!Platform.isAndroid) {
+    if (!isAndroidNative) {
       return {
         'usageStats': true,
         'accessibility': true,
@@ -136,7 +139,7 @@ class NativeBridgeService extends GetxService {
 
   /// Request system permission intent
   Future<bool> requestPermission(String permissionType) async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.requestPermission,
@@ -164,7 +167,7 @@ class NativeBridgeService extends GetxService {
 
   /// Get installed launcher apps
   Future<List<InstalledAppModel>> getInstalledApps() async {
-    if (!Platform.isAndroid) {
+    if (!isAndroidNative) {
       // Return sample demo data when testing on desktop/emulator
       return _getDemoApps();
     }
@@ -194,7 +197,7 @@ class NativeBridgeService extends GetxService {
     int? startTime,
     int? endTime,
   }) async {
-    if (!Platform.isAndroid) {
+    if (!isAndroidNative) {
       return {
         'com.instagram.android': 24 * 60 * 1000,
         'com.zhiliaoapp.musically': 18 * 60 * 1000,
@@ -220,7 +223,7 @@ class NativeBridgeService extends GetxService {
 
   /// Sync limits to native service
   Future<bool> syncLimits(List<AppLimitModel> limits) async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.syncLimits,
@@ -235,7 +238,7 @@ class NativeBridgeService extends GetxService {
 
   /// Sync monitored/protected packages list to native Android service
   Future<bool> syncMonitoredPackages(List<String> packages) async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.syncMonitoredPackages,
@@ -253,7 +256,7 @@ class NativeBridgeService extends GetxService {
     String packageName,
     int durationMinutes,
   ) async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.setTemporaryUnlock,
@@ -268,7 +271,7 @@ class NativeBridgeService extends GetxService {
 
   /// Remove temporary unlock
   Future<bool> removeTemporaryUnlock(String packageName) async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.removeTemporaryUnlock,
@@ -283,7 +286,7 @@ class NativeBridgeService extends GetxService {
 
   /// Close the foreground app via accessibility service
   Future<bool> closeForegroundApp() async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.closeForegroundApp,
@@ -297,7 +300,7 @@ class NativeBridgeService extends GetxService {
 
   /// Check if battery optimization is disabled for this app
   Future<bool> isBatteryOptimizationIgnored() async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         'isBatteryOptimizationIgnored',
@@ -311,7 +314,7 @@ class NativeBridgeService extends GetxService {
 
   /// Request exemption from battery optimization
   Future<bool> requestIgnoreBatteryOptimizations() async {
-    if (!Platform.isAndroid) return true;
+    if (!isAndroidNative) return true;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         'requestIgnoreBatteryOptimizations',
@@ -359,7 +362,7 @@ class NativeBridgeService extends GetxService {
     String language = 'ar',
     String? fallbackPhonetic,
   }) async {
-    if (kIsWeb || !Platform.isAndroid) {
+    if (!isAndroidNative) {
       isSpeakingRx.value = true;
       _ttsStateController.add(true);
       Future.delayed(const Duration(seconds: 3), () {
@@ -396,7 +399,7 @@ class NativeBridgeService extends GetxService {
     double rate = 0.85,
     String? fallbackPhonetic,
   }) async {
-    if (kIsWeb || !Platform.isAndroid) {
+    if (!isAndroidNative) {
       // Fallback simulation for tests/web
       isSpeakingRx.value = true;
       _ttsStateController.add(true);
@@ -429,7 +432,7 @@ class NativeBridgeService extends GetxService {
     isSpeakingRx.value = false;
     _ttsStateController.add(false);
 
-    if (kIsWeb || !Platform.isAndroid) return;
+    if (!isAndroidNative) return;
 
     try {
       await _methodChannel.invokeMethod(ChannelConstants.stopAudio);
@@ -440,7 +443,7 @@ class NativeBridgeService extends GetxService {
 
   /// Check if the engine is actively speaking or playing audio
   Future<bool> isSpeaking() async {
-    if (kIsWeb || !Platform.isAndroid) return isSpeakingRx.value;
+    if (!isAndroidNative) return isSpeakingRx.value;
     try {
       final res = await _methodChannel.invokeMethod<bool>(
         ChannelConstants.isSpeaking,

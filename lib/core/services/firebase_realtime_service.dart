@@ -5,8 +5,20 @@ import 'package:get/get.dart';
 import 'package:focus_deen/core/services/firebase_auth_service.dart';
 import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+
 class FirebaseRealtimeService extends GetxService {
-  final FirebaseDatabase _database = FirebaseDatabase.instance;
+  FirebaseDatabase? get _database {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseDatabase.instance;
+      }
+    } catch (e) {
+      debugPrint('FirebaseDatabase instance notice: $e');
+    }
+    return null;
+  }
+
   final FirebaseAuthService _authService = Get.find<FirebaseAuthService>();
 
   StreamSubscription? _unlockSub;
@@ -16,12 +28,14 @@ class FirebaseRealtimeService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    try {
-      _database.setPersistenceEnabled(true);
-    } catch (e) {
-      debugPrint(
-        'Realtime Database persistence already enabled or not supported: $e',
-      );
+    if (!kIsWeb) {
+      try {
+        _database?.setPersistenceEnabled(true);
+      } catch (e) {
+        debugPrint(
+          'Realtime Database persistence already enabled or not supported: $e',
+        );
+      }
     }
     _listenToAuthChanges();
   }
@@ -46,11 +60,14 @@ class FirebaseRealtimeService extends GetxService {
 
   /// Broadcast live active unlock pass to Realtime Database
   Future<void> syncUnlockSession(UnlockSessionModel session) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref(
+      final ref = db.ref(
         'active_unlocks/$uid/${session.packageName.replaceAll('.', '_')}',
       );
       await ref.set({
@@ -67,11 +84,14 @@ class FirebaseRealtimeService extends GetxService {
 
   /// Remove expired or revoked unlock session from Realtime Database
   Future<void> removeUnlockSession(String packageName) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref(
+      final ref = db.ref(
         'active_unlocks/$uid/${packageName.replaceAll('.', '_')}',
       );
       await ref.remove();
@@ -82,7 +102,10 @@ class FirebaseRealtimeService extends GetxService {
 
   /// Listen for real-time unlock changes (e.g. synced across multiple devices)
   void _listenToActiveUnlocks(String uid) {
-    final ref = _database.ref('active_unlocks/$uid');
+    final db = _database;
+    if (db == null) return;
+
+    final ref = db.ref('active_unlocks/$uid');
     _unlockSub = ref.onValue.listen((event) {
       final data = event.snapshot.value;
       if (data is Map) {
@@ -115,11 +138,14 @@ class FirebaseRealtimeService extends GetxService {
     required bool inFocusSession,
     int? remainingSeconds,
   }) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref('live_status/$uid');
+      final ref = db.ref('live_status/$uid');
       await ref.update({
         'inFocusSession': inFocusSession,
         'focusSessionRemainingSeconds': remainingSeconds ?? 0,
@@ -132,11 +158,14 @@ class FirebaseRealtimeService extends GetxService {
 
   /// Real-time presence management
   Future<void> updateUserPresence({required bool isOnline}) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final statusRef = _database.ref('live_status/$uid');
+      final statusRef = db.ref('live_status/$uid');
       if (isOnline) {
         await statusRef.update({
           'isOnline': true,
@@ -166,11 +195,14 @@ class FirebaseRealtimeService extends GetxService {
     required int usedMinutes,
     required int limitMinutes,
   }) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref('realtime_events/$uid/latest_block');
+      final ref = db.ref('realtime_events/$uid/latest_block');
       await ref.set({
         'type': 'app_blocked',
         'packageName': packageName,
@@ -186,11 +218,14 @@ class FirebaseRealtimeService extends GetxService {
 
   /// Push live tasbih count to Realtime Database
   Future<void> syncTasbihLive(int count) async {
+    final db = _database;
+    if (db == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      final ref = _database.ref('live_status/$uid');
+      final ref = db.ref('live_status/$uid');
       await ref.update({
         'liveTasbihCount': count,
         'lastTasbihTimestamp': ServerValue.timestamp,

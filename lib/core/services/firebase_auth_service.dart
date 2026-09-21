@@ -2,8 +2,19 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+
 class FirebaseAuthService extends GetxService {
-  final FirebaseAuth _auth = FirebaseAuth.instance;
+  FirebaseAuth? get _auth {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseAuth.instance;
+      }
+    } catch (e) {
+      debugPrint('FirebaseAuth instance notice: $e');
+    }
+    return null;
+  }
 
   final Rx<User?> currentUser = Rx<User?>(null);
 
@@ -15,15 +26,22 @@ class FirebaseAuthService extends GetxService {
   @override
   void onInit() {
     super.onInit();
-    currentUser.value = _auth.currentUser;
-    _auth.authStateChanges().listen((user) {
-      currentUser.value = user;
-    });
+    try {
+      final auth = _auth;
+      if (auth != null) {
+        currentUser.value = auth.currentUser;
+        auth.authStateChanges().listen((user) {
+          currentUser.value = user;
+        });
+      }
+    } catch (e) {
+      debugPrint('FirebaseAuth onInit notice: $e');
+    }
   }
 
   Future<UserCredential?> signInAnonymously() async {
     try {
-      return await _auth.signInAnonymously();
+      return await _auth?.signInAnonymously();
     } catch (e) {
       debugPrint('Error signInAnonymously: $e');
       return null;
@@ -35,7 +53,7 @@ class FirebaseAuthService extends GetxService {
     required String password,
   }) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      return await _auth?.signInWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -50,7 +68,7 @@ class FirebaseAuthService extends GetxService {
     required String password,
   }) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(
+      return await _auth?.createUserWithEmailAndPassword(
         email: email.trim(),
         password: password,
       );
@@ -62,7 +80,7 @@ class FirebaseAuthService extends GetxService {
 
   Future<void> signOut() async {
     try {
-      await _auth.signOut();
+      await _auth?.signOut();
     } catch (e) {
       debugPrint('Error signOut: $e');
     }

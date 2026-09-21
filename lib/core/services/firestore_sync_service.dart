@@ -6,8 +6,20 @@ import 'package:focus_deen/core/services/firebase_auth_service.dart';
 import 'package:focus_deen/core/services/storage_service.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
 
+import 'package:firebase_core/firebase_core.dart';
+
 class FirestoreSyncService extends GetxService {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  FirebaseFirestore? get _firestore {
+    try {
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseFirestore.instance;
+      }
+    } catch (e) {
+      debugPrint('FirebaseFirestore instance notice: $e');
+    }
+    return null;
+  }
+
   final FirebaseAuthService _authService = Get.find<FirebaseAuthService>();
   final StorageService _storageService = Get.find<StorageService>();
 
@@ -34,7 +46,10 @@ class FirestoreSyncService extends GetxService {
 
   /// Real-time listener for limits updated in Cloud Firestore
   void _listenToCloudLimits(String uid) {
-    _limitsSub = _firestore
+    final firestore = _firestore;
+    if (firestore == null) return;
+
+    _limitsSub = firestore
         .collection('users')
         .doc(uid)
         .collection('limits')
@@ -59,6 +74,9 @@ class FirestoreSyncService extends GetxService {
 
   /// Back up local limits and configuration to Cloud Firestore
   Future<bool> backupToCloud() async {
+    final firestore = _firestore;
+    if (firestore == null) return false;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return false;
 
@@ -67,8 +85,8 @@ class FirestoreSyncService extends GetxService {
       final limits = _storageService.getLimits();
       final monitored = _storageService.getMonitoredPackages();
 
-      final batch = _firestore.batch();
-      final userRef = _firestore.collection('users').doc(uid);
+      final batch = firestore.batch();
+      final userRef = firestore.collection('users').doc(uid);
 
       batch.set(userRef, {
         'email': _authService.email,
@@ -101,6 +119,9 @@ class FirestoreSyncService extends GetxService {
     required int focusScore,
     required int completedFocusSessions,
   }) async {
+    final firestore = _firestore;
+    if (firestore == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
@@ -109,7 +130,7 @@ class FirestoreSyncService extends GetxService {
           .toIso8601String()
           .split('T')
           .first; // YYYY-MM-DD
-      await _firestore
+      await firestore
           .collection('users')
           .doc(uid)
           .collection('daily_stats')
@@ -128,11 +149,14 @@ class FirestoreSyncService extends GetxService {
 
   /// Save tasbih lifetime count to Firestore
   Future<void> saveTasbihStats(int totalCount) async {
+    final firestore = _firestore;
+    if (firestore == null) return;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return;
 
     try {
-      await _firestore.collection('users').doc(uid).set({
+      await firestore.collection('users').doc(uid).set({
         'lifetimeTasbihCount': totalCount,
         'lastTasbihUpdate': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
@@ -143,12 +167,15 @@ class FirestoreSyncService extends GetxService {
 
   /// Restore cloud backup into local storage
   Future<bool> restoreFromCloud() async {
+    final firestore = _firestore;
+    if (firestore == null) return false;
+
     final uid = _authService.uid;
     if (uid.isEmpty) return false;
 
     isSyncing.value = true;
     try {
-      final userDoc = await _firestore.collection('users').doc(uid).get();
+      final userDoc = await firestore.collection('users').doc(uid).get();
       if (!userDoc.exists || userDoc.data() == null) return false;
 
       final data = userDoc.data()!;
@@ -160,7 +187,7 @@ class FirestoreSyncService extends GetxService {
       }
 
       // Fetch limits subcollection
-      final limitsSnap = await _firestore
+      final limitsSnap = await firestore
           .collection('users')
           .doc(uid)
           .collection('limits')
