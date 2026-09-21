@@ -329,6 +329,19 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 result.success(true)
             }
 
+            "syncSettings" -> {
+                // Persist overlay settings (min score, unlock duration) so the accessibility
+                // service can read them from SharedPreferences without needing a Flutter engine.
+                val minScore = call.argument<Int>("minScore") ?: 80
+                val unlockDurationMinutes = call.argument<Int>("unlockDurationMinutes") ?: 30
+                val prefs = context.getSharedPreferences("focusdeen_monitor_prefs", android.content.Context.MODE_PRIVATE)
+                prefs.edit()
+                    .putInt("min_score", minScore)
+                    .putInt("unlock_duration_minutes", unlockDurationMinutes)
+                    .apply()
+                result.success(true)
+            }
+
             "getUnlockSessions" -> {
                 val sessions = appMonitorService.getActiveUnlockSessions().map {
                     mapOf(

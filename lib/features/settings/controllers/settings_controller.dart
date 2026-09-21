@@ -78,6 +78,9 @@ class SettingsController extends GetxController {
   void setUnlockThreshold(int threshold) {
     unlockThreshold.value = threshold;
     _storageService.write('unlock_threshold_percentage', threshold);
+    // Sync to native SharedPreferences so the overlay reads the updated threshold
+    final duration = _storageService.read<int>('unlock_duration_minutes') ?? 30;
+    _nativeBridge.syncSettings(minScore: threshold, unlockDurationMinutes: duration);
   }
 
   void toggleNotifyBeforeLimit(bool val) {

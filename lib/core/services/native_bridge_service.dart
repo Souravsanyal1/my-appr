@@ -284,6 +284,28 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Sync overlay settings (minScore, unlockDurationMinutes) to native SharedPreferences.
+  /// Called whenever the user changes these values in Settings.
+  Future<bool> syncSettings({
+    required int minScore,
+    required int unlockDurationMinutes,
+  }) async {
+    if (!isAndroidNative) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        'syncSettings',
+        {
+          'minScore': minScore,
+          'unlockDurationMinutes': unlockDurationMinutes,
+        },
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error syncing settings: $e');
+      return false;
+    }
+  }
+
   /// Close the foreground app via accessibility service
   Future<bool> closeForegroundApp() async {
     if (!isAndroidNative) return true;

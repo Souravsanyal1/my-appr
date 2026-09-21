@@ -2,6 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+// ignore: unused_import
+import 'lock_overlay_main.dart'; // Ensures lockOverlayMain entrypoint is included in the build
+
 import 'core/blocker/blocker_service.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
@@ -56,6 +59,11 @@ void main() async {
   // Sync monitored/protected packages to Android Native Layer
   final initialMonitored = storageService.getMonitoredPackages();
   nativeBridge.syncMonitoredPackages(initialMonitored);
+
+  // Sync overlay settings (min score threshold, unlock duration) to native SharedPreferences
+  final minScore = storageService.read<int>('unlock_threshold_percentage') ?? 80;
+  final unlockDuration = storageService.read<int>('unlock_duration_minutes') ?? 30;
+  nativeBridge.syncSettings(minScore: minScore, unlockDurationMinutes: unlockDuration);
 
   // Initialize Global State Controllers
   Get.put<LimitController>(LimitController(), permanent: true);
