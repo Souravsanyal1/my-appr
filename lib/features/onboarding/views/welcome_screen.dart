@@ -1,193 +1,222 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/responsive/responsive_layout.dart';
+import '../../../core/services/language_service.dart';
 
 class WelcomeScreen extends StatelessWidget {
   const WelcomeScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
-          child: Column(
-            children: [
-              // Top Bar: Language pill
-              Align(
-                alignment: Alignment.topRight,
-                child: Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 6,
+    final languageService = LanguageService.to;
+
+    return Obx(() {
+      final isBn = languageService.isBangla;
+
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: SafeArea(
+          child: ResponsiveScaffoldBody(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 24.0,
+              vertical: 16.0,
+            ),
+            child: Column(
+              children: [
+                // Top Bar: Interactive Language pill
+                Align(
+                  alignment: Alignment.topRight,
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      onTap: () =>
+                          languageService.showLanguageSelector(context),
+                      borderRadius: BorderRadius.circular(20),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              isBn ? '🇧🇩 বাং' : '🇬🇧 EN',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.brightGreen,
+                              ),
+                            ),
+                            const SizedBox(width: 4),
+                            const Icon(
+                              Icons.keyboard_arrow_down,
+                              size: 16,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                   ),
+                ),
+
+                const Spacer(),
+
+                // Phone Preview Mockup Graphic
+                Container(
+                  width: 170,
+                  height: 230,
                   decoration: BoxDecoration(
                     color: AppColors.surface,
-                    borderRadius: BorderRadius.circular(20),
-                    border: Border.all(color: AppColors.border),
+                    borderRadius: BorderRadius.circular(28),
+                    border: Border.all(color: AppColors.border, width: 2),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primaryGreen.withValues(alpha: 0.18),
+                        blurRadius: 32,
+                        offset: const Offset(0, 10),
+                      ),
+                    ],
                   ),
-                  child: const Row(
-                    mainAxisSize: MainAxisSize.min,
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
                     children: [
+                      Container(
+                        width: 52,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.15),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.self_improvement,
+                          color: AppColors.brightGreen,
+                          size: 28,
+                        ),
+                      ),
+                      const SizedBox(height: 14),
                       Text(
-                        'EN',
-                        style: TextStyle(
-                          fontSize: 12,
+                        isBn ? 'বিরতি ও আমল' : 'Pause & Recite',
+                        style: const TextStyle(
+                          fontSize: 13,
                           fontWeight: FontWeight.bold,
                           color: AppColors.textPrimary,
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.keyboard_arrow_down,
-                        size: 16,
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 10,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: AppColors.brightGreen.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Text(
+                          isBn ? 'অ্যাপ আনলক' : 'Unlock Apps',
+                          style: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brightGreen,
+                          ),
+                        ),
                       ),
                     ],
                   ),
                 ),
-              ),
 
-              const Spacer(),
+                const SizedBox(height: 40),
 
-              // Phone Preview Mockup Graphic
-              Container(
-                width: 170,
-                height: 230,
-                decoration: BoxDecoration(
-                  color: AppColors.surface,
-                  borderRadius: BorderRadius.circular(28),
-                  border: Border.all(color: AppColors.border, width: 2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primaryGreen.withValues(alpha: 0.18),
-                      blurRadius: 32,
-                      offset: const Offset(0, 10),
-                    ),
-                  ],
-                ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    Container(
-                      width: 52,
-                      height: 52,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryGreen.withValues(alpha: 0.15),
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(
-                        Icons.self_improvement,
-                        color: AppColors.brightGreen,
-                        size: 28,
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    const Text(
-                      'Pause & Recite',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.brightGreen.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Text(
-                        'Unlock Apps',
-                        style: TextStyle(
-                          fontSize: 10,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.brightGreen,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-
-              const SizedBox(height: 40),
-
-              // Main Headline
-              const Text(
-                'Make your screen time\nmeaningful again',
-                textAlign: TextAlign.center,
-                style: TextStyle(
-                  fontSize: 26,
-                  fontWeight: FontWeight.bold,
-                  height: 1.3,
-                  color: AppColors.textPrimary,
-                ),
-              ),
-              const SizedBox(height: 12),
-
-              // Description
-              const Padding(
-                padding: EdgeInsets.symmetric(horizontal: 16.0),
-                child: Text(
-                  'Do a short Islamic learning task before opening distracting apps.',
+                // Main Headline
+                Text(
+                  isBn
+                      ? 'স্ক্রিন টাইমকে আবার\nঅর্থপূর্ণ করে তুলুন'
+                      : 'Make your screen time\nmeaningful again',
                   textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    height: 1.4,
-                    color: AppColors.textSecondary,
+                  style: const TextStyle(
+                    fontSize: 26,
+                    fontWeight: FontWeight.bold,
+                    height: 1.3,
+                    color: AppColors.textPrimary,
                   ),
                 ),
-              ),
+                const SizedBox(height: 12),
 
-              const Spacer(),
-
-              // Primary Action CTA: Pill Button
-              SizedBox(
-                width: double.infinity,
-                height: 56,
-                child: ElevatedButton(
-                  onPressed: () => Get.toNamed('/choose-apps'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGreen,
-                    foregroundColor: Colors.black,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(28),
+                // Description
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16.0),
+                  child: Text(
+                    isBn
+                        ? 'অন্য অ্যাপে ঢোকার আগে একটি ছোট ইসলামিক আমল সম্পন্ন করুন।'
+                        : 'Do a short Islamic learning task before opening distracting apps.',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.4,
+                      color: AppColors.textSecondary,
                     ),
-                    elevation: 0,
-                  ),
-                  child: const Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Text(
-                        "Let's get started",
-                        style: TextStyle(
-                          fontSize: 16,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
-                    ],
                   ),
                 ),
-              ),
-              const SizedBox(height: 14),
 
-              // Footer: Terms & Privacy
-              const Text(
-                'By continuing, you agree to Terms & Privacy Policy',
-                style: TextStyle(fontSize: 11, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 8),
-            ],
+                const Spacer(),
+
+                // Primary Action CTA: Pill Button
+                SizedBox(
+                  width: double.infinity,
+                  height: 56,
+                  child: ElevatedButton(
+                    onPressed: () => Get.toNamed('/choose-apps'),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primaryGreen,
+                      foregroundColor: Colors.black,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(28),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Text(
+                          isBn ? 'শুরু করা যাক' : "Let's get started",
+                          style: const TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(Icons.arrow_forward_rounded, size: 18),
+                      ],
+                    ),
+                  ),
+                ),
+                const SizedBox(height: 14),
+
+                // Footer: Terms & Privacy
+                Text(
+                  isBn
+                      ? 'চালিয়ে যাওয়ার মাধ্যমে আপনি শর্তাবলী ও গোপনীয়তা নীতিতে সম্মত হচ্ছেন'
+                      : 'By continuing, you agree to Terms & Privacy Policy',
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+                const SizedBox(height: 8),
+              ],
+            ),
           ),
         ),
-      ),
-    );
+      );
+    });
   }
 }
