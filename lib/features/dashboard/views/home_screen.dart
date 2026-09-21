@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/routes/app_routes.dart';
 import '../../../core/services/gamification_service.dart';
 import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
+import '../../../core/services/notification_service.dart';
 import '../../../core/services/storage_service.dart';
 import '../../settings/views/profile_view.dart';
 import '../../statistics/views/progress_view.dart';
@@ -173,9 +175,65 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
 
-                // Right: Streak Counter + Language Switcher
+                // Right: Notification Bell + Language Switcher + Streak
                 Row(
                   children: [
+                    // Notification Bell with unread badge
+                    Obx(() {
+                      final notifService = Get.isRegistered<NotificationService>()
+                          ? NotificationService.to
+                          : null;
+                      final unread = notifService?.unreadCount.value ?? 0;
+                      return GestureDetector(
+                        onTap: () => Get.toNamed(AppRoutes.notifications),
+                        child: Stack(
+                          clipBehavior: Clip.none,
+                          children: [
+                            Container(
+                              width: 36,
+                              height: 36,
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                shape: BoxShape.circle,
+                                border: Border.all(color: AppColors.border),
+                              ),
+                              child: const Center(
+                                child: Icon(
+                                  Iconsax.notification,
+                                  size: 18,
+                                  color: AppColors.textSecondary,
+                                ),
+                              ),
+                            ),
+                            if (unread > 0)
+                              Positioned(
+                                top: -2,
+                                right: -2,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
+                                  decoration: const BoxDecoration(
+                                    color: AppColors.brightGreen,
+                                    shape: BoxShape.circle,
+                                  ),
+                                  child: Center(
+                                    child: Text(
+                                      unread > 9 ? '9+' : '$unread',
+                                      style: const TextStyle(
+                                        fontSize: 9,
+                                        fontWeight: FontWeight.bold,
+                                        color: Colors.black,
+                                      ),
+                                    ),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                      );
+                    }),
+                    const SizedBox(width: 8),
+
                     // Language Switcher Chip
                     GestureDetector(
                       onTap: () => languageService.showLanguageSelector(context),

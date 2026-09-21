@@ -1,1 +1,55 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"focusdeen-f8295","appId":"1:422731970610:android:89acc8d98969405851242b","fileOutput":"android/app/google-services.json"}},"dart":{"lib/firebase_options.dart":{"projectId":"focusdeen-f8295","configurations":{"android":"1:422731970610:android:89acc8d98969405851242b","ios":"1:422731970610:ios:95a76790e657a29d51242b","macos":"1:422731970610:ios:95a76790e657a29d51242b","web":"1:422731970610:web:842803442ed762e551242b","windows":"1:422731970610:web:ef43a111c4aa865f51242b"}}}}}}
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "functions": [
+    {
+      "source": "functions",
+      "codebase": "default",
+      "ignore": [
+        "node_modules",
+        ".git",
+        "firebase-debug.log",
+        "firebase-debug.*.log"
+      ]
+    }
+  ],
+  "hosting": {
+    "public": "admin_panel/dist",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**"
+    ],
+    "rewrites": [
+      {
+        "source": "**",
+        "destination": "/index.html"
+      }
+    ]
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "focusdeen-f8295",
+          "appId": "1:422731970610:android:89acc8d98969405851242b",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "focusdeen-f8295",
+          "configurations": {
+            "android": "1:422731970610:android:89acc8d98969405851242b",
+            "ios": "1:422731970610:ios:95a76790e657a29d51242b",
+            "macos": "1:422731970610:ios:95a76790e657a29d51242b",
+            "web": "1:422731970610:web:842803442ed762e551242b",
+            "windows": "1:422731970610:web:ef43a111c4aa865f51242b"
+          }
+        }
+      }
+    }
+  }
+}

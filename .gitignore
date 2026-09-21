@@ -46,3 +46,11 @@ app.*.map.json
 .kotlin/
 android/.kotlin/
 *.salive
+
+# Firebase & Web Admin
+.firebase/
+admin_panel/node_modules/
+admin_panel/dist/
+admin_panel/.env
+functions/node_modules/
+.env

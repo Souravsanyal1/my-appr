@@ -34,4 +34,5 @@ abstract class AppRoutes {
   static const String statistics = '/statistics';
   static const String settings = '/settings';
   static const String auth = '/auth';
+  static const String notifications = '/notifications';
 }

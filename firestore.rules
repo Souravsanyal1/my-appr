@@ -1,0 +1,70 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if caller is an authenticated administrator
+    // In Firebase Auth, admin users sign in with email/password (provider == 'password')
+    function isAdmin() {
+      return request.auth != null &&
+        (request.auth.token.firebase.sign_in_provider == 'password' ||
+         request.auth.token.admin == true);
+    }
+
+    // Helper: Check if caller is authenticated (including Firebase Anonymous Auth)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ─── Users Collection ──────────────────────────────────────────
+    // Mobile app users are anonymous (no login screen).
+    // Each device sets and updates its own document: users/{deviceId}
+    match /users/{deviceId} {
+      // Admin web panel can read and list all devices
+      allow read, list: if isAdmin();
+
+      // Mobile app can read its own device document
+      allow get: if isAuthenticated();
+
+      // Anonymous mobile app creates its own device document
+      allow create: if isAuthenticated() &&
+        request.resource.data.deviceId == deviceId;
+
+      // Anonymous mobile app updates lastActiveAt, fcmToken, and stats
+      // Admin has full update permission
+      allow update: if isAdmin() || (
+        isAuthenticated() &&
+        request.resource.data.deviceId == deviceId
+      );
+
+      // Only admin can delete user records
+      allow delete: if isAdmin();
+    }
+
+    // ─── Notifications Log Collection ──────────────────────────────
+    // Tracks dispatched FCM broadcasts and multicast delivery metrics
+    match /notifications_log/{logId} {
+      // Strictly admin-only access
+      allow read, write, list: if isAdmin();
+    }
+
+    // ─── Scheduled Notifications Collection ────────────────────────
+    // Stores queued reminders for client pre-scheduling & server fallback
+    match /scheduled_notifications/{notifId} {
+      // Strictly admin-only access
+      allow read, write, list: if isAdmin();
+    }
+
+    // ─── Broadcast Notifications Collection (100% Free Tier) ────────
+    // Admin creates broadcasts; client apps read in real-time
+    match /notifications_broadcast/{broadcastId} {
+      allow read, list: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Deny all other unlisted collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

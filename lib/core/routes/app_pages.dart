@@ -35,6 +35,7 @@ import '../../features/unlock/views/analysis_view.dart';
 import '../../features/unlock/views/recording_view.dart';
 import '../../features/unlock/views/result_view.dart';
 import '../../features/unlock/views/retry_result_view.dart';
+import '../../features/notifications/views/notifications_inbox_view.dart';
 import '../../features/unlock/views/unlock_screen.dart';
 import '../../features/unlock/views/unlock_success_view.dart';
 import 'app_routes.dart';
@@ -114,5 +115,9 @@ class AppPages {
     GetPage(name: AppRoutes.statistics, page: () => const StatisticsScreen()),
     GetPage(name: AppRoutes.settings, page: () => const SettingsScreen()),
     GetPage(name: AppRoutes.auth, page: () => const AuthScreen()),
+    GetPage(
+      name: AppRoutes.notifications,
+      page: () => const NotificationsInboxView(),
+    ),
   ];
 }
