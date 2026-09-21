@@ -81,6 +81,8 @@ class AppSelectionController extends GetxController {
     }
   }
 
+  final RxString selectedCategory = 'all'.obs;
+
   void setSearchQuery(String query) {
     searchQuery.value = query;
     applyFilter();
@@ -88,6 +90,11 @@ class AppSelectionController extends GetxController {
 
   void setFilter(String filter) {
     selectedFilter.value = filter;
+    applyFilter();
+  }
+
+  void setCategory(String category) {
+    selectedCategory.value = category;
     applyFilter();
   }
 
@@ -102,6 +109,65 @@ class AppSelectionController extends GetxController {
       list = list.where((a) => !a.isSystemApp).toList();
     }
 
+    if (selectedCategory.value != 'all') {
+      final cat = selectedCategory.value.toLowerCase();
+      list = list.where((a) {
+        final appCat = a.category.toLowerCase();
+        final name = a.appName.toLowerCase();
+        final pkg = a.packageName.toLowerCase();
+
+        switch (cat) {
+          case 'social':
+            return appCat.contains('social') ||
+                pkg.contains('insta') ||
+                name.contains('instagram') ||
+                pkg.contains('face') ||
+                name.contains('facebook') ||
+                pkg.contains('tiktok') ||
+                name.contains('tiktok') ||
+                pkg.contains('snap') ||
+                name.contains('snapchat') ||
+                pkg.contains('tweet') ||
+                name.contains('twitter') ||
+                pkg.contains('reddit');
+          case 'messaging':
+            return appCat.contains('messag') ||
+                pkg.contains('what') ||
+                name.contains('whatsapp') ||
+                pkg.contains('tele') ||
+                name.contains('telegram') ||
+                pkg.contains('discord') ||
+                name.contains('discord') ||
+                pkg.contains('orca') ||
+                name.contains('messenger') ||
+                pkg.contains('chat');
+          case 'video':
+            return appCat.contains('video') ||
+                appCat.contains('entertainment') ||
+                pkg.contains('tube') ||
+                name.contains('youtube') ||
+                pkg.contains('netfl') ||
+                name.contains('netflix') ||
+                pkg.contains('twitch') ||
+                name.contains('twitch') ||
+                pkg.contains('stream');
+          case 'gaming':
+            return appCat.contains('game') ||
+                pkg.contains('game') ||
+                name.contains('game') ||
+                pkg.contains('play') ||
+                pkg.contains('subway') ||
+                name.contains('subway') ||
+                pkg.contains('candy') ||
+                name.contains('candy') ||
+                pkg.contains('roblox') ||
+                name.contains('roblox');
+          default:
+            return true;
+        }
+      }).toList();
+    }
+
     if (searchQuery.value.trim().isNotEmpty) {
       final q = searchQuery.value.toLowerCase().trim();
       list = list.where((a) {
@@ -111,6 +177,20 @@ class AppSelectionController extends GetxController {
     }
 
     filteredApps.assignAll(list);
+  }
+
+  void selectAllVisible() {
+    for (final app in filteredApps) {
+      monitoredPackages.add(app.packageName);
+    }
+    _storageService.saveMonitoredPackages(monitoredPackages.toList());
+    applyFilter();
+  }
+
+  void clearAllSelections() {
+    monitoredPackages.clear();
+    _storageService.saveMonitoredPackages([]);
+    applyFilter();
   }
 
   void toggleAppMonitored(String packageName) {

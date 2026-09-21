@@ -240,9 +240,13 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 backgroundExecutor.execute {
                     try {
                         val apps = getInstalledAppsList()
-                        result.success(apps)
+                        mainHandler.post {
+                            result.success(apps)
+                        }
                     } catch (e: Exception) {
-                        result.error("APPS_ERROR", e.localizedMessage, null)
+                        mainHandler.post {
+                            result.error("APPS_ERROR", e.localizedMessage, null)
+                        }
                     }
                 }
             }
@@ -259,9 +263,13 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                         } else {
                             usageStatsService.getTodayUsageForPackages(packages)
                         }
-                        result.success(usageMap)
+                        mainHandler.post {
+                            result.success(usageMap)
+                        }
                     } catch (e: Exception) {
-                        result.error("USAGE_ERROR", e.localizedMessage, null)
+                        mainHandler.post {
+                            result.error("USAGE_ERROR", e.localizedMessage, null)
+                        }
                     }
                 }
             }
@@ -400,29 +408,48 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
 
     private fun getInstalledAppsList(): List<Map<String, Any?>> {
         val pm = context.packageManager
+        val appList = mutableListOf<Map<String, Any?>>()
+        val seenPackages = mutableSetOf<String>()
+
+        // 1. Primary: Query all launcher activities
         val mainIntent = Intent(Intent.ACTION_MAIN, null).apply {
             addCategory(Intent.CATEGORY_LAUNCHER)
         }
 
-        val resolveInfos = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-            pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
-        } else {
-            @Suppress("DEPRECATION")
-            pm.queryIntentActivities(mainIntent, 0)
+        val resolveInfos = try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.queryIntentActivities(mainIntent, PackageManager.ResolveInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.queryIntentActivities(mainIntent, 0)
+            }
+        } catch (e: Exception) {
+            emptyList()
         }
 
-        val appList = mutableListOf<Map<String, Any?>>()
-        val seenPackages = mutableSetOf<String>()
-
         for (resolveInfo in resolveInfos) {
-            val pkg = resolveInfo.activityInfo.packageName
+            val activityInfo = resolveInfo.activityInfo ?: continue
+            val pkg = activityInfo.packageName ?: continue
             if (pkg == context.packageName || seenPackages.contains(pkg)) {
                 continue
             }
             seenPackages.add(pkg)
 
-            val appName = resolveInfo.loadLabel(pm).toString()
-            val isSystemApp = (resolveInfo.activityInfo.applicationInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            val appName = try {
+                resolveInfo.loadLabel(pm).toString()
+            } catch (e: Exception) {
+                pkg
+            }
+
+            val appInfo = activityInfo.applicationInfo
+            val isSystemApp = if (appInfo != null) {
+                (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+            } else {
+                false
+            }
+
+            val category = inferAppCategory(pkg, appName, appInfo)
+
             val iconBase64 = try {
                 val drawable = resolveInfo.loadIcon(pm)
                 drawableToBase64(drawable)
@@ -435,34 +462,126 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                     "packageName" to pkg,
                     "appName" to appName,
                     "isSystemApp" to isSystemApp,
+                    "category" to category,
                     "iconBase64" to iconBase64
                 )
             )
+        }
+
+        // 2. Secondary fallback: Query all installed applications to catch any launchable user apps
+        try {
+            val installedApps = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                pm.getInstalledApplications(PackageManager.ApplicationInfoFlags.of(0L))
+            } else {
+                @Suppress("DEPRECATION")
+                pm.getInstalledApplications(0)
+            }
+
+            for (appInfo in installedApps) {
+                val pkg = appInfo.packageName ?: continue
+                if (pkg == context.packageName || seenPackages.contains(pkg)) {
+                    continue
+                }
+
+                // Check if user launchable
+                val launchIntent = pm.getLaunchIntentForPackage(pkg)
+                if (launchIntent != null) {
+                    seenPackages.add(pkg)
+                    val appName = try {
+                        pm.getApplicationLabel(appInfo).toString()
+                    } catch (e: Exception) {
+                        pkg
+                    }
+                    val isSystemApp = (appInfo.flags and ApplicationInfo.FLAG_SYSTEM) != 0
+                    val category = inferAppCategory(pkg, appName, appInfo)
+                    val iconBase64 = try {
+                        val drawable = pm.getApplicationIcon(appInfo)
+                        drawableToBase64(drawable)
+                    } catch (e: Exception) {
+                        null
+                    }
+
+                    appList.add(
+                        mapOf(
+                            "packageName" to pkg,
+                            "appName" to appName,
+                            "isSystemApp" to isSystemApp,
+                            "category" to category,
+                            "iconBase64" to iconBase64
+                        )
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
         }
 
         // Sort alphabetically by appName
         return appList.sortedBy { (it["appName"] as? String)?.lowercase() ?: "" }
     }
 
-    private fun drawableToBase64(drawable: Drawable): String {
-        val bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
-            drawable.bitmap
-        } else {
-            val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 96
-            val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 96
-            val b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-            val canvas = Canvas(b)
-            drawable.setBounds(0, 0, canvas.width, canvas.height)
-            drawable.draw(canvas)
-            b
+    private fun inferAppCategory(pkg: String, name: String, appInfo: ApplicationInfo?): String {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O && appInfo != null) {
+            when (appInfo.category) {
+                ApplicationInfo.CATEGORY_GAME -> return "Gaming"
+                ApplicationInfo.CATEGORY_AUDIO -> return "Music & Audio"
+                ApplicationInfo.CATEGORY_VIDEO -> return "Video & Entertainment"
+                ApplicationInfo.CATEGORY_IMAGE -> return "Photo & Video"
+                ApplicationInfo.CATEGORY_SOCIAL -> return "Social media"
+                ApplicationInfo.CATEGORY_NEWS -> return "News"
+                ApplicationInfo.CATEGORY_MAPS -> return "Navigation"
+                ApplicationInfo.CATEGORY_PRODUCTIVITY -> return "Productivity"
+            }
         }
 
-        // Scale down to max 96x96 to keep memory & transmission fast
-        val scaled = Bitmap.createScaledBitmap(bitmap, 96, 96, true)
-        val stream = ByteArrayOutputStream()
-        scaled.compress(Bitmap.CompressFormat.PNG, 85, stream)
-        val byteArray = stream.toByteArray()
-        return Base64.encodeToString(byteArray, Base64.NO_WRAP)
+        val lower = "${pkg.lowercase()} ${name.lowercase()}"
+        return when {
+            lower.contains("game") || lower.contains("play") || lower.contains("clash") ||
+                lower.contains("craft") || lower.contains("subway") || lower.contains("candy") ||
+                lower.contains("pubg") || lower.contains("freefire") || lower.contains("roblox") -> "Gaming"
+            lower.contains("social") || lower.contains("facebook") || lower.contains("insta") ||
+                lower.contains("tiktok") || lower.contains("musically") || lower.contains("snap") ||
+                lower.contains("reddit") || lower.contains("tweet") || lower.contains("twitter") ||
+                lower.contains("x") || lower.contains("threads") || lower.contains("pin") -> "Social media"
+            lower.contains("chat") || lower.contains("messag") || lower.contains("what") ||
+                lower.contains("tele") || lower.contains("discord") || lower.contains("viber") ||
+                lower.contains("imo") || lower.contains("signal") -> "Messaging"
+            lower.contains("tube") || lower.contains("video") || lower.contains("stream") ||
+                lower.contains("netfl") || lower.contains("prime") || lower.contains("movie") ||
+                lower.contains("tv") || lower.contains("twitch") || lower.contains("disney") -> "Video & Entertainment"
+            lower.contains("music") || lower.contains("audio") || lower.contains("spot") ||
+                lower.contains("sound") -> "Music & Audio"
+            lower.contains("shop") || lower.contains("amazon") || lower.contains("daraz") ||
+                lower.contains("store") || lower.contains("shopee") || lower.contains("ali") -> "Shopping"
+            lower.contains("chrome") || lower.contains("browser") || lower.contains("fire") ||
+                lower.contains("opera") || lower.contains("edge") -> "Browser"
+            else -> "Social media"
+        }
+    }
+
+    private fun drawableToBase64(drawable: Drawable): String? {
+        return try {
+            val bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
+                drawable.bitmap
+            } else {
+                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 40
+                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 40
+                val b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+                val canvas = Canvas(b)
+                drawable.setBounds(0, 0, canvas.width, canvas.height)
+                drawable.draw(canvas)
+                b
+            }
+
+            // Scale down to compact 40x40 to keep binder IPC buffer payload tiny and fast (<1KB per app)
+            val scaled = Bitmap.createScaledBitmap(bitmap, 40, 40, true)
+            val stream = ByteArrayOutputStream()
+            scaled.compress(Bitmap.CompressFormat.PNG, 75, stream)
+            val byteArray = stream.toByteArray()
+            Base64.encodeToString(byteArray, Base64.NO_WRAP)
+        } catch (e: Exception) {
+            null
+        }
     }
 
     private fun openPermissionSettings(type: String?) {

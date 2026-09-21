@@ -329,28 +329,124 @@ class NativeBridgeService extends GetxService {
   List<InstalledAppModel> _getDemoApps() {
     return const [
       InstalledAppModel(
+        packageName: 'com.facebook.katana',
+        appName: 'Facebook',
+        category: 'Social media',
+      ),
+      InstalledAppModel(
         packageName: 'com.instagram.android',
         appName: 'Instagram',
+        category: 'Social media',
       ),
       InstalledAppModel(
         packageName: 'com.zhiliaoapp.musically',
         appName: 'TikTok',
-      ),
-      InstalledAppModel(
-        packageName: 'com.facebook.katana',
-        appName: 'Facebook',
+        category: 'Social media',
       ),
       InstalledAppModel(
         packageName: 'com.google.android.youtube',
         appName: 'YouTube',
-      ),
-      InstalledAppModel(
-        packageName: 'com.twitter.android',
-        appName: 'X (Twitter)',
+        category: 'Video & Entertainment',
       ),
       InstalledAppModel(
         packageName: 'com.snapchat.android',
         appName: 'Snapchat',
+        category: 'Social media',
+      ),
+      InstalledAppModel(
+        packageName: 'com.twitter.android',
+        appName: 'X (Twitter)',
+        category: 'Social media',
+      ),
+      InstalledAppModel(
+        packageName: 'com.whatsapp',
+        appName: 'WhatsApp',
+        category: 'Messaging',
+      ),
+      InstalledAppModel(
+        packageName: 'org.telegram.messenger',
+        appName: 'Telegram',
+        category: 'Messaging',
+      ),
+      InstalledAppModel(
+        packageName: 'com.facebook.orca',
+        appName: 'Messenger',
+        category: 'Messaging',
+      ),
+      InstalledAppModel(
+        packageName: 'com.reddit.frontpage',
+        appName: 'Reddit',
+        category: 'Social media',
+      ),
+      InstalledAppModel(
+        packageName: 'com.discord',
+        appName: 'Discord',
+        category: 'Messaging',
+      ),
+      InstalledAppModel(
+        packageName: 'com.pinterest',
+        appName: 'Pinterest',
+        category: 'Social media',
+      ),
+      InstalledAppModel(
+        packageName: 'com.netflix.mediaclient',
+        appName: 'Netflix',
+        category: 'Video & Entertainment',
+      ),
+      InstalledAppModel(
+        packageName: 'com.spotify.music',
+        appName: 'Spotify',
+        category: 'Music & Audio',
+      ),
+      InstalledAppModel(
+        packageName: 'com.android.chrome',
+        appName: 'Google Chrome',
+        category: 'Browser',
+      ),
+      InstalledAppModel(
+        packageName: 'tv.twitch.android.app',
+        appName: 'Twitch',
+        category: 'Video & Entertainment',
+      ),
+      InstalledAppModel(
+        packageName: 'com.dts.freefireth',
+        appName: 'Free Fire',
+        category: 'Gaming',
+      ),
+      InstalledAppModel(
+        packageName: 'com.tencent.ig',
+        appName: 'PUBG Mobile',
+        category: 'Gaming',
+      ),
+      InstalledAppModel(
+        packageName: 'com.roblox.client',
+        appName: 'Roblox',
+        category: 'Gaming',
+      ),
+      InstalledAppModel(
+        packageName: 'com.king.candycrushsaga',
+        appName: 'Candy Crush Saga',
+        category: 'Gaming',
+      ),
+      InstalledAppModel(
+        packageName: 'com.kiloo.subwaysurf',
+        appName: 'Subway Surfers',
+        category: 'Gaming',
+      ),
+      InstalledAppModel(
+        packageName: 'com.daraz.android',
+        appName: 'Daraz Online Shopping',
+        category: 'Shopping',
+      ),
+      InstalledAppModel(
+        packageName: 'com.amazon.mShop.android.shopping',
+        appName: 'Amazon Shopping',
+        category: 'Shopping',
+      ),
+      InstalledAppModel(
+        packageName: 'com.linkedin.android',
+        appName: 'LinkedIn',
+        category: 'Social media',
       ),
     ];
   }
