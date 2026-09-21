@@ -4,7 +4,10 @@ import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/language_service.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/widgets/app_icon_widget.dart';
 import '../../../core/widgets/rank_shield_card.dart';
+import '../../app_selection/controllers/app_selection_controller.dart';
+import '../../app_selection/models/installed_app_model.dart';
 import '../controllers/blocking_controller.dart';
 
 class BlockedScreen extends StatelessWidget {
@@ -123,49 +126,79 @@ class BlockedScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Wrap(
-                          spacing: 8,
-                          runSpacing: 8,
-                          children: monitoredPackages.take(6).map((pkg) {
-                            final simpleName = pkg
-                                .split('.')
-                                .last
-                                .capitalizeFirst ??
-                                'App';
-                            return Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 10,
-                                vertical: 6,
-                              ),
-                              decoration: BoxDecoration(
-                                color: AppColors.surface,
-                                borderRadius: BorderRadius.circular(10),
-                                border: Border.all(
-                                  color: AppColors.border,
-                                ),
-                              ),
-                              child: Row(
+                        Obx(() {
+                          // Prefer AppSelectionController cache for real icons;
+                          // gracefully falls back to package-derived name if not loaded.
+                          final selCtrl = Get.isRegistered<AppSelectionController>()
+                              ? Get.find<AppSelectionController>()
+                              : null;
+                          return Wrap(
+                            spacing: 12,
+                            runSpacing: 12,
+                            children: monitoredPackages.take(6).map((pkg) {
+                              InstalledAppModel? appModel;
+                              try {
+                                appModel = selCtrl?.allApps.firstWhere(
+                                  (a) => a.packageName == pkg,
+                                );
+                              } catch (_) {
+                                appModel = null;
+                              }
+                              final displayName = appModel?.appName ??
+                                  pkg.split('.').last.capitalizeFirst ??
+                                  'App';
+                              return Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(
-                                    Iconsax.lock_1,
-                                    size: 13,
-                                    color: Color(0xFFFF5252),
+                                  Stack(
+                                    children: [
+                                      AppIconWidget(
+                                        app: appModel,
+                                        packageName: appModel == null ? pkg : null,
+                                        appName: appModel == null ? displayName : null,
+                                        size: 52,
+                                        borderRadius: 14,
+                                      ),
+                                      // Lock badge overlay
+                                      Positioned(
+                                        right: 0,
+                                        bottom: 0,
+                                        child: Container(
+                                          width: 18,
+                                          height: 18,
+                                          decoration: const BoxDecoration(
+                                            color: Color(0xFFFF5252),
+                                            shape: BoxShape.circle,
+                                          ),
+                                          child: const Icon(
+                                            Iconsax.lock_1,
+                                            size: 10,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                   ),
-                                  const SizedBox(width: 6),
-                                  Text(
-                                    simpleName,
-                                    style: const TextStyle(
-                                      fontSize: 12,
-                                      fontWeight: FontWeight.w500,
-                                      color: AppColors.textPrimary,
+                                  const SizedBox(height: 6),
+                                  SizedBox(
+                                    width: 56,
+                                    child: Text(
+                                      displayName,
+                                      textAlign: TextAlign.center,
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: const TextStyle(
+                                        fontSize: 10,
+                                        color: AppColors.textSecondary,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
                                 ],
-                              ),
-                            );
-                          }).toList(),
-                        ),
+                              );
+                            }).toList(),
+                          );
+                        }),
                       ],
                     ),
                   ),

@@ -405,3 +405,36 @@ exports.cleanupInactiveTokens = functions.pubsub
     console.log(`Cleaned up tokens for ${snap.size} inactive devices.`);
     return null;
   });
+
+/**
+ * Firestore Trigger: onUserCreated
+ * Atomically increments RTDB liveStats/totalUsers when a new user document is created.
+ */
+exports.onUserCreated = functions.firestore
+  .document('users/{deviceId}')
+  .onCreate(async (snap, context) => {
+    try {
+      const rtdb = admin.database();
+      await rtdb.ref('liveStats/totalUsers').transaction((current) => (current || 0) + 1);
+      console.log(`[RTDB Sync] Increment totalUsers for new device: ${context.params.deviceId}`);
+    } catch (err) {
+      console.error('[RTDB Sync] onUserCreated error:', err);
+    }
+  });
+
+/**
+ * Firestore Trigger: onUserDeleted
+ * Atomically decrements RTDB liveStats/totalUsers when a user document is deleted.
+ */
+exports.onUserDeleted = functions.firestore
+  .document('users/{deviceId}')
+  .onDelete(async (snap, context) => {
+    try {
+      const rtdb = admin.database();
+      await rtdb.ref('liveStats/totalUsers').transaction((current) => Math.max(0, (current || 1) - 1));
+      console.log(`[RTDB Sync] Decrement totalUsers for deleted device: ${context.params.deviceId}`);
+    } catch (err) {
+      console.error('[RTDB Sync] onUserDeleted error:', err);
+    }
+  });
+

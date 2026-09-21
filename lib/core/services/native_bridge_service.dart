@@ -364,7 +364,7 @@ class NativeBridgeService extends GetxService {
   }
 
   List<InstalledAppModel> _getDemoApps() {
-    return const [
+    return [
       InstalledAppModel(
         packageName: 'com.facebook.katana',
         appName: 'Facebook',

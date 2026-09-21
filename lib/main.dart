@@ -9,6 +9,7 @@ import 'lock_overlay_main.dart'; // Ensures lockOverlayMain entrypoint is includ
 import 'core/blocker/blocker_service.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
+import 'core/services/data_layer_service.dart';
 import 'core/services/device_identity_service.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firebase_realtime_service.dart';
@@ -59,6 +60,7 @@ void main() async {
   Get.put<FirebaseAuthService>(FirebaseAuthService(), permanent: true);
   Get.put<FirestoreSyncService>(FirestoreSyncService(), permanent: true);
   Get.put<FirebaseRealtimeService>(FirebaseRealtimeService(), permanent: true);
+  Get.put<DataLayerService>(DataLayerService(), permanent: true);
 
   // Initialize Core Services
   final nativeBridge = Get.put<NativeBridgeService>(

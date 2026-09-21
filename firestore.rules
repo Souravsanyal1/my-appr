@@ -4,7 +4,6 @@ service cloud.firestore {
   match /databases/{database}/documents {
 
     // Helper: Check if caller is an authenticated administrator
-    // In Firebase Auth, admin users sign in with email/password (provider == 'password')
     function isAdmin() {
       return request.auth != null &&
         (request.auth.token.firebase.sign_in_provider == 'password' ||
@@ -17,8 +16,7 @@ service cloud.firestore {
     }
 
     // ─── Users Collection ──────────────────────────────────────────
-    // Mobile app users are anonymous (no login screen).
-    // Each device sets and updates its own document: users/{deviceId}
+    // users/{deviceId}
     match /users/{deviceId} {
       // Admin web panel can read and list all devices
       allow read, list: if isAdmin();
@@ -28,10 +26,9 @@ service cloud.firestore {
 
       // Anonymous mobile app creates its own device document
       allow create: if isAuthenticated() &&
-        request.resource.data.deviceId == deviceId;
+        (request.resource.data.deviceId == deviceId || !('deviceId' in request.resource.data));
 
-      // Anonymous mobile app updates lastActiveAt, fcmToken, and stats
-      // Admin has full update permission
+      // Anonymous mobile app updates lastActiveAt, fcmToken, lockedApps, and stats
       allow update: if isAdmin() || isAuthenticated();
 
       // Only admin can delete user records
@@ -43,25 +40,32 @@ service cloud.firestore {
       allow read, write: if isAuthenticated();
     }
 
-    // ─── Notifications Log Collection ──────────────────────────────
-    // Tracks dispatched FCM broadcasts and multicast delivery metrics
+    // ─── Notifications Collection ──────────────────────────────────
+    // Permanent notification history & delivery metrics
+    match /notifications/{id} {
+      allow read, list: if isAuthenticated();
+      allow write: if isAdmin();
+    }
+
+    // Legacy / Admin logs compatibility
     match /notifications_log/{logId} {
-      // Strictly admin-only access
       allow read, write, list: if isAdmin();
     }
 
-    // ─── Scheduled Notifications Collection ────────────────────────
-    // Stores queued reminders for client pre-scheduling & server fallback
     match /scheduled_notifications/{notifId} {
-      // Strictly admin-only access
       allow read, write, list: if isAdmin();
     }
 
-    // ─── Broadcast Notifications Collection (100% Free Tier) ────────
-    // Admin creates broadcasts; client apps read in real-time
     match /notifications_broadcast/{broadcastId} {
       allow read, list: if isAuthenticated();
       allow write: if isAdmin();
+    }
+
+    // ─── Deed History Collection ───────────────────────────────────
+    // deedHistory/{deviceId}/items/{id}
+    match /deedHistory/{deviceId}/items/{id} {
+      allow read, write: if isAuthenticated();
+      allow list: if isAdmin() || isAuthenticated();
     }
 
     // Deny all other unlisted collections by default
