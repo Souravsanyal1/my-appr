@@ -345,6 +345,22 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 result.success(success)
             }
 
+            "launchApp" -> {
+                val packageName = call.argument<String>("packageName") ?: ""
+                try {
+                    val launchIntent = context.packageManager.getLaunchIntentForPackage(packageName)
+                    if (launchIntent != null) {
+                        launchIntent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                        context.startActivity(launchIntent)
+                        result.success(true)
+                    } else {
+                        result.success(false)
+                    }
+                } catch (e: Exception) {
+                    result.error("LAUNCH_ERROR", e.localizedMessage, null)
+                }
+            }
+
             "isBatteryOptimizationIgnored" -> {
                 val powerManager = context.getSystemService(Context.POWER_SERVICE) as? android.os.PowerManager
                 val isIgnored = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {

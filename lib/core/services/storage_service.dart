@@ -112,6 +112,120 @@ class StorageService extends GetxService {
     return hash != null && hash.isNotEmpty;
   }
 
+  // User Profile
+  String getUserName() => _box.read<String>('user_name') ?? 'Sourav Sanyal';
+  void setUserName(String name) => _box.write('user_name', name);
+
+  // Daily Goal (in minutes)
+  int getDailyGoalMinutes() => _box.read<int>('daily_goal_minutes') ?? 30;
+  void setDailyGoalMinutes(int mins) => _box.write('daily_goal_minutes', mins);
+
+  // Minimum Passing Score
+  int getMinimumPassingScore() =>
+      _box.read<int>('unlock_score_threshold') ?? 80;
+  void setMinimumPassingScore(int score) =>
+      _box.write('unlock_score_threshold', score);
+
+  // Default Unlock Duration (in minutes)
+  int getDefaultUnlockDurationMinutes() =>
+      _box.read<int>('default_unlock_duration_minutes') ?? 30;
+  void setDefaultUnlockDurationMinutes(int mins) =>
+      _box.write('default_unlock_duration_minutes', mins);
+
+  // Real Statistics & Tracking
+  int getTotalDeedsCount() => _box.read<int>('total_deeds_count') ?? 0;
+  int getCompletedDeedsCount() =>
+      _box.read<int>('completed_deeds_count') ?? 0;
+  int getUnlockedMinutesTotal() =>
+      _box.read<int>('unlocked_minutes_total') ?? 0;
+
+  int getAverageScore() {
+    final List<dynamic>? scores =
+        _box.read<List<dynamic>>('pronunciation_scores');
+    if (scores == null || scores.isEmpty) return 0;
+    final valid = scores.map((e) => (e as num).toInt()).toList();
+    if (valid.isEmpty) return 0;
+    final sum = valid.fold<int>(0, (prev, element) => prev + element);
+    return (sum / valid.length).round();
+  }
+
+  int getStreakDays() {
+    _checkStreak();
+    return _box.read<int>('streak_days') ?? 1;
+  }
+
+  List<int> getWeeklyActiveDays() {
+    _checkStreak();
+    final raw = _box.read<List<dynamic>>('weekly_active_days');
+    if (raw == null || raw.isEmpty) return [DateTime.now().weekday];
+    return raw.map((e) => (e as num).toInt()).toList();
+  }
+
+  void _checkStreak() {
+    final today = DateTime.now();
+    final todayStr =
+        '${today.year}-${today.month.toString().padLeft(2, '0')}-${today.day.toString().padLeft(2, '0')}';
+    final lastActive = _box.read<String>('last_active_date_str');
+    if (lastActive == null) {
+      _box.write('last_active_date_str', todayStr);
+      _box.write('streak_days', 1);
+      _box.write('weekly_active_days', [today.weekday]);
+      return;
+    }
+    if (lastActive == todayStr) return; // already recorded today
+
+    final lastDate = DateTime.tryParse(lastActive);
+    if (lastDate != null) {
+      final diffDays = DateTime(today.year, today.month, today.day)
+          .difference(DateTime(lastDate.year, lastDate.month, lastDate.day))
+          .inDays;
+      if (diffDays == 1) {
+        final currentStreak = _box.read<int>('streak_days') ?? 1;
+        _box.write('streak_days', currentStreak + 1);
+      } else if (diffDays > 1) {
+        _box.write('streak_days', 1);
+      }
+
+      final currentWeekDays =
+          (_box.read<List<dynamic>>('weekly_active_days') ?? [])
+              .map((e) => (e as num).toInt())
+              .toSet();
+      if (diffDays >= 7 || today.weekday < lastDate.weekday) {
+        currentWeekDays.clear();
+      }
+      currentWeekDays.add(today.weekday);
+      _box.write('weekly_active_days', currentWeekDays.toList());
+      _box.write('last_active_date_str', todayStr);
+    }
+  }
+
+  void recordDeedAttempt({
+    required int score,
+    required bool passed,
+    required int unlockMinutes,
+  }) {
+    _checkStreak();
+    final total = getTotalDeedsCount() + 1;
+    _box.write('total_deeds_count', total);
+
+    final scores = (_box.read<List<dynamic>>('pronunciation_scores') ?? [])
+        .map((e) => (e as num).toInt())
+        .toList();
+    scores.add(score);
+    if (scores.length > 50) scores.removeAt(0);
+    _box.write('pronunciation_scores', scores);
+
+    if (passed) {
+      final completed = getCompletedDeedsCount() + 1;
+      _box.write('completed_deeds_count', completed);
+
+      if (unlockMinutes > 0) {
+        final totalMinutes = getUnlockedMinutesTotal() + unlockMinutes;
+        _box.write('unlocked_minutes_total', totalMinutes);
+      }
+    }
+  }
+
   // Generic key-value helpers
   T? read<T>(String key) => _box.read<T>(key);
   void write(String key, dynamic value) => _box.write(key, value);

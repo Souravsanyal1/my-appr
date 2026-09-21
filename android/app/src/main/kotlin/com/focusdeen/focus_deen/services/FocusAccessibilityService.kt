@@ -162,6 +162,7 @@ class FocusAccessibilityService : AccessibilityService() {
                 flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP or Intent.FLAG_ACTIVITY_SINGLE_TOP
                 putExtra("route", "/blocked")
                 putExtra("packageName", currentPackage)
+                putExtra("blocked_pkg", currentPackage)
                 putExtra("appName", check.appName)
                 putExtra("usedMinutes", check.usedMinutes)
                 putExtra("limitMinutes", check.limitMinutes)

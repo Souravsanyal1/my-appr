@@ -20,6 +20,7 @@ import '../../features/limits/views/limit_screen.dart';
 import '../../features/onboarding/bindings/onboarding_binding.dart';
 import '../../features/onboarding/views/choose_apps_screen.dart';
 import '../../features/onboarding/views/daily_goal_screen.dart';
+import '../../features/onboarding/views/permission_setup_screen.dart';
 import '../../features/onboarding/views/end_screen.dart';
 import '../../features/onboarding/views/onboarding_screen.dart';
 import '../../features/onboarding/views/splash_screen.dart';
@@ -46,6 +47,10 @@ class AppPages {
       name: AppRoutes.chooseApps,
       page: () => const ChooseAppsScreen(),
       binding: AppSelectionBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.permissionSetup,
+      page: () => const PermissionSetupScreen(),
     ),
     GetPage(name: AppRoutes.dailyGoal, page: () => const DailyGoalScreen()),
     GetPage(

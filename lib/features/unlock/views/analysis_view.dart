@@ -89,6 +89,12 @@ class _AnalysisViewState extends State<AnalysisView> {
                   final args = (Get.arguments is Map)
                       ? Map<String, dynamic>.from(Get.arguments as Map)
                       : <String, dynamic>{};
+                  final unlockMins = args['duration'] as int? ?? 30;
+                  storage.recordDeedAttempt(
+                    score: res.overallScore,
+                    passed: res.isPassing,
+                    unlockMinutes: res.isPassing ? unlockMins : 0,
+                  );
                   if (res.isPassing) {
                     Get.offNamed(
                       '/result',

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
+import 'core/blocker/blocker_service.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
 import 'core/services/firebase_auth_service.dart';
@@ -50,6 +51,7 @@ void main() async {
   );
   Get.put<PinSecurityService>(PinSecurityService(), permanent: true);
   Get.put<ThemeController>(ThemeController(), permanent: true);
+  Get.put<BlockerService>(BlockerService().init(), permanent: true);
 
   // Sync monitored/protected packages to Android Native Layer
   final initialMonitored = storageService.getMonitoredPackages();

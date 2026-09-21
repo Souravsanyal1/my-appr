@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/language_service.dart';
+import '../../../core/services/storage_service.dart';
 import '../../../core/widgets/progress_ring.dart';
 
 class ProfileView extends StatelessWidget {
@@ -10,9 +11,15 @@ class ProfileView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final languageService = LanguageService.to;
+    final storage = Get.find<StorageService>();
 
     return Obx(() {
       final isBn = languageService.isBangla;
+      final userName = storage.getUserName();
+      final goalMins = storage.getDailyGoalMinutes();
+      final protectedCount = storage.getMonitoredPackages().length;
+      final streak = storage.getStreakDays();
+      final minScore = storage.getMinimumPassingScore();
 
       return SafeArea(
         child: SingleChildScrollView(
@@ -60,9 +67,9 @@ class ProfileView extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: 12),
-              const Text(
-                'Sourav Sanyal',
-                style: TextStyle(
+              Text(
+                userName,
+                style: const TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
                   color: AppColors.textPrimary,
@@ -89,17 +96,17 @@ class ProfileView extends StatelessWidget {
                   children: [
                     _buildJourneyItem(
                       isBn ? 'দৈনিক লক্ষ্য' : 'Daily Goal',
-                      '30m',
+                      '${goalMins}m',
                     ),
                     Container(width: 1, height: 36, color: AppColors.border),
                     _buildJourneyItem(
                       isBn ? 'সুরক্ষিত' : 'Protected',
-                      isBn ? '৩ টি অ্যাপ' : '3 Apps',
+                      isBn ? '$protectedCount টি অ্যাপ' : '$protectedCount Apps',
                     ),
                     Container(width: 1, height: 36, color: AppColors.border),
                     _buildJourneyItem(
                       isBn ? 'ধারাবাহিকতা' : 'Streak',
-                      isBn ? '৭ দিন' : '7 Days',
+                      isBn ? '$streak দিন' : '$streak Days',
                     ),
                   ],
                 ),
@@ -132,7 +139,9 @@ class ProfileView extends StatelessWidget {
                 title: isBn
                     ? 'আনলক নিয়ম ও নূন্যতম স্কোর'
                     : 'Unlock Rules & Passing Score',
-                subtitle: isBn ? 'বর্তমান সীমা: ৮০%' : 'Current threshold: 80%',
+                subtitle: isBn
+                    ? 'বর্তমান সীমা: $minScore%'
+                    : 'Current threshold: $minScore%',
                 onTap: () => Get.toNamed('/settings'),
               ),
               const SizedBox(height: 10),

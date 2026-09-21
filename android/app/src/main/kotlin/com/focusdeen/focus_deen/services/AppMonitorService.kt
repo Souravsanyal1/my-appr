@@ -83,40 +83,58 @@ class AppMonitorService private constructor(private val context: Context) {
     }
 
     fun setTemporaryUnlock(packageName: String, durationMinutes: Int) {
-        val expiresAt = System.currentTimeMillis() + (durationMinutes * 60 * 1000L)
+        val now = System.currentTimeMillis()
+        val durationMillis = durationMinutes * 60 * 1000L
+        val expiresAt = now + durationMillis
+        val elapsedAtExpiry = android.os.SystemClock.elapsedRealtime() + durationMillis
+
         unlockSessionsMap[packageName] = UnlockSession(packageName, expiresAt, durationMinutes)
-        prefs.edit().putLong("unlock_$packageName", expiresAt).apply()
+        prefs.edit()
+            .putLong("unlock_$packageName", expiresAt)
+            .putLong("unlock_elapsed_$packageName", elapsedAtExpiry)
+            .apply()
+
+        // Schedule exact alarm for reliable timed auto re-lock
+        com.focusdeen.focus_deen.receivers.RelockScheduler.scheduleRelock(context, packageName, expiresAt)
     }
 
     fun removeTemporaryUnlock(packageName: String) {
         unlockSessionsMap.remove(packageName)
-        prefs.edit().remove("unlock_$packageName").apply()
+        prefs.edit()
+            .remove("unlock_$packageName")
+            .remove("unlock_elapsed_$packageName")
+            .apply()
+        com.focusdeen.focus_deen.receivers.RelockScheduler.cancelRelock(context, packageName)
     }
 
     fun isTemporarilyUnlocked(packageName: String): Boolean {
         val now = System.currentTimeMillis()
+        val currentElapsed = android.os.SystemClock.elapsedRealtime()
 
         // 1. Check in-memory session
         val memorySession = unlockSessionsMap[packageName]
         if (memorySession != null) {
-            if (now < memorySession.expiresAtMillis) {
+            val savedElapsed = prefs.getLong("unlock_elapsed_$packageName", 0L)
+            val isElapsedValid = if (savedElapsed > 0L) currentElapsed < savedElapsed else true
+            if (now < memorySession.expiresAtMillis && isElapsedValid) {
                 return true
             } else {
-                unlockSessionsMap.remove(packageName)
-                prefs.edit().remove("unlock_$packageName").apply()
+                removeTemporaryUnlock(packageName)
                 return false
             }
         }
 
         // 2. Check persistent SharedPreferences (in case process restarted)
         val savedExpiry = prefs.getLong("unlock_$packageName", 0L)
+        val savedElapsed = prefs.getLong("unlock_elapsed_$packageName", 0L)
         if (savedExpiry > 0L) {
-            if (now < savedExpiry) {
+            val isElapsedValid = if (savedElapsed > 0L) currentElapsed < savedElapsed else true
+            if (now < savedExpiry && isElapsedValid) {
                 val remainingMinutes = (((savedExpiry - now) / 60000L).toInt()).coerceAtLeast(1)
                 unlockSessionsMap[packageName] = UnlockSession(packageName, savedExpiry, remainingMinutes)
                 return true
             } else {
-                prefs.edit().remove("unlock_$packageName").apply()
+                removeTemporaryUnlock(packageName)
                 return false
             }
         }

@@ -106,10 +106,13 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget _buildHomeTab(BuildContext context, bool isBn) {
     final storage = Get.find<StorageService>();
     final languageService = LanguageService.to;
-    final completedDeeds =
-        (storage.read<List<dynamic>>('completed_lesson_ids') ?? []).length;
-    const totalDeeds = 6;
+    final completedDeeds = storage.getCompletedDeedsCount();
+    final totalDeeds =
+        storage.getTotalDeedsCount() > 0 ? storage.getTotalDeedsCount() : 6;
     final progressPercent = (completedDeeds / totalDeeds).clamp(0.0, 1.0);
+    final userName = storage.getUserName();
+    final unlockDuration = storage.getDefaultUnlockDurationMinutes();
+    final monitoredPkgs = storage.getMonitoredPackages();
 
     return SafeArea(
       child: SingleChildScrollView(
@@ -127,7 +130,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isBn ? 'শুভ সকাল, Sourav' : 'Good morning, Sourav',
+                        isBn ? 'শুভ সকাল, $userName' : 'Good morning, $userName',
                         style: const TextStyle(
                           fontSize: 22,
                           fontWeight: FontWeight.bold,
@@ -309,11 +312,11 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                   const SizedBox(height: 16),
                   ProgressRing(
-                    progress: progressPercent > 0 ? progressPercent : 0.33,
+                    progress: progressPercent,
                     size: 110,
                     strokeWidth: 8,
                     centerChild: Text(
-                      '${((progressPercent > 0 ? progressPercent : 0.33) * 100).toInt()}%',
+                      '${(progressPercent * 100).toInt()}%',
                       style: const TextStyle(
                         fontSize: 28,
                         fontWeight: FontWeight.w800,
@@ -324,8 +327,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   const SizedBox(height: 16),
                   Text(
                     isBn
-                        ? '${completedDeeds > 0 ? completedDeeds : 2} / $totalDeeds টি আমল সম্পন্ন'
-                        : '${completedDeeds > 0 ? completedDeeds : 2} / $totalDeeds deeds completed',
+                        ? '$completedDeeds / $totalDeeds টি আমল সম্পন্ন'
+                        : '$completedDeeds / $totalDeeds deeds completed',
                     style: const TextStyle(
                       fontSize: 13,
                       color: AppColors.textMuted,
@@ -337,28 +340,77 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 24),
 
             // Protected Apps Section
-            Text(
-              isBn ? 'সুরক্ষিত অ্যাপসমূহ' : 'Protected Apps',
-              style: const TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                Text(
+                  isBn ? 'সুরক্ষিত অ্যাপসমূহ' : 'Protected Apps',
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                GestureDetector(
+                  onTap: () => Get.toNamed('/app-selection'),
+                  child: Text(
+                    isBn ? 'পরিবর্তন করুন' : 'Edit',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.brightGreen,
+                    ),
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 12),
             SingleChildScrollView(
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildAppPill('TikTok'),
-                  const SizedBox(width: 8),
-                  _buildAppPill('Instagram'),
-                  const SizedBox(width: 8),
-                  _buildAppPill('Facebook'),
-                  const SizedBox(width: 8),
-                  _buildAppPill('YouTube'),
-                  const SizedBox(width: 8),
-                  _buildAppPill('Snapchat'),
+                  ...monitoredPkgs.map((pkg) {
+                    final appName = _getFriendlyAppName(pkg);
+                    return Padding(
+                      padding: const EdgeInsets.only(right: 8.0),
+                      child: _buildAppPill(appName),
+                    );
+                  }),
+                  GestureDetector(
+                    onTap: () => Get.toNamed('/app-selection'),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 10,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.surface,
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.5),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(
+                            Icons.add_rounded,
+                            size: 16,
+                            color: AppColors.brightGreen,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isBn ? 'যোগ করুন' : 'Add',
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.brightGreen,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -393,7 +445,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         ),
                       ),
                       Text(
-                        isBn ? '🌿 ৩০ মিনিট ব্যবহার' : '🌿 30m access',
+                        isBn
+                            ? '🌿 $unlockDuration মিনিট ব্যবহার'
+                            : '🌿 ${unlockDuration}m access',
                         style: const TextStyle(
                           fontSize: 12,
                           color: AppColors.textSecondary,
@@ -450,6 +504,24 @@ class _HomeScreenState extends State<HomeScreen> {
         ),
       ),
     );
+  }
+
+  String _getFriendlyAppName(String pkg) {
+    final lower = pkg.toLowerCase();
+    if (lower.contains('tiktok') ||
+        lower.contains('musically') ||
+        lower.contains('trill')) {
+      return 'TikTok';
+    }
+    if (lower.contains('instagram')) return 'Instagram';
+    if (lower.contains('facebook') || lower.contains('katana')) return 'Facebook';
+    if (lower.contains('youtube')) return 'YouTube';
+    if (lower.contains('snapchat')) return 'Snapchat';
+    if (lower.contains('twitter') || lower.contains('.x.')) return 'X';
+    if (lower.contains('reddit')) return 'Reddit';
+    if (lower.contains('whatsapp')) return 'WhatsApp';
+    final parts = pkg.split('.');
+    return parts.length > 1 ? parts.last.capitalizeFirst ?? parts.last : pkg;
   }
 
   Widget _buildAppPill(String name) {

@@ -198,7 +198,7 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView>
                 width: double.infinity,
                 height: 54,
                 child: ElevatedButton(
-                  onPressed: () {
+                  onPressed: () async {
                     ScaffoldMessenger.of(context).showSnackBar(
                       SnackBar(
                         content: Text(
@@ -206,8 +206,11 @@ class _ActiveUnlockViewState extends State<ActiveUnlockView>
                               ? '${_session.appName} খোলা হচ্ছে...'
                               : 'Launching ${_session.appName}...',
                         ),
+                        duration: const Duration(seconds: 1),
                       ),
                     );
+                    await Get.find<NativeBridgeService>()
+                        .launchApp(_session.packageName);
                   },
                   style: ElevatedButton.styleFrom(
                     backgroundColor: AppColors.primaryGreen,

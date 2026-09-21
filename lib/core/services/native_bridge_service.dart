@@ -298,6 +298,21 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Launch an installed application by package name
+  Future<bool> launchApp(String packageName) async {
+    if (!isAndroidNative) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        'launchApp',
+        {'packageName': packageName},
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error launching app $packageName: $e');
+      return false;
+    }
+  }
+
   /// Check if battery optimization is disabled for this app
   Future<bool> isBatteryOptimizationIgnored() async {
     if (!isAndroidNative) return true;
