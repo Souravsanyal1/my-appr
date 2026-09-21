@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/services/language_service.dart';
 import '../../../core/services/storage_service.dart';
+import '../../../core/widgets/app_icon_widget.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../../learning/views/deeds_library_view.dart';
 import '../../settings/views/profile_view.dart';
@@ -258,13 +259,15 @@ class _HomeScreenState extends State<HomeScreen> {
               scrollDirection: Axis.horizontal,
               child: Row(
                 children: [
-                  _buildAppPill('TikTok', Icons.music_note_rounded),
+                  _buildAppPill('TikTok'),
                   const SizedBox(width: 8),
-                  _buildAppPill('Instagram', Icons.camera_alt_outlined),
+                  _buildAppPill('Instagram'),
                   const SizedBox(width: 8),
-                  _buildAppPill('Facebook', Icons.people_outline_rounded),
+                  _buildAppPill('Facebook'),
                   const SizedBox(width: 8),
-                  _buildAppPill('YouTube', Icons.play_arrow_outlined),
+                  _buildAppPill('YouTube'),
+                  const SizedBox(width: 8),
+                  _buildAppPill('Snapchat'),
                 ],
               ),
             ),
@@ -358,9 +361,9 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _buildAppPill(String name, IconData icon) {
+  Widget _buildAppPill(String name) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
@@ -369,7 +372,7 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(icon, size: 16, color: AppColors.brightGreen),
+          AppIconWidget(appName: name, size: 20, borderRadius: 6),
           const SizedBox(width: 8),
           Text(
             name,

@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/language_service.dart';
+import '../../../core/widgets/app_icon_widget.dart';
 import '../../../core/widgets/progress_ring.dart';
 import '../../app_selection/controllers/app_selection_controller.dart';
 import '../../app_selection/models/installed_app_model.dart';
@@ -11,6 +13,7 @@ class ChooseAppsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(AppSelectionController());
+    final isBn = LanguageService.to.isBangla;
 
     return Scaffold(
       backgroundColor: AppColors.background,
@@ -33,9 +36,11 @@ class ChooseAppsScreen extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Headline
-              const Text(
-                'What should we\nprotect?',
-                style: TextStyle(
+              Text(
+                isBn
+                    ? 'কোন অ্যাপগুলো\nসুরক্ষা করবেন?'
+                    : 'What should we\nprotect?',
+                style: const TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.bold,
                   height: 1.25,
@@ -45,16 +50,55 @@ class ChooseAppsScreen extends StatelessWidget {
               const SizedBox(height: 8),
 
               // Subtitle
-              const Text(
-                'Choose the apps you want to use more intentionally.',
-                style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+              Text(
+                isBn
+                    ? 'যে অ্যাপগুলো আপনি সচেতনভাবে ব্যবহার করতে চান সেগুলো বেছে নিন।'
+                    : 'Choose the apps you want to use more intentionally.',
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textSecondary,
+                ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 18),
+
+              // Search Bar
+              Container(
+                decoration: BoxDecoration(
+                  color: AppColors.surface,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: AppColors.border),
+                ),
+                child: TextField(
+                  onChanged: (val) => controller.setSearchQuery(val),
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 14,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: isBn ? 'অ্যাপ খুঁজুন...' : 'Search apps...',
+                    hintStyle: const TextStyle(
+                      color: AppColors.textSecondary,
+                      fontSize: 14,
+                    ),
+                    prefixIcon: const Icon(
+                      Icons.search,
+                      color: AppColors.textSecondary,
+                      size: 20,
+                    ),
+                    border: InputBorder.none,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 14,
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 18),
 
               // List of Protected Apps
               Expanded(
                 child: Obx(() {
-                  final apps = controller.installedApps;
+                  final apps = controller.filteredApps;
                   if (apps.isEmpty && controller.isLoading.value) {
                     return const Center(
                       child: CircularProgressIndicator(
@@ -63,31 +107,36 @@ class ChooseAppsScreen extends StatelessWidget {
                     );
                   }
 
-                  // Default preset list if native list is loading
+                  // Default preset list if native list is loading or empty
                   final displayList = apps.isNotEmpty
                       ? apps
                       : [
-                          InstalledAppModel(
+                          const InstalledAppModel(
                             appName: 'TikTok',
                             packageName: 'com.zhiliaoapp.musically',
                             category: 'Social media',
                           ),
-                          InstalledAppModel(
+                          const InstalledAppModel(
                             appName: 'Instagram',
                             packageName: 'com.instagram.android',
                             category: 'Social media',
                           ),
-                          InstalledAppModel(
+                          const InstalledAppModel(
                             appName: 'Facebook',
                             packageName: 'com.facebook.katana',
                             category: 'Social media',
                           ),
-                          InstalledAppModel(
+                          const InstalledAppModel(
                             appName: 'YouTube',
                             packageName: 'com.google.android.youtube',
                             category: 'Video & entertainment',
                           ),
-                          InstalledAppModel(
+                          const InstalledAppModel(
+                            appName: 'Snapchat',
+                            packageName: 'com.snapchat.android',
+                            category: 'Social media',
+                          ),
+                          const InstalledAppModel(
                             appName: 'Reddit',
                             packageName: 'com.reddit.frontpage',
                             category: 'Social media',
@@ -109,31 +158,12 @@ class ChooseAppsScreen extends StatelessWidget {
                             controller.toggleAppSelection(app.packageName),
                         child: Row(
                           children: [
-                            Container(
-                              width: 44,
-                              height: 44,
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? AppColors.primaryGreen.withValues(
-                                        alpha: 0.18,
-                                      )
-                                    : AppColors.surfaceLight,
-                                shape: BoxShape.circle,
-                              ),
-                              child: Center(
-                                child: Text(
-                                  app.appName.isNotEmpty
-                                      ? app.appName[0].toUpperCase()
-                                      : 'A',
-                                  style: TextStyle(
-                                    fontWeight: FontWeight.bold,
-                                    fontSize: 18,
-                                    color: isSelected
-                                        ? AppColors.brightGreen
-                                        : AppColors.textPrimary,
-                                  ),
-                                ),
-                              ),
+                            // Authentic App Icon with fallback
+                            AppIconWidget(
+                              app: app,
+                              size: 46,
+                              borderRadius: 12,
+                              isSelected: isSelected,
                             ),
                             const SizedBox(width: 14),
                             Expanded(
@@ -142,6 +172,8 @@ class ChooseAppsScreen extends StatelessWidget {
                                 children: [
                                   Text(
                                     app.appName,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w600,
@@ -152,7 +184,11 @@ class ChooseAppsScreen extends StatelessWidget {
                                   Text(
                                     app.category.isNotEmpty
                                         ? app.category
-                                        : 'Social media',
+                                        : (isBn
+                                              ? 'সোশ্যাল মিডিয়া'
+                                              : 'Social media'),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
                                     style: const TextStyle(
                                       fontSize: 12,
                                       color: AppColors.textSecondary,
@@ -210,18 +246,18 @@ class ChooseAppsScreen extends StatelessWidget {
                     ),
                     elevation: 0,
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
                       Text(
-                        'Continue',
-                        style: TextStyle(
+                        isBn ? 'এগিয়ে যান' : 'Continue',
+                        style: const TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      SizedBox(width: 8),
-                      Icon(Icons.arrow_forward_rounded, size: 18),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.arrow_forward_rounded, size: 18),
                     ],
                   ),
                 ),

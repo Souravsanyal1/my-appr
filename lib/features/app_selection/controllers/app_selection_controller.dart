@@ -29,11 +29,48 @@ class AppSelectionController extends GetxController {
       monitoredPackages.assignAll(savedMonitored);
 
       final apps = await _nativeBridge.getInstalledApps();
+      const priorityKeywords = [
+        'tiktok',
+        'musically',
+        'instagram',
+        'facebook',
+        'youtube',
+        'snapchat',
+        'reddit',
+        'twitter',
+        'whatsapp',
+        'telegram',
+        'discord',
+      ];
+
       final mapped = apps.map((app) {
         return app.copyWith(
           isMonitored: monitoredPackages.contains(app.packageName),
         );
       }).toList();
+
+      mapped.sort((a, b) {
+        final aMon = a.isMonitored ? 1 : 0;
+        final bMon = b.isMonitored ? 1 : 0;
+        if (aMon != bMon) return bMon.compareTo(aMon);
+
+        final aPkg = a.packageName.toLowerCase();
+        final aName = a.appName.toLowerCase();
+        final bPkg = b.packageName.toLowerCase();
+        final bName = b.appName.toLowerCase();
+
+        final aIsPriority = priorityKeywords.any(
+          (k) => aPkg.contains(k) || aName.contains(k),
+        );
+        final bIsPriority = priorityKeywords.any(
+          (k) => bPkg.contains(k) || bName.contains(k),
+        );
+
+        if (aIsPriority && !bIsPriority) return -1;
+        if (!aIsPriority && bIsPriority) return 1;
+
+        return aName.compareTo(bName);
+      });
 
       allApps.assignAll(mapped);
       applyFilter();
