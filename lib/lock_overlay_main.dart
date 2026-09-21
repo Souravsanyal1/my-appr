@@ -95,7 +95,7 @@ class _LockOverlayAppState extends State<LockOverlayApp> {
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
       home: Scaffold(
-        backgroundColor: const Color(0xFF06120E),
+        backgroundColor: const Color(0xE806120E),
         body: SafeArea(
           child: req == null
               ? const SizedBox.shrink()
@@ -114,11 +114,11 @@ class _LockOverlayAppState extends State<LockOverlayApp> {
 
   ThemeData _buildTheme() {
     return ThemeData.dark(useMaterial3: true).copyWith(
-      scaffoldBackgroundColor: const Color(0xFF06120E),
+      scaffoldBackgroundColor: const Color(0xE806120E),
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFF1FE08F),
         secondary: Color(0xFFD4A853),
-        surface: Color(0xFF0E2418),
+        surface: Color(0xD90E2418),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(

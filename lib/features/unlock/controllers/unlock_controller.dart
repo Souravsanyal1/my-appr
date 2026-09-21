@@ -11,6 +11,8 @@ import '../models/unlock_session_model.dart';
 import '../services/pronunciation_analyzer.dart';
 import '../services/recitation_scoring_service.dart';
 
+import '../models/good_deed_model.dart';
+
 class UnlockController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
   final NativeBridgeService _nativeBridge = Get.find<NativeBridgeService>();
@@ -22,6 +24,11 @@ class UnlockController extends GetxController {
   final RxInt selectedScore = 85.obs;
   final RxBool isUnlocking = false.obs;
   final RxBool isAnalyzing = false.obs;
+
+  // Good Deed Flow
+  final Rx<GoodDeedModel> activeDeed = GoodDeedModel.pool.first.obs;
+  final RxInt repetitionCount = 0.obs;
+  final RxBool isTranslated = false.obs;
 
   // Active sessions in the system
   final RxList<UnlockSessionModel> activeSessions = <UnlockSessionModel>[].obs;
@@ -51,8 +58,34 @@ class UnlockController extends GetxController {
       packageName.value = args['packageName']?.toString() ?? '';
       appName.value = args['appName']?.toString() ?? 'App';
     }
+    randomizeDeed();
     loadActiveSessions();
     _startCountdownTicker();
+  }
+
+  void randomizeDeed() {
+    final pool = GoodDeedModel.pool;
+    final nextIdx = (DateTime.now().millisecond) % pool.length;
+    activeDeed.value = pool[nextIdx];
+    repetitionCount.value = 0;
+    isTranslated.value = false;
+  }
+
+  void setDeed(GoodDeedModel deed) {
+    activeDeed.value = deed;
+    repetitionCount.value = 0;
+    isTranslated.value = false;
+  }
+
+  void incrementRepetition() {
+    if (repetitionCount.value < activeDeed.value.targetRepetitions) {
+      repetitionCount.value++;
+      HapticFeedback.lightImpact();
+    }
+  }
+
+  void toggleTranslate() {
+    isTranslated.value = !isTranslated.value;
   }
 
   @override

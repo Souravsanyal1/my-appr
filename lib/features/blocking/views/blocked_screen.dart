@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:focus_deen/core/constants/app_colors.dart';
-import 'package:focus_deen/core/constants/app_strings.dart';
-import 'package:focus_deen/features/blocking/controllers/blocking_controller.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
+import '../../../core/constants/app_colors.dart';
+import '../../../core/services/language_service.dart';
+import '../../../core/services/storage_service.dart';
+import '../../../core/widgets/rank_shield_card.dart';
+import '../controllers/blocking_controller.dart';
 
 class BlockedScreen extends StatelessWidget {
   const BlockedScreen({super.key});
@@ -10,254 +13,222 @@ class BlockedScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final controller = Get.put(BlockingController());
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final lang = LanguageService.to;
+    final storage = Get.find<StorageService>();
 
     return PopScope(
-      canPop: false, // Prevent dismissing by back button
+      canPop: false,
       onPopInvokedWithResult: (didPop, result) {
         if (!didPop) {
           controller.onCloseApp();
         }
       },
       child: Scaffold(
-        backgroundColor: isDark
-            ? AppColors.darkBackground
-            : AppColors.lightBackground,
+        backgroundColor: AppColors.background,
         body: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.symmetric(
-              horizontal: 28.0,
-              vertical: 24.0,
-            ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                const Spacer(),
+          child: Obx(() {
+            final isBn = lang.isBangla;
+            final monitoredPackages = storage.getMonitoredPackages();
 
-                // Visual Icon Badge
-                Container(
-                  width: 90,
-                  height: 90,
-                  decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    gradient: AppColors.dangerGradient,
-                    boxShadow: [
-                      BoxShadow(
-                        color: AppColors.danger.withValues(alpha: 0.35),
-                        blurRadius: 24,
-                        offset: const Offset(0, 8),
+            return SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22.0,
+                vertical: 16.0,
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  // 1. Current Rank Shield + XP Bar at the top
+                  const RankShieldCard(compact: true),
+                  const SizedBox(height: 24),
+
+                  // 2. Lock Visual Badge
+                  Container(
+                    width: 72,
+                    height: 72,
+                    decoration: BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: const Color(0xFFFF5252).withValues(alpha: 0.14),
+                      border: Border.all(
+                        color: const Color(0xFFFF5252).withValues(alpha: 0.5),
+                        width: 2,
                       ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      Icons.hourglass_bottom_rounded,
-                      size: 46,
-                      color: Colors.white,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 32),
-
-                // TIME'S UP Header
-                const Text(
-                  AppStrings.timesUp,
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w900,
-                    letterSpacing: 2.5,
-                    color: AppColors.primaryGold,
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // App Name
-                Obx(
-                  () => Text(
-                    controller.appName.value,
-                    style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontSize: 22,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // Subtitle
-                Text(
-                  AppStrings.limitReached,
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    fontSize: 15,
-                    color: isDark
-                        ? AppColors.textSecondaryDark
-                        : AppColors.textSecondaryLight,
-                  ),
-                ),
-                const SizedBox(height: 28),
-
-                // Usage Box
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 24,
-                    vertical: 16,
-                  ),
-                  decoration: BoxDecoration(
-                    color: isDark ? AppColors.darkCard : AppColors.lightCard,
-                    borderRadius: BorderRadius.circular(16),
-                    border: Border.all(
-                      color: isDark
-                          ? AppColors.darkCardBorder
-                          : AppColors.lightCardBorder,
-                    ),
-                  ),
-                  child: Column(
-                    children: [
-                      Text(
-                        'Used',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
-                          color: isDark
-                              ? AppColors.textMutedDark
-                              : AppColors.textMutedLight,
+                      boxShadow: [
+                        BoxShadow(
+                          color: const Color(0xFFFF5252).withValues(alpha: 0.25),
+                          blurRadius: 20,
+                          offset: const Offset(0, 6),
                         ),
+                      ],
+                    ),
+                    child: const Center(
+                      child: Icon(
+                        Iconsax.lock,
+                        size: 34,
+                        color: Color(0xFFFF5252),
                       ),
-                      const SizedBox(height: 6),
-                      Obx(
-                        () => Text(
-                          '${controller.usedMinutes.value} / ${controller.limitMinutes.value} minutes',
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.danger,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 24),
-
-                // Islamic Reflection Quote
-                Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryGold.withValues(alpha: 0.08),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                      color: AppColors.primaryGold.withValues(alpha: 0.2),
                     ),
                   ),
-                  child: Text(
-                    AppStrings.quoteTime,
+                  const SizedBox(height: 18),
+
+                  // 3. "Your apps are locked" Message
+                  Text(
+                    lang.t('your_apps_locked'),
                     textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      fontStyle: FontStyle.italic,
-                      color: isDark
-                          ? AppColors.primaryGoldLight
-                          : Colors.brown.shade800,
-                      height: 1.4,
+                    style: const TextStyle(
+                      fontSize: 24,
+                      fontWeight: FontWeight.w900,
+                      color: AppColors.textPrimary,
                     ),
                   ),
-                ),
-
-                const Spacer(),
-                const Divider(),
-                const SizedBox(height: 16),
-
-                // Action 1: Learn to Unlock
-                SizedBox(
-                  width: double.infinity,
-                  height: 52,
-                  child: ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.black,
-                      elevation: 4,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
+                  const SizedBox(height: 6),
+                  Text(
+                    lang.t('complete_deed_to_unlock'),
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 14,
+                      color: AppColors.textSecondary,
                     ),
-                    onPressed: controller.onLearnToUnlock,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
+                  ),
+                  const SizedBox(height: 20),
+
+                  // 4. Locked Apps small grid / list
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: AppColors.cardBackground,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.border),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Icon(Icons.school_outlined, size: 20),
-                        SizedBox(width: 8),
-                        Text(
-                          AppStrings.learnToUnlock,
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
+                        Row(
+                          children: [
+                            const Icon(
+                              Iconsax.shield_security,
+                              size: 16,
+                              color: AppColors.primaryGold,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              isBn ? 'লক করা অ্যাপসমূহ' : 'Protected Apps Locked',
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 12),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: monitoredPackages.take(6).map((pkg) {
+                            final simpleName = pkg
+                                .split('.')
+                                .last
+                                .capitalizeFirst ??
+                                'App';
+                            return Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.surface,
+                                borderRadius: BorderRadius.circular(10),
+                                border: Border.all(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(
+                                    Iconsax.lock_1,
+                                    size: 13,
+                                    color: Color(0xFFFF5252),
+                                  ),
+                                  const SizedBox(width: 6),
+                                  Text(
+                                    simpleName,
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w500,
+                                      color: AppColors.textPrimary,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          }).toList(),
                         ),
                       ],
                     ),
                   ),
-                ),
-                const SizedBox(height: 12),
+                  const SizedBox(height: 28),
 
-                // Action 2: Start Focus Session
-                SizedBox(
-                  width: double.infinity,
-                  height: 50,
-                  child: OutlinedButton(
-                    style: OutlinedButton.styleFrom(
-                      side: const BorderSide(
-                        color: AppColors.emerald,
-                        width: 1.5,
-                      ),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(14),
-                      ),
-                    ),
-                    onPressed: controller.onStartFocusSession,
-                    child: const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Icon(
-                          Icons.self_improvement,
-                          color: AppColors.emerald,
-                          size: 20,
+                  // 5. Big CTA Button: "Complete a Good Deed" -> launches reveal flow
+                  SizedBox(
+                    width: double.infinity,
+                    height: 56,
+                    child: ElevatedButton.icon(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.brightGreen,
+                        foregroundColor: Colors.black,
+                        elevation: 6,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        SizedBox(width: 8),
-                        Text(
-                          AppStrings.startFocusSession,
-                          style: TextStyle(
-                            fontSize: 15,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.emerald,
-                          ),
+                      ),
+                      onPressed: () {
+                        Get.toNamed(
+                          '/unlock',
+                          arguments: {
+                            'packageName': controller.packageName.value,
+                            'appName': controller.appName.value,
+                          },
+                        );
+                      },
+                      icon: const Icon(Iconsax.magic_star, size: 22),
+                      label: Text(
+                        lang.t('complete_a_good_deed'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
                         ),
-                      ],
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 12),
-
-                // Action 3: Close App
-                SizedBox(
-                  width: double.infinity,
-                  height: 48,
-                  child: TextButton(
-                    onPressed: controller.onCloseApp,
-                    child: Text(
-                      AppStrings.closeApp,
-                      style: TextStyle(
-                        fontSize: 15,
-                        color: isDark
-                            ? AppColors.textSecondaryDark
-                            : AppColors.textSecondaryLight,
                       ),
                     ),
                   ),
-                ),
-              ],
-            ),
-          ),
+                  const SizedBox(height: 12),
+
+                  // Close App / Leave Button
+                  SizedBox(
+                    width: double.infinity,
+                    height: 48,
+                    child: TextButton.icon(
+                      onPressed: controller.onCloseApp,
+                      icon: const Icon(
+                        Iconsax.close_circle,
+                        size: 18,
+                        color: AppColors.textSecondary,
+                      ),
+                      label: Text(
+                        isBn ? 'অ্যাপ বন্ধ করুন' : 'Close Application',
+                        style: const TextStyle(
+                          fontSize: 14,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          }),
         ),
       ),
     );

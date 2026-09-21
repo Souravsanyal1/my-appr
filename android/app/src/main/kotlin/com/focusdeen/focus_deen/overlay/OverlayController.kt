@@ -56,8 +56,8 @@ class OverlayController(
         const val CHANNEL = "deenflow/lock_overlay"
         const val ENGINE_ID = "deenflow_lock_overlay_engine"
         private const val DART_ENTRYPOINT = "lockOverlayMain"
-        private const val FIRST_FRAME_TIMEOUT_MS = 4000L
-        private const val COVER_COLOR = "#06120E"
+        private const val FIRST_FRAME_TIMEOUT_MS = 3000L
+        private const val COVER_COLOR = "#E606120E"
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -79,9 +79,9 @@ class OverlayController(
 
     private val watchdog = Runnable {
         val pkg = currentPkg ?: return@Runnable
-        Log.w(TAG, "Flutter first frame timeout for $pkg")
-        dismiss()
-        callbacks.onOverlayFailed(pkg, "first_frame_timeout")
+        Log.w(TAG, "Flutter first frame delayed for $pkg — revealing content, never auto-backing")
+        // Never dismiss to home! Keep overlay displayed over the app.
+        cover?.visibility = View.GONE
     }
 
     val isShowing: Boolean get() = root != null
@@ -92,8 +92,14 @@ class OverlayController(
     /** Service connect hole ekbar call korun, tahole overlay tatkhonik khole. */
     fun prewarm() {
         if (engine != null) return
+        val loader = FlutterInjector.instance().flutterLoader()
+        if (!loader.initialized()) {
+            loader.startInitialization(service.applicationContext)
+        }
+        loader.ensureInitializationComplete(service.applicationContext, null)
+
         val e = FlutterEngine(service.applicationContext)
-        val bundle = FlutterInjector.instance().flutterLoader().findAppBundlePath()
+        val bundle = loader.findAppBundlePath()
         e.dartExecutor.executeDartEntrypoint(DartExecutor.DartEntrypoint(bundle, DART_ENTRYPOINT))
         // NOTE: Activity-dependent plugin (permission_handler request, etc.) service e kaj korbe na.
         GeneratedPluginRegistrant.registerWith(e)
@@ -277,13 +283,16 @@ class OverlayController(
 
     private fun addWindow(view: View): Boolean {
         val types = mutableListOf<Int>()
-        if (Build.VERSION.SDK_INT >= 22) types += WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
         if (Build.VERSION.SDK_INT >= 26 && Settings.canDrawOverlays(service)) {
             types += WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY
+        }
+        if (Build.VERSION.SDK_INT >= 22) {
+            types += WindowManager.LayoutParams.TYPE_ACCESSIBILITY_OVERLAY
         }
         for (type in types) {
             try {
                 wm.addView(view, layoutParams(type))
+                Log.i(TAG, "Successfully attached overlay with type=$type")
                 return true
             } catch (t: Throwable) {
                 Log.w(TAG, "addView failed for type=$type", t)
@@ -304,7 +313,7 @@ class OverlayController(
             WindowManager.LayoutParams.MATCH_PARENT,
             type,
             flags,
-            PixelFormat.OPAQUE,
+            PixelFormat.TRANSLUCENT,
         ).apply {
             softInputMode = WindowManager.LayoutParams.SOFT_INPUT_ADJUST_RESIZE
             if (Build.VERSION.SDK_INT >= 30) {

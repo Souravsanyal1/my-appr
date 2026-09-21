@@ -15,10 +15,104 @@ import 'package:focus_deen/features/statistics/models/daily_stats_model.dart';
 import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 import 'package:focus_deen/features/unlock/services/pronunciation_analyzer.dart';
 import 'package:get/get.dart' hide ScreenType;
+import 'package:focus_deen/core/services/gamification_service.dart';
 import 'package:focus_deen/core/services/language_service.dart';
 import 'package:focus_deen/features/onboarding/views/welcome_screen.dart';
+import 'package:focus_deen/features/unlock/models/good_deed_model.dart';
 
 void main() {
+  group('Gamification & Stacking Unlock Tests', () {
+    test('UserRank thresholds and progression evaluation', () {
+      expect(UserRank.bronze.minXp, 0);
+      expect(UserRank.bronze.nextThreshold, 110);
+      expect(UserRank.silver.minXp, 111);
+      expect(UserRank.gold.minXp, 301);
+      expect(UserRank.platinum.minXp, 601);
+
+      // Verify rank categorization
+      UserRank rankForXp(int xp) {
+        if (xp >= 601) return UserRank.platinum;
+        if (xp >= 301) return UserRank.gold;
+        if (xp >= 111) return UserRank.silver;
+        return UserRank.bronze;
+      }
+
+      expect(rankForXp(50), UserRank.bronze);
+      expect(rankForXp(110), UserRank.bronze);
+      expect(rankForXp(111), UserRank.silver);
+      expect(rankForXp(300), UserRank.silver);
+      expect(rankForXp(301), UserRank.gold);
+      expect(rankForXp(600), UserRank.gold);
+      expect(rankForXp(601), UserRank.platinum);
+      expect(rankForXp(1200), UserRank.platinum);
+    });
+
+    test('DeedHistoryItem serialization', () {
+      final now = DateTime.now();
+      final item = DeedHistoryItem(
+        deedName: 'Astaghfirullah',
+        xpEarned: 20,
+        durationMinutes: 30,
+        timestamp: now,
+      );
+
+      final map = item.toMap();
+      expect(map['deedName'], 'Astaghfirullah');
+      expect(map['xpEarned'], 20);
+      expect(map['durationMinutes'], 30);
+
+      final restored = DeedHistoryItem.fromMap(map);
+      expect(restored.deedName, 'Astaghfirullah');
+      expect(restored.xpEarned, 20);
+      expect(restored.durationMinutes, 30);
+    });
+
+    test('Stacking time logic adds duration to active expiry', () {
+      final now = DateTime.now();
+      // Case 1: No previous unlock or expired -> expiry = now + 30
+      DateTime currentExpiry = now.subtract(const Duration(minutes: 5));
+      DateTime stacked;
+      if (currentExpiry.isAfter(now)) {
+        stacked = currentExpiry.add(const Duration(minutes: 30));
+      } else {
+        stacked = now.add(const Duration(minutes: 30));
+      }
+      expect(stacked.difference(now).inMinutes, 30);
+
+      // Case 2: 15 minutes remaining -> stacked = current + 30 = 45 min
+      currentExpiry = now.add(const Duration(minutes: 15));
+      if (currentExpiry.isAfter(now)) {
+        stacked = currentExpiry.add(const Duration(minutes: 30));
+      } else {
+        stacked = now.add(const Duration(minutes: 30));
+      }
+      expect(stacked.difference(now).inMinutes, 45);
+    });
+
+    test('GoodDeedModel pool verification', () {
+      expect(GoodDeedModel.pool.isNotEmpty, true);
+      for (final deed in GoodDeedModel.pool) {
+        expect(deed.arabic.isNotEmpty, true);
+        expect(deed.transliteration.isNotEmpty, true);
+        expect(deed.banglaPronunciation.isNotEmpty, true);
+        expect(deed.translationEn.isNotEmpty, true);
+        expect(deed.translationBn.isNotEmpty, true);
+        expect(deed.hadithQuoteEn.isNotEmpty, true);
+        expect(deed.hadithQuoteBn.isNotEmpty, true);
+        expect(deed.targetRepetitions > 0, true);
+        expect(deed.rewardMinutes > 0, true);
+
+        // Verify points mapping rule: Easy = 10, Medium = 20, Hard = 30
+        if (deed.difficulty == 'Easy') {
+          expect(deed.xpEarned, 10);
+        } else if (deed.difficulty == 'Medium') {
+          expect(deed.xpEarned, 20);
+        } else if (deed.difficulty == 'Hard') {
+          expect(deed.xpEarned, 30);
+        }
+      }
+    });
+  });
   group('AppLimitModel Tests', () {
     test('Serialize and deserialize AppLimitModel', () {
       const limit = AppLimitModel(

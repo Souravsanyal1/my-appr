@@ -11,6 +11,7 @@ import 'core/routes/app_routes.dart';
 import 'core/services/firebase_auth_service.dart';
 import 'core/services/firebase_realtime_service.dart';
 import 'core/services/firestore_sync_service.dart';
+import 'core/services/gamification_service.dart';
 import 'core/services/language_service.dart';
 import 'core/services/native_bridge_service.dart';
 import 'core/services/pin_security_service.dart';
@@ -55,6 +56,10 @@ void main() async {
   Get.put<PinSecurityService>(PinSecurityService(), permanent: true);
   Get.put<ThemeController>(ThemeController(), permanent: true);
   Get.put<BlockerService>(BlockerService().init(), permanent: true);
+
+  // Initialize Gamification & Stacking Unlock Service
+  final gamificationService = await GamificationService().init();
+  Get.put<GamificationService>(gamificationService, permanent: true);
 
   // Sync monitored/protected packages to Android Native Layer
   final initialMonitored = storageService.getMonitoredPackages();

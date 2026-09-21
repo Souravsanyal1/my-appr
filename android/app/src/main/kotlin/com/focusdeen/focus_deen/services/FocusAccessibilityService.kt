@@ -10,6 +10,7 @@ import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.accessibility.AccessibilityEvent
+import com.focusdeen.focus_deen.overlay.FloatingTimerController
 import com.focusdeen.focus_deen.overlay.OverlayController
 import com.focusdeen.focus_deen.receivers.RelockScheduler
 
@@ -49,6 +50,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
 
     private val mainHandler = Handler(Looper.getMainLooper())
     private lateinit var overlay: OverlayController
+    private lateinit var floatingTimer: FloatingTimerController
     private var launcherPkgs: Set<String> = emptySet()
 
     private var lastForegroundPackage: String? = null
@@ -56,6 +58,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
     private val screenOffReceiver = object : BroadcastReceiver() {
         override fun onReceive(context: Context, intent: Intent) {
             if (::overlay.isInitialized) overlay.dismiss()
+            if (::floatingTimer.isInitialized) floatingTimer.onForegroundPackageChanged("")
         }
     }
 
@@ -84,6 +87,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         super.onServiceConnected()
         instance = this
         overlay = OverlayController(this, this).also { it.prewarm() }
+        floatingTimer = FloatingTimerController(this) { expiredPkg -> relockNow(expiredPkg) }
         launcherPkgs = resolveLauncherPackages()
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         mainHandler.removeCallbacks(autoLockTicker)
@@ -103,6 +107,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
             currentForegroundPackage = null
             lastForegroundPackage = null
             if (::overlay.isInitialized) overlay.dismiss()
+            if (::floatingTimer.isInitialized) floatingTimer.onForegroundPackageChanged("")
             return
         }
 
@@ -115,13 +120,24 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
                 onForegroundAppChangedListener?.invoke(pkg)
             }
 
-            // Notify overlay to dismiss if user changed apps
+            // Notify overlay and floating timer of app switch
             if (::overlay.isInitialized) overlay.onForegroundPackageChanged(pkg)
+            if (::floatingTimer.isInitialized) floatingTimer.onForegroundPackageChanged(pkg)
+
+            // Check if app has an active unlock session
+            val monitor = AppMonitorService.getInstance(applicationContext)
+            if (monitor.isTemporarilyUnlocked(pkg)) {
+                val session = monitor.unlockSessionsMap[pkg]
+                val expiresAt = session?.expiresAtMillis ?: (System.currentTimeMillis() + getDurationMinutes() * 60 * 1000L)
+                if (::floatingTimer.isInitialized) {
+                    floatingTimer.show(pkg, monitor.getAppName(pkg), expiresAt)
+                }
+            }
 
             // Check if blocked
-            val monitor = AppMonitorService.getInstance(applicationContext)
             when (val check = monitor.checkPackage(pkg)) {
                 is AppMonitorService.CheckResult.Blocked -> {
+                    if (::floatingTimer.isInitialized) floatingTimer.dismiss()
                     showOverlayFor(pkg, check)
                 }
                 is AppMonitorService.CheckResult.Warning -> {
@@ -136,8 +152,9 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         }
     }
 
-    /** Unlock time sesh hole RelockReceiver eta call korbe. HOME + DeenFlow open korbe NA. */
+    /** Unlock time sesh hole RelockReceiver ba FloatingTimer eta call korbe. */
     fun relockNow(pkg: String) {
+        if (::floatingTimer.isInitialized) floatingTimer.dismiss()
         val monitor = AppMonitorService.getInstance(applicationContext)
         val appName = monitor.getAppName(pkg)
         val minScore = getMinScore()
@@ -190,9 +207,14 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         val monitor = AppMonitorService.getInstance(applicationContext)
         val durationMinutes = getDurationMinutes()
         monitor.setTemporaryUnlock(pkg, durationMinutes)
-        Log.i(TAG, "Unlocked $pkg score=$scorePercent for ${durationMinutes}min")
-        // Protected app is already in the background (beneath our overlay which is now gone)
-        // No startActivity needed. The app becomes accessible naturally.
+        val session = monitor.unlockSessionsMap[pkg]
+        val expiresAt = session?.expiresAtMillis ?: (System.currentTimeMillis() + durationMinutes * 60 * 1000L)
+        Log.i(TAG, "Unlocked $pkg score=$scorePercent for ${durationMinutes}min — displaying floating timer badge")
+
+        // Display floating countdown timer badge on top of the unlocked app
+        if (::floatingTimer.isInitialized) {
+            floatingTimer.show(pkg, monitor.getAppName(pkg), expiresAt)
+        }
     }
 
     override fun onCancel(pkg: String) {
@@ -202,17 +224,16 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
     }
 
     override fun onOverlayFailed(pkg: String, reason: String) {
-        Log.w(TAG, "Overlay failed for $pkg: $reason -> HOME fallback")
-        // Fallback: just go home. Never launch MainActivity.
-        performGlobalAction(GLOBAL_ACTION_HOME)
-        currentForegroundPackage = null
-        lastForegroundPackage = null
+        Log.w(TAG, "Overlay issue for $pkg: $reason — keeping app context without auto-backing")
+        // User requested: "auto back korbe na. seikhanei thakbe sei app er background er task look thakbe"
+        // NEVER call performGlobalAction(GLOBAL_ACTION_HOME)!
     }
 
     // ------------------------------------------------------------------ misc
 
     override fun onInterrupt() {
         if (::overlay.isInitialized) overlay.dismiss()
+        if (::floatingTimer.isInitialized) floatingTimer.dismiss()
     }
 
     override fun onDestroy() {
@@ -222,6 +243,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         lastForegroundPackage = null
         try { unregisterReceiver(screenOffReceiver) } catch (_: IllegalArgumentException) {}
         if (::overlay.isInitialized) overlay.release()
+        if (::floatingTimer.isInitialized) floatingTimer.dismiss()
         super.onDestroy()
     }
 

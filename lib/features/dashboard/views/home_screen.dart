@@ -1,12 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:iconsax_flutter/iconsax_flutter.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/services/gamification_service.dart';
 import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/storage_service.dart';
-import '../../../core/widgets/app_icon_widget.dart';
-import '../../../core/widgets/progress_ring.dart';
-import '../../learning/views/deeds_library_view.dart';
 import '../../settings/views/profile_view.dart';
 import '../../statistics/views/progress_view.dart';
 
@@ -18,7 +17,8 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  int _currentTabIndex = 0;
+  // 3-tab BottomNav: 0: Stats, 1: Unlock (Center Dashboard / Primary), 2: Settings
+  int _currentTabIndex = 1;
 
   @override
   Widget build(BuildContext context) {
@@ -32,9 +32,8 @@ class _HomeScreenState extends State<HomeScreen> {
         body: IndexedStack(
           index: _currentTabIndex,
           children: [
-            _buildHomeTab(context, isBn),
             const ProgressView(),
-            const DeedsLibraryView(),
+            _buildHomeTab(context, isBn),
             const ProfileView(),
           ],
         ),
@@ -49,52 +48,71 @@ class _HomeScreenState extends State<HomeScreen> {
             backgroundColor: AppColors.surface,
             indicatorColor: AppColors.primaryGreen.withValues(alpha: 0.18),
             selectedIndex: _currentTabIndex,
-            onDestinationSelected: (idx) =>
-                setState(() => _currentTabIndex = idx),
+            onDestinationSelected: (idx) {
+              if (idx == 1 && _currentTabIndex == 1) {
+                // Tapping center Unlock while on Home opens the Deed Reveal flow
+                Get.toNamed('/unlock');
+              } else {
+                setState(() => _currentTabIndex = idx);
+              }
+            },
             destinations: [
+              // 1. Stats (merged from অগ্রগতি / Progress)
               NavigationDestination(
                 icon: const Icon(
-                  Icons.home_outlined,
+                  Iconsax.chart_21,
                   color: AppColors.textSecondary,
+                  size: 22,
                 ),
                 selectedIcon: const Icon(
-                  Icons.home,
+                  Iconsax.chart_2,
                   color: AppColors.brightGreen,
+                  size: 22,
                 ),
-                label: isBn ? 'হোম' : 'Home',
+                label: languageService.t('nav_stats'),
               ),
+              // 2. Unlock (Center Padlock - Primary Tab)
               NavigationDestination(
-                icon: const Icon(
-                  Icons.show_chart_rounded,
-                  color: AppColors.textSecondary,
+                icon: Container(
+                  padding: const EdgeInsets.all(4),
+                  decoration: BoxDecoration(
+                    color: AppColors.surfaceLight,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: AppColors.primaryGreen.withValues(alpha: 0.5)),
+                  ),
+                  child: const Icon(
+                    Iconsax.unlock,
+                    color: AppColors.brightGreen,
+                    size: 20,
+                  ),
                 ),
-                selectedIcon: const Icon(
-                  Icons.show_chart_rounded,
-                  color: AppColors.brightGreen,
+                selectedIcon: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: const BoxDecoration(
+                    color: AppColors.primaryGreen,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Iconsax.unlock,
+                    color: Colors.black,
+                    size: 20,
+                  ),
                 ),
-                label: isBn ? 'অগ্রগতি' : 'Progress',
+                label: languageService.t('nav_unlock'),
               ),
+              // 3. Settings (merged from প্রোফাইল / Profile & Settings)
               NavigationDestination(
                 icon: const Icon(
-                  Icons.menu_book_outlined,
+                  Iconsax.setting_2,
                   color: AppColors.textSecondary,
+                  size: 22,
                 ),
                 selectedIcon: const Icon(
-                  Icons.menu_book_rounded,
+                  Iconsax.setting_2,
                   color: AppColors.brightGreen,
+                  size: 22,
                 ),
-                label: isBn ? 'আমল' : 'Deeds',
-              ),
-              NavigationDestination(
-                icon: const Icon(
-                  Icons.person_outline_rounded,
-                  color: AppColors.textSecondary,
-                ),
-                selectedIcon: const Icon(
-                  Icons.person_rounded,
-                  color: AppColors.brightGreen,
-                ),
-                label: isBn ? 'প্রোফাইল' : 'Profile',
+                label: languageService.t('nav_settings'),
               ),
             ],
           ),
@@ -104,65 +122,65 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Widget _buildHomeTab(BuildContext context, bool isBn) {
+    final gamification = GamificationService.to;
     final storage = Get.find<StorageService>();
     final languageService = LanguageService.to;
-    final completedDeeds = storage.getCompletedDeedsCount();
-    final totalDeeds =
-        storage.getTotalDeedsCount() > 0 ? storage.getTotalDeedsCount() : 6;
-    final progressPercent = (completedDeeds / totalDeeds).clamp(0.0, 1.0);
-    final userName = storage.getUserName();
-    final unlockDuration = storage.getDefaultUnlockDurationMinutes();
     final monitoredPkgs = storage.getMonitoredPackages();
 
     return SafeArea(
       child: SingleChildScrollView(
-        padding: const EdgeInsets.symmetric(horizontal: 24.0, vertical: 16.0),
+        padding: const EdgeInsets.symmetric(horizontal: 20.0, vertical: 14.0),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Header Greeting & Language Toggle
+            // ===============================================================
+            // 1. TOP BAR: App Logo + Name (Left) & Streak with Flame (Right)
+            // ===============================================================
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isBn ? 'শুভ সকাল, $userName' : 'Good morning, $userName',
-                        style: const TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isBn
-                            ? 'আজকের স্ক্রিন টাইমকে করুন অর্থপূর্ণ ও কল্যাণময়।'
-                            : "Let's make today's screen time meaningful.",
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(width: 12),
+                // Left: Logo + App Name
                 Row(
-                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 38,
+                      height: 38,
+                      decoration: BoxDecoration(
+                        color: AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.35),
+                        ),
+                      ),
+                      child: const Center(
+                        child: Icon(
+                          Icons.mosque_rounded,
+                          color: AppColors.brightGreen,
+                          size: 22,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 10),
+                    Text(
+                      languageService.t('app_name'),
+                      style: const TextStyle(
+                        fontSize: 22,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 0.5,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ],
+                ),
+
+                // Right: Streak Counter + Language Switcher
+                Row(
                   children: [
                     // Language Switcher Chip
                     GestureDetector(
-                      onTap: () =>
-                          languageService.showLanguageSelector(context),
+                      onTap: () => languageService.showLanguageSelector(context),
                       child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 6,
-                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                         decoration: BoxDecoration(
                           color: AppColors.surface,
                           borderRadius: BorderRadius.circular(20),
@@ -171,15 +189,21 @@ class _HomeScreenState extends State<HomeScreen> {
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            const Icon(
+                              Iconsax.global,
+                              size: 14,
+                              color: AppColors.brightGreen,
+                            ),
+                            const SizedBox(width: 5),
                             Text(
-                              isBn ? '🇧🇩 বাং' : '🇬🇧 EN',
+                              isBn ? 'বাং' : 'EN',
                               style: const TextStyle(
                                 fontSize: 12,
                                 fontWeight: FontWeight.bold,
                                 color: AppColors.brightGreen,
                               ),
                             ),
-                            const SizedBox(width: 4),
+                            const SizedBox(width: 2),
                             const Icon(
                               Icons.arrow_drop_down,
                               size: 16,
@@ -190,19 +214,36 @@ class _HomeScreenState extends State<HomeScreen> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    Container(
-                      width: 40,
-                      height: 40,
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.notifications_none_rounded,
-                          color: AppColors.textPrimary,
-                          size: 20,
+
+                    // Streak Counter with Google Material Fire Icon
+                    Obx(
+                      () => Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: const Color(0xFFFFA726).withValues(alpha: 0.5),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.local_fire_department_rounded,
+                              size: 17,
+                              color: Color(0xFFFFA726),
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${gamification.currentStreak.value}',
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.textPrimary,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
                     ),
@@ -210,84 +251,49 @@ class _HomeScreenState extends State<HomeScreen> {
                 ),
               ],
             ),
-            const SizedBox(height: 20),
+            const SizedBox(height: 16),
 
-            // Accessibility Permission Alert Banner
+            // Accessibility Permission Alert Banner (if needed)
             FutureBuilder<bool>(
-              future: Get.find<NativeBridgeService>()
-                  .checkAccessibilityPermission(),
+              future: Get.find<NativeBridgeService>().checkAccessibilityPermission(),
               builder: (context, snapshot) {
                 if (snapshot.hasData && snapshot.data == false) {
                   return Container(
-                    margin: const EdgeInsets.only(bottom: 20),
-                    padding: const EdgeInsets.all(16),
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.all(14),
                     decoration: BoxDecoration(
                       color: AppColors.warning.withValues(alpha: 0.12),
                       borderRadius: BorderRadius.circular(16),
-                      border: Border.all(
-                        color: AppColors.warning.withValues(alpha: 0.4),
-                      ),
+                      border: Border.all(color: AppColors.warning.withValues(alpha: 0.4)),
                     ),
                     child: Row(
                       children: [
                         const Icon(
                           Icons.warning_amber_rounded,
                           color: AppColors.warning,
-                          size: 28,
+                          size: 24,
                         ),
-                        const SizedBox(width: 12),
+                        const SizedBox(width: 10),
                         Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                isBn
-                                    ? 'লক কাজ করতে পারমিশন দিন'
-                                    : 'Enable App Lock Service',
-                                style: const TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: AppColors.textPrimary,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                isBn
-                                    ? 'অ্যাপ ব্লক কার্যকর রাখতে অ্যাক্সেসিবিলিটি চালু করুন।'
-                                    : 'Accessibility is required to block selected apps.',
-                                style: const TextStyle(
-                                  fontSize: 12,
-                                  color: AppColors.textSecondary,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        ElevatedButton(
-                          onPressed: () async {
-                            await Get.find<NativeBridgeService>()
-                                .requestPermission('accessibility');
-                            setState(() {});
-                          },
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: AppColors.warning,
-                            foregroundColor: Colors.black,
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 12,
-                              vertical: 8,
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                          ),
                           child: Text(
-                            isBn ? 'অন করুন' : 'Enable',
+                            isBn
+                                ? 'অ্যাপ লক সক্রিয় করতে এক্সেসিবিলিটি সার্ভিস অন করুন।'
+                                : 'Enable accessibility service to activate app lock.',
                             style: const TextStyle(
                               fontSize: 12,
-                              fontWeight: FontWeight.bold,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
                             ),
                           ),
+                        ),
+                        TextButton(
+                          onPressed: () =>
+                              Get.find<NativeBridgeService>().requestPermission('accessibility'),
+                          style: TextButton.styleFrom(
+                            foregroundColor: AppColors.warning,
+                            padding: const EdgeInsets.symmetric(horizontal: 8),
+                          ),
+                          child: Text(isBn ? 'অন করুন' : 'Enable'),
                         ),
                       ],
                     ),
@@ -297,253 +303,507 @@ class _HomeScreenState extends State<HomeScreen> {
               },
             ),
 
-            // Main Card: Today's Progress
-            AppCard(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 28),
-              child: Column(
-                children: [
-                  Text(
-                    isBn ? "আজকের অগ্রগতি" : "Today's progress",
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  ProgressRing(
-                    progress: progressPercent,
-                    size: 110,
-                    strokeWidth: 8,
-                    centerChild: Text(
-                      '${(progressPercent * 100).toInt()}%',
-                      style: const TextStyle(
-                        fontSize: 28,
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.textPrimary,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Text(
-                    isBn
-                        ? '$completedDeeds / $totalDeeds টি আমল সম্পন্ন'
-                        : '$completedDeeds / $totalDeeds deeds completed',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+            // ===============================================================
+            // 2. HORIZONTAL WEEK STRIP (Sun–Sat)
+            // ===============================================================
+            _buildHorizontalWeekStrip(context, gamification, isBn),
+            const SizedBox(height: 18),
 
-            // Protected Apps Section
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  isBn ? 'সুরক্ষিত অ্যাপসমূহ' : 'Protected Apps',
-                  style: const TextStyle(
-                    fontSize: 15,
-                    fontWeight: FontWeight.bold,
-                    color: AppColors.textPrimary,
-                  ),
-                ),
-                GestureDetector(
-                  onTap: () => Get.toNamed('/app-selection'),
-                  child: Text(
-                    isBn ? 'পরিবর্তন করুন' : 'Edit',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.brightGreen,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 12),
-            SingleChildScrollView(
-              scrollDirection: Axis.horizontal,
-              child: Row(
-                children: [
-                  ...monitoredPkgs.map((pkg) {
-                    final appName = _getFriendlyAppName(pkg);
-                    return Padding(
-                      padding: const EdgeInsets.only(right: 8.0),
-                      child: _buildAppPill(appName),
-                    );
-                  }),
-                  GestureDetector(
-                    onTap: () => Get.toNamed('/app-selection'),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 10,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(20),
-                        border: Border.all(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.5),
-                        ),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(
-                            Icons.add_rounded,
-                            size: 16,
-                            color: AppColors.brightGreen,
-                          ),
-                          const SizedBox(width: 4),
-                          Text(
-                            isBn ? 'যোগ করুন' : 'Add',
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.brightGreen,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 24),
+            // ===============================================================
+            // a) "TIME REMAINING" CARD — Live Countdown (Persists Across Restarts)
+            // ===============================================================
+            _buildTimeRemainingCard(context, gamification, isBn),
+            const SizedBox(height: 14),
 
-            // Next Task / Deed Card
-            AppCard(
-              onTap: () => Get.toNamed('/intention'),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 10,
-                          vertical: 4,
-                        ),
-                        decoration: BoxDecoration(
-                          color: AppColors.primaryGreen.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: Text(
-                          isBn ? 'পরবর্তী আমল' : 'NEXT DEED',
-                          style: const TextStyle(
-                            fontSize: 11,
-                            fontWeight: FontWeight.bold,
-                            letterSpacing: 0.8,
-                            color: AppColors.brightGreen,
-                          ),
-                        ),
-                      ),
-                      Text(
-                        isBn
-                            ? '🌿 $unlockDuration মিনিট ব্যবহার'
-                            : '🌿 ${unlockDuration}m access',
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textSecondary,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 14),
-                  Text(
-                    isBn
-                        ? 'ইস্তিগফার ৩ বার পাঠ করুন'
-                        : 'Recite Istighfar 3 times',
-                    style: const TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      color: AppColors.textPrimary,
-                    ),
-                  ),
-                  const SizedBox(height: 6),
-                  Text(
-                    isBn
-                        ? 'আস্তাগফিরুল্লাহা ওয়া আতূবু ইলাইহি — আল্লাহর কাছে ক্ষমা প্রার্থনা'
-                        : 'Astaghfirullah — Seek forgiveness and invite peace',
-                    style: const TextStyle(
-                      fontSize: 13,
-                      color: AppColors.textSecondary,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
-                    children: [
-                      Text(
-                        isBn ? 'শুরু করুন' : 'Start',
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.brightGreen,
-                        ),
-                      ),
-                      const SizedBox(width: 4),
-                      const Icon(
-                        Icons.arrow_forward_rounded,
-                        size: 16,
-                        color: AppColors.brightGreen,
-                      ),
-                    ],
-                  ),
-                ],
-              ),
-            ),
-            const SizedBox(height: 20),
+            // ===============================================================
+            // b) BIG STATUS BANNER — "APPS CURRENTLY Unlocked" / "Locked"
+            // ===============================================================
+            _buildStatusBanner(context, gamification, isBn),
+            const SizedBox(height: 14),
+
+            // ===============================================================
+            // c) "ADD MORE TIME" CARD — Stack Time with Deed Trigger
+            // ===============================================================
+            _buildAddMoreTimeCard(context, isBn),
+            const SizedBox(height: 14),
+
+            // ===============================================================
+            // d) "LOCKED APPS" SECTION — Count, Lock Status & App Picker
+            // ===============================================================
+            _buildLockedAppsSection(context, gamification, monitoredPkgs, isBn),
+            const SizedBox(height: 24),
           ],
         ),
       ),
     );
   }
 
-  String _getFriendlyAppName(String pkg) {
-    final lower = pkg.toLowerCase();
-    if (lower.contains('tiktok') ||
-        lower.contains('musically') ||
-        lower.contains('trill')) {
-      return 'TikTok';
-    }
-    if (lower.contains('instagram')) return 'Instagram';
-    if (lower.contains('facebook') || lower.contains('katana')) return 'Facebook';
-    if (lower.contains('youtube')) return 'YouTube';
-    if (lower.contains('snapchat')) return 'Snapchat';
-    if (lower.contains('twitter') || lower.contains('.x.')) return 'X';
-    if (lower.contains('reddit')) return 'Reddit';
-    if (lower.contains('whatsapp')) return 'WhatsApp';
-    final parts = pkg.split('.');
-    return parts.length > 1 ? parts.last.capitalizeFirst ?? parts.last : pkg;
-  }
+  // ---------------------------------------------------------------------------
+  // Week Strip (Sun–Sat) with highlighted today ring and filled past days
+  // ---------------------------------------------------------------------------
+  Widget _buildHorizontalWeekStrip(
+    BuildContext context,
+    GamificationService gamification,
+    bool isBn,
+  ) {
+    final now = DateTime.now();
+    // Sunday of the current week
+    final daysFromSunday = now.weekday % 7;
+    final sunday = DateTime(now.year, now.month, now.day).subtract(Duration(days: daysFromSunday));
 
-  Widget _buildAppPill(String name) {
+    final dayNamesEn = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    final dayNamesBn = ['রবি', 'সোম', 'মঙ্গল', 'বুধ', 'বৃহ', 'শুক্র', 'শনি'];
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 10),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius: BorderRadius.circular(20),
         border: Border.all(color: AppColors.border),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        mainAxisAlignment: MainAxisAlignment.spaceAround,
+        children: List.generate(7, (index) {
+          final dayDate = sunday.add(Duration(days: index));
+          final isToday = dayDate.year == now.year &&
+              dayDate.month == now.month &&
+              dayDate.day == now.day;
+          final isPast = dayDate.isBefore(DateTime(now.year, now.month, now.day));
+
+          // Check if user completed deeds on this day
+          final dayWeekday = dayDate.weekday; // Sunday is 7, Monday is 1...
+          final isCompleted = gamification.weeklyCompletedDays.contains(dayWeekday);
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                isBn ? dayNamesBn[index] : dayNamesEn[index],
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                  color: isToday ? AppColors.brightGreen : AppColors.textSecondary,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: isCompleted
+                      ? AppColors.primaryGreen.withValues(alpha: 0.25)
+                      : (isToday ? AppColors.surfaceLight : Colors.transparent),
+                  border: Border.all(
+                    color: isToday
+                        ? AppColors.brightGreen
+                        : (isCompleted ? AppColors.primaryGreen : AppColors.border),
+                    width: isToday ? 2.0 : 1.0,
+                  ),
+                ),
+                child: Center(
+                  child: isCompleted && isPast
+                      ? const Icon(
+                          Icons.check_rounded,
+                          size: 18,
+                          color: AppColors.brightGreen,
+                        )
+                      : Text(
+                          '${dayDate.day}',
+                          style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: isToday ? FontWeight.bold : FontWeight.w500,
+                            color: isToday ? AppColors.brightGreen : AppColors.textPrimary,
+                          ),
+                        ),
+                ),
+              ),
+            ],
+          );
+        }),
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // a) "Time Remaining" Card — Live Countdown
+  // ---------------------------------------------------------------------------
+  Widget _buildTimeRemainingCard(
+    BuildContext context,
+    GamificationService gamification,
+    bool isBn,
+  ) {
+    final languageService = LanguageService.to;
+
+    return Obx(() {
+      final isUnlocked = gamification.isUnlocked;
+      final countdownStr = gamification.formattedCountdown;
+
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(20),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(24),
+          border: Border.all(
+            color: isUnlocked
+                ? AppColors.primaryGreen.withValues(alpha: 0.35)
+                : AppColors.border,
+            width: isUnlocked ? 1.5 : 1.0,
+          ),
+          boxShadow: isUnlocked
+              ? [
+                  BoxShadow(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Icon(
+                        Iconsax.timer_1,
+                        color: AppColors.brightGreen,
+                        size: 17,
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        languageService.t('time_remaining'),
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textSecondary,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 8),
+                  Text(
+                    countdownStr,
+                    style: TextStyle(
+                      fontSize: 32,
+                      fontWeight: FontWeight.w800,
+                      fontFamily: 'monospace',
+                      color: isUnlocked ? AppColors.brightGreen : AppColors.textMuted,
+                      letterSpacing: 0.5,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    isUnlocked
+                        ? (isBn ? 'অ্যাপসমূহ ব্যবহারে সময় বরাদ্দ আছে' : 'Access granted across protected apps')
+                        : (isBn ? 'কোনো সময় অবশিষ্ট নেই' : 'No access time currently remaining'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textMuted,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Container(
+              width: 52,
+              height: 52,
+              decoration: BoxDecoration(
+                color: isUnlocked
+                    ? AppColors.primaryGreen.withValues(alpha: 0.15)
+                    : AppColors.surfaceLight,
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: isUnlocked ? AppColors.brightGreen : AppColors.border,
+                ),
+              ),
+              child: Icon(
+                isUnlocked ? Iconsax.clock : Iconsax.timer_pause,
+                color: isUnlocked ? AppColors.brightGreen : AppColors.textMuted,
+                size: 24,
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // b) Big Status Banner — "APPS CURRENTLY Unlocked" / "Locked"
+  // ---------------------------------------------------------------------------
+  Widget _buildStatusBanner(
+    BuildContext context,
+    GamificationService gamification,
+    bool isBn,
+  ) {
+    final languageService = LanguageService.to;
+
+    return Obx(() {
+      final isUnlocked = gamification.isUnlocked;
+
+      return AnimatedContainer(
+        duration: const Duration(milliseconds: 300),
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+        decoration: BoxDecoration(
+          color: isUnlocked
+              ? AppColors.primaryGreen.withValues(alpha: 0.14)
+              : AppColors.error.withValues(alpha: 0.10),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: isUnlocked
+                ? AppColors.primaryGreen.withValues(alpha: 0.5)
+                : AppColors.error.withValues(alpha: 0.4),
+            width: 1.5,
+          ),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: isUnlocked
+                    ? AppColors.primaryGreen.withValues(alpha: 0.2)
+                    : AppColors.error.withValues(alpha: 0.18),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                isUnlocked ? Iconsax.unlock : Iconsax.lock,
+                color: isUnlocked ? AppColors.brightGreen : AppColors.error,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 14),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    isUnlocked
+                        ? languageService.t('apps_currently_unlocked')
+                        : languageService.t('apps_currently_locked'),
+                    style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.8,
+                      color: isUnlocked ? AppColors.brightGreen : AppColors.error,
+                    ),
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    isUnlocked
+                        ? languageService.t('apps_unlocked_desc')
+                        : languageService.t('all_apps_locked'),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: AppColors.textSecondary,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      );
+    });
+  }
+
+  // ---------------------------------------------------------------------------
+  // c) "Add more time" Card — Stacking Unlock Trigger
+  // ---------------------------------------------------------------------------
+  Widget _buildAddMoreTimeCard(BuildContext context, bool isBn) {
+    final languageService = LanguageService.to;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          AppIconWidget(appName: name, size: 20, borderRadius: 6),
-          const SizedBox(width: 8),
+          Row(
+            children: [
+              const Icon(
+                Iconsax.add_circle,
+                color: AppColors.brightGreen,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                languageService.t('add_more_time'),
+                style: const TextStyle(
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
           Text(
-            name,
+            languageService.t('add_time_description'),
             style: const TextStyle(
               fontSize: 13,
-              fontWeight: FontWeight.w600,
-              color: AppColors.textPrimary,
+              height: 1.45,
+              color: AppColors.textSecondary,
             ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 48,
+            child: ElevatedButton(
+              onPressed: () => Get.toNamed('/unlock'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primaryGreen,
+                foregroundColor: Colors.black,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(16),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text(
+                    languageService.t('do_another_deed'),
+                    style: const TextStyle(
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  // ---------------------------------------------------------------------------
+  // d) "Locked Apps" Section
+  // ---------------------------------------------------------------------------
+  Widget _buildLockedAppsSection(
+    BuildContext context,
+    GamificationService gamification,
+    List<String> monitoredPkgs,
+    bool isBn,
+  ) {
+    final languageService = LanguageService.to;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Text(
+                        languageService.t('locked_apps'),
+                        style: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: AppColors.primaryGreen.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                          ),
+                        ),
+                        child: Text(
+                          '${monitoredPkgs.length}',
+                          style: const TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.brightGreen,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 4),
+                  Obx(
+                    () => Text(
+                      gamification.isUnlocked
+                          ? (isBn ? 'সুরক্ষিত অ্যাপসমূহ সাময়িক আনলকড' : 'Protected apps temporarily accessible')
+                          : (isBn ? 'সুরক্ষিত সকল অ্যাপ লক করা আছে' : 'All protected apps are locked'),
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: gamification.isUnlocked
+                            ? AppColors.brightGreen
+                            : AppColors.textSecondary,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              OutlinedButton.icon(
+                onPressed: () => Get.toNamed('/choose-apps'),
+                icon: const Icon(Iconsax.setting_4, size: 16),
+                label: Text(
+                  isBn ? 'অ্যাপ বাছুন' : 'Choose',
+                  style: const TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                ),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.brightGreen,
+                  side: BorderSide(
+                    color: AppColors.primaryGreen.withValues(alpha: 0.4),
+                  ),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          Row(
+            children: [
+              const Icon(
+                Iconsax.eye_slash,
+                size: 14,
+                color: AppColors.textMuted,
+              ),
+              const SizedBox(width: 6),
+              Text(
+                languageService.t('app_icons_privacy_note'),
+                style: const TextStyle(
+                  fontSize: 11,
+                  fontStyle: FontStyle.italic,
+                  color: AppColors.textMuted,
+                ),
+              ),
+            ],
           ),
         ],
       ),
