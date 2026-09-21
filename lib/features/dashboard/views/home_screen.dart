@@ -119,31 +119,36 @@ class _HomeScreenState extends State<HomeScreen> {
             // Header Greeting & Language Toggle
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      isBn ? 'শুভ সকাল, Sourav' : 'Good morning, Sourav',
-                      style: const TextStyle(
-                        fontSize: 22,
-                        fontWeight: FontWeight.bold,
-                        color: AppColors.textPrimary,
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        isBn ? 'শুভ সকাল, Sourav' : 'Good morning, Sourav',
+                        style: const TextStyle(
+                          fontSize: 22,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      isBn
-                          ? 'আজকের স্ক্রিন টাইমকে করুন অর্থপূর্ণ ও কল্যাণময়।'
-                          : "Let's make today's screen time meaningful.",
-                      style: const TextStyle(
-                        fontSize: 13,
-                        color: AppColors.textSecondary,
+                      const SizedBox(height: 4),
+                      Text(
+                        isBn
+                            ? 'আজকের স্ক্রিন টাইমকে করুন অর্থপূর্ণ ও কল্যাণময়।'
+                            : "Let's make today's screen time meaningful.",
+                        style: const TextStyle(
+                          fontSize: 13,
+                          color: AppColors.textSecondary,
+                        ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
+                const SizedBox(width: 12),
                 Row(
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     // Language Switcher Chip
                     GestureDetector(

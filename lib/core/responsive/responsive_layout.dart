@@ -73,7 +73,7 @@ class ResponsiveScaffoldBody extends StatelessWidget {
                   child: Center(
                     child: ConstrainedBox(
                       constraints: BoxConstraints(maxWidth: maxContentWidth),
-                      child: child,
+                      child: IntrinsicHeight(child: child),
                     ),
                   ),
                 ),

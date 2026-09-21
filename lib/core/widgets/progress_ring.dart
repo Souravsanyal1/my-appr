@@ -48,6 +48,7 @@ class AppCard extends StatelessWidget {
   final VoidCallback? onTap;
   final bool isSelected;
   final Color? backgroundColor;
+  final double? width;
 
   const AppCard({
     super.key,
@@ -56,6 +57,7 @@ class AppCard extends StatelessWidget {
     this.onTap,
     this.isSelected = false,
     this.backgroundColor,
+    this.width = double.infinity,
   });
 
   @override
@@ -63,6 +65,7 @@ class AppCard extends StatelessWidget {
     final cardBorder = isSelected ? AppColors.primaryGreen : AppColors.border;
 
     return Container(
+      width: width,
       decoration: BoxDecoration(
         color: backgroundColor ?? AppColors.surface,
         borderRadius: BorderRadius.circular(24),

@@ -66,30 +66,34 @@ class _DeedsLibraryViewState extends State<DeedsLibraryView> {
               // Header with Title and Language Switcher
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        isBn ? 'আমল লাইব্রেরি' : 'Deeds Library',
-                        style: const TextStyle(
-                          fontSize: 26,
-                          fontWeight: FontWeight.bold,
-                          color: AppColors.textPrimary,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          isBn ? 'আমল লাইব্রেরি' : 'Deeds Library',
+                          style: const TextStyle(
+                            fontSize: 26,
+                            fontWeight: FontWeight.bold,
+                            color: AppColors.textPrimary,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        isBn
-                            ? 'শিখতে ও অ্যাপ আনলক করতে আমল বেছে নিন'
-                            : 'Select a good deed to learn and unlock.',
-                        style: const TextStyle(
-                          fontSize: 13,
-                          color: AppColors.textSecondary,
+                        const SizedBox(height: 4),
+                        Text(
+                          isBn
+                              ? 'শিখতে ও অ্যাপ আনলক করতে আমল বেছে নিন'
+                              : 'Select a good deed to learn and unlock.',
+                          style: const TextStyle(
+                            fontSize: 13,
+                            color: AppColors.textSecondary,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   GestureDetector(
                     onTap: () => languageService.showLanguageSelector(context),
                     child: Container(
