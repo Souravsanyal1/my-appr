@@ -1,5 +1,3 @@
-import 'package:get/get.dart';
-
 /// Model for an in-app notification inbox item.
 /// Stored locally in StorageService and works fully offline.
 class InboxNotificationModel {
@@ -53,7 +51,7 @@ class InboxNotificationModel {
 
   factory InboxNotificationModel.fromMap(Map<String, dynamic> map) =>
       InboxNotificationModel(
-        id: map['id'] as String? ?? Get.find().hashCode.toString(),
+        id: map['id'] as String? ?? DateTime.now().millisecondsSinceEpoch.toString(),
         title: map['title'] as String? ?? '',
         body: map['body'] as String? ?? '',
         imageUrl: map['imageUrl'] as String?,

@@ -81,7 +81,7 @@ class NotificationsInboxView extends StatelessWidget {
         return ListView.separated(
           padding: const EdgeInsets.all(16),
           itemCount: items.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          separatorBuilder: (context, index) => const SizedBox(height: 8),
           itemBuilder: (context, index) {
             final item = items[index];
             return _buildInboxTile(
@@ -233,9 +233,9 @@ class NotificationsInboxView extends StatelessWidget {
                             color: AppColors.brightGreen,
                           ),
                           const SizedBox(width: 4),
-                          Text(
-                            item.route!,
-                            style: const TextStyle(
+                          const Text(
+                            'Tap to open',
+                            style: TextStyle(
                               fontSize: 11,
                               color: AppColors.brightGreen,
                             ),
