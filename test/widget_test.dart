@@ -11,6 +11,9 @@ import 'package:focus_deen/features/statistics/models/achievement_model.dart';
 import 'package:focus_deen/features/statistics/models/daily_stats_model.dart';
 import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 import 'package:focus_deen/features/unlock/services/pronunciation_analyzer.dart';
+import 'package:get/get.dart' hide ScreenType;
+import 'package:focus_deen/core/services/language_service.dart';
+import 'package:focus_deen/features/onboarding/views/welcome_screen.dart';
 
 void main() {
   group('AppLimitModel Tests', () {
@@ -481,6 +484,51 @@ void main() {
 
         expect(find.text('Large Scaled Title'), findsOneWidget);
         expect(tester.takeException(), isNull);
+      },
+    );
+
+    testWidgets(
+      'WelcomeScreen renders without overflow on compact 360x640 screen in Bengali',
+      (tester) async {
+        tester.view.physicalSize = const Size(360, 640);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        // Put LanguageService
+        final lang = Get.put(LanguageService());
+        lang.currentLanguage.value = 'bn';
+
+        await tester.pumpWidget(const GetMaterialApp(home: WelcomeScreen()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('বিরতি ও আমল'), findsOneWidget);
+        expect(find.text('শুরু করা যাক'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        Get.delete<LanguageService>();
+      },
+    );
+
+    testWidgets(
+      'WelcomeScreen renders without overflow on ultra-compact 320x568 screen in English',
+      (tester) async {
+        tester.view.physicalSize = const Size(320, 568);
+        tester.view.devicePixelRatio = 1.0;
+        addTearDown(tester.view.resetPhysicalSize);
+        addTearDown(tester.view.resetDevicePixelRatio);
+
+        final lang = Get.put(LanguageService());
+        lang.currentLanguage.value = 'en';
+
+        await tester.pumpWidget(const GetMaterialApp(home: WelcomeScreen()));
+        await tester.pumpAndSettle();
+
+        expect(find.text('Pause & Recite'), findsOneWidget);
+        expect(find.text("Let's get started"), findsOneWidget);
+        expect(tester.takeException(), isNull);
+
+        Get.delete<LanguageService>();
       },
     );
   });
