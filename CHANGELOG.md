@@ -95,7 +95,36 @@ All changes made during the multi-phase audit and remediation of **DeenFlow** (I
   - Added `NSMicrophoneUsageDescription` explaining microphone access for recitation coaching.
   - Added `NSSpeechRecognitionUsageDescription` explaining speech recognition for recitation evaluation.
 
-#### 6. Verification & Automated Tests
+#### 6. Authentic Tilawat Audio Playback & Native Media Streaming
+- `android/app/src/main/AndroidManifest.xml`
+  - Added `INTERNET`, `ACCESS_NETWORK_STATE`, and `MODIFY_AUDIO_SETTINGS` permissions.
+  - Added `android.intent.action.TTS_SERVICE` query intent for Android 11+ visibility.
+- `android/app/src/main/kotlin/com/focusdeen/focus_deen/channels/FocusDeenMethodChannel.kt`
+  - Added native `android.media.MediaPlayer` integration with `AudioAttributes.USAGE_MEDIA` and `AudioAttributes.CONTENT_TYPE_SPEECH`.
+  - Added `playAudio` and `stopAudio` channel methods.
+  - Added volume boost (`1.0f`) on `AudioManager.STREAM_MUSIC` and smart `fallbackPhonetic` synthesis when Arabic voice packs are missing on real OEM devices.
+- `lib/core/constants/channel_constants.dart` & `lib/core/services/native_bridge_service.dart`
+  - Added `playAudio` and `stopAudio` bridge calls and asynchronous playback event listeners.
+- `lib/features/learning/models/learning_lesson_model.dart` & `lib/features/learning/repositories/learning_repository.dart`
+  - Added `audioUrl` field with authentic EveryAyah and Islamic Network CDN MP3 recitation URLs (Mishary Rashid Alafasy) for Daily Dhikr, Takbir, and Short Surahs.
+- `lib/features/learning/views/learning_mode_view.dart` & `lib/features/learning/views/lesson_detail_screen.dart`
+  - Wired audio buttons to play genuine recitation audio with dynamic state tracking and synchronized play/stop actions.
+
+#### 7. App Icons & Search in "What should we protect?"
+- `lib/core/widgets/app_icon_widget.dart` (NEW)
+  - Created reusable `AppIconWidget` to render high-resolution on-device icons via `Image.memory` with smooth rounded corners.
+  - Added branded visual fallbacks for TikTok, Instagram, Facebook, YouTube, Snapchat, Reddit, WhatsApp, Twitter/X, Telegram, Discord, and system apps.
+- `android/app/src/main/AndroidManifest.xml`
+  - Added `android.permission.QUERY_ALL_PACKAGES` permission for Android 11+ package visibility.
+- `lib/features/onboarding/views/choose_apps_screen.dart`
+  - Replaced single-letter placeholder with `AppIconWidget`.
+  - Added real-time search bar for installed apps and full Bengali localization.
+- `lib/features/app_selection/controllers/app_selection_controller.dart`
+  - Curated installed app sorting to prioritize popular distracting social apps at the top.
+- `lib/features/dashboard/views/home_screen.dart`
+  - Upgraded dashboard protected app pills with real brand icons.
+
+#### 8. Verification & Automated Tests
 - `test/widget_test.dart`
   - Expanded test suite from 16 to 20 automated tests:
     - Screen breakpoint classification (compact, medium, expanded).
