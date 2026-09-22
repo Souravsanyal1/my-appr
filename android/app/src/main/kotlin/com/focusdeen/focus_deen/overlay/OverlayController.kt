@@ -171,10 +171,11 @@ class OverlayController(
         fv.attachToFlutterEngine(e)
         e.lifecycleChannel.appIsResumed()
         container.requestFocus()
-        requestAudioFocus()
-        pauseBackgroundMedia()
-        main.postDelayed({ pauseBackgroundMedia() }, 150L)
-        main.postDelayed({ pauseBackgroundMedia() }, 400L)
+        requestAudioFocus()          // AUDIOFOCUS_GAIN forces YouTube/TikTok to pause
+        pauseBackgroundMedia()         // Immediate
+        main.postDelayed({ pauseBackgroundMedia() }, 200L)   // After window attach
+        main.postDelayed({ pauseBackgroundMedia() }, 500L)   // After Flutter renders
+        main.postDelayed({ pauseBackgroundMedia() }, 1000L)  // Safety net for slow apps
 
         val args = mapOf(
             "package" to pkg,
@@ -340,12 +341,21 @@ class OverlayController(
 
     // ----------------------------------------------------------- audio & media pause
 
-    /** Pichoner TikTok/YouTube/Media auto-pause korar jonno. */
+    /**
+     * Pichoner TikTok/YouTube/Media auto-pause korar jonno.
+     * KEYCODE_MEDIA_PAUSE  — standard players (Spotify, podcast, etc.)
+     * KEYCODE_MEDIA_PLAY_PAUSE — YouTube, TikTok (toggle key)
+     * AudioFocus GAIN      — system forces other apps to pause/duck
+     */
     fun pauseBackgroundMedia() {
         try {
+            // Standard pause key (Spotify, music players)
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
             audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
-            Log.d(TAG, "Dispatched KEYCODE_MEDIA_PAUSE to pause background video/audio")
+            // Toggle key — works for YouTube, TikTok, Instagram Reels
+            audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+            audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE))
+            Log.d(TAG, "Dispatched MEDIA_PAUSE + MEDIA_PLAY_PAUSE to pause background video/audio")
         } catch (t: Throwable) {
             Log.w(TAG, "pauseBackgroundMedia dispatch failed", t)
         }
@@ -353,20 +363,22 @@ class OverlayController(
 
     private fun requestAudioFocus() {
         if (Build.VERSION.SDK_INT >= 26) {
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            // AUDIOFOCUS_GAIN (not transient) — forces YouTube/TikTok to fully pause
+            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SPEECH)
                         .build(),
                 )
+                .setWillPauseWhenDucked(true)
                 .setOnAudioFocusChangeListener { }
                 .build()
             audio.requestAudioFocus(req)
             focusRequest = req
         } else {
             @Suppress("DEPRECATION")
-            audio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
+            audio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
         }
     }
 
