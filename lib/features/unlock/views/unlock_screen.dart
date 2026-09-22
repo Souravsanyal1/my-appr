@@ -580,28 +580,46 @@ class _UnlockScreenState extends State<UnlockScreen>
 
                           return Column(
                             children: [
-                              // Status message banner (e.g. recitation celebration)
-                              if (statusMsg.isNotEmpty)
+                              // Status message banner (e.g. recitation celebration or error notice)
+                              if (statusMsg.isNotEmpty || controller.hasTrackingFailed.value)
                                 AnimatedContainer(
                                   duration: const Duration(milliseconds: 250),
                                   margin: const EdgeInsets.only(bottom: 12),
                                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
                                   decoration: BoxDecoration(
-                                    color: AppColors.brightGreen.withValues(alpha: 0.2),
+                                    color: controller.hasTrackingFailed.value
+                                        ? const Color(0xFF3B1212)
+                                        : AppColors.brightGreen.withValues(alpha: 0.2),
                                     borderRadius: BorderRadius.circular(20),
-                                    border: Border.all(color: AppColors.brightGreen.withValues(alpha: 0.5)),
+                                    border: Border.all(
+                                      color: controller.hasTrackingFailed.value
+                                          ? const Color(0xFFEF4444)
+                                          : AppColors.brightGreen.withValues(alpha: 0.5),
+                                    ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      const Icon(Icons.check_circle, color: AppColors.brightGreen, size: 16),
+                                      Icon(
+                                        controller.hasTrackingFailed.value
+                                            ? Icons.error_outline_rounded
+                                            : Icons.check_circle,
+                                        color: controller.hasTrackingFailed.value
+                                            ? const Color(0xFFEF4444)
+                                            : AppColors.brightGreen,
+                                        size: 16,
+                                      ),
                                       const SizedBox(width: 6),
-                                      Text(
-                                        statusMsg,
-                                        style: const TextStyle(
-                                          color: AppColors.brightGreen,
-                                          fontSize: 12,
-                                          fontWeight: FontWeight.bold,
+                                      Flexible(
+                                        child: Text(
+                                          statusMsg,
+                                          style: TextStyle(
+                                            color: controller.hasTrackingFailed.value
+                                                ? const Color(0xFFFCA5A5)
+                                                : AppColors.brightGreen,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -616,6 +634,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                                 textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
                                 children: List.generate(words.length, (i) {
                                   final matched = i < matches.length && matches[i];
+                                  final isFailed = !matched && controller.hasTrackingFailed.value;
                                   return AnimatedContainer(
                                     duration: const Duration(milliseconds: 250),
                                     padding: EdgeInsets.symmetric(
@@ -625,18 +644,28 @@ class _UnlockScreenState extends State<UnlockScreen>
                                     decoration: BoxDecoration(
                                       color: matched
                                           ? AppColors.brightGreen.withValues(alpha: 0.28)
-                                          : Colors.white.withValues(alpha: 0.08),
+                                          : (isFailed
+                                              ? const Color(0xFF3B1212)
+                                              : Colors.white.withValues(alpha: 0.08)),
                                       borderRadius: BorderRadius.circular(12),
                                       border: Border.all(
                                         color: matched
                                             ? AppColors.brightGreen
-                                            : Colors.white24,
-                                        width: matched ? 1.8 : 1,
+                                            : (isFailed
+                                                ? const Color(0xFFEF4444)
+                                                : Colors.white24),
+                                        width: (matched || isFailed) ? 1.8 : 1,
                                       ),
                                       boxShadow: [
                                         if (matched)
                                           BoxShadow(
                                             color: AppColors.brightGreen.withValues(alpha: 0.35),
+                                            blurRadius: 10,
+                                            spreadRadius: 1,
+                                          )
+                                        else if (isFailed)
+                                          BoxShadow(
+                                            color: const Color(0xFFEF4444).withValues(alpha: 0.35),
                                             blurRadius: 10,
                                             spreadRadius: 1,
                                           ),
@@ -653,6 +682,13 @@ class _UnlockScreenState extends State<UnlockScreen>
                                             color: AppColors.brightGreen,
                                           ),
                                           const SizedBox(width: 4),
+                                        ] else if (isFailed) ...[
+                                          const Icon(
+                                            Icons.close,
+                                            size: 13,
+                                            color: Color(0xFFEF4444),
+                                          ),
+                                          const SizedBox(width: 4),
                                         ],
                                         Text(
                                           words[i],
@@ -660,8 +696,10 @@ class _UnlockScreenState extends State<UnlockScreen>
                                           style: TextStyle(
                                             fontSize: fontSize,
                                             height: isRtl ? 1.7 : 1.3,
-                                            fontWeight: matched ? FontWeight.bold : FontWeight.w600,
-                                            color: matched ? AppColors.brightGreen : Colors.white,
+                                            fontWeight: (matched || isFailed) ? FontWeight.bold : FontWeight.w600,
+                                            color: matched
+                                                ? AppColors.brightGreen
+                                                : (isFailed ? const Color(0xFFFCA5A5) : Colors.white),
                                             fontFamily: fontFam,
                                           ),
                                         ),

@@ -267,6 +267,13 @@ class _DeedFlowState extends State<_DeedFlow> {
     });
   }
 
+  void _pauseRecording() {
+    _recordingTimer?.cancel();
+    setState(() {
+      _isRecording = false;
+    });
+  }
+
   void _stopAndAnalyze([double matchRatio = 0.0]) {
     if (!_isRecording) return;
     _recordingTimer?.cancel();
@@ -386,6 +393,7 @@ class _DeedFlowState extends State<_DeedFlow> {
           isRecording: _isRecording,
           recordingSeconds: _recordingSeconds,
           onStart: _startRecording,
+          onPause: _pauseRecording,
           onStop: (ratio) => _stopAndAnalyze(ratio),
           onCancel: widget.onCancel,
         );
@@ -671,6 +679,7 @@ class _RecordStep extends StatefulWidget {
   final bool isRecording;
   final double recordingSeconds;
   final VoidCallback onStart;
+  final VoidCallback? onPause;
   final ValueChanged<double> onStop;
   final Future<void> Function() onCancel;
 
@@ -680,6 +689,7 @@ class _RecordStep extends StatefulWidget {
     required this.isRecording,
     required this.recordingSeconds,
     required this.onStart,
+    this.onPause,
     required this.onStop,
     required this.onCancel,
   });
@@ -696,11 +706,14 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   bool _speechAvailable = false;
   bool _fallbackToDefaultLocale = false;
   Timer? _restartListenTimer;
+  int _consecutiveErrors = 0;
+  static const int _maxConsecutiveErrors = 2;
 
   // 0: Arabic, 1: Bangla Pronunciation, 2: Bangla Meaning, 3: English
   int _activeMode = 0;
   String _liveSpokenText = '';
   List<bool> _matchedWords = [];
+  bool _sessionFailed = false;
 
   @override
   void initState() {
@@ -718,6 +731,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   void _initMatchedWords() {
     final words = _currentWords;
     _matchedWords = List.filled(words.length, false);
+    _sessionFailed = false;
   }
 
   Future<void> _initSpeech() async {
@@ -726,14 +740,17 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
         onStatus: (status) {
           debugPrint('[LockOverlay STT] status: $status');
           if (widget.isRecording && (status == 'done' || status == 'notListening')) {
-            _scheduleListenRestart();
+            _scheduleListenRestart(fromError: false);
           }
         },
         onError: (error) {
           debugPrint('[LockOverlay STT] error: ${error.errorMsg}');
           if (widget.isRecording) {
-            _fallbackToDefaultLocale = true;
-            _scheduleListenRestart();
+            _consecutiveErrors++;
+            if (_consecutiveErrors >= _maxConsecutiveErrors) {
+              _fallbackToDefaultLocale = true;
+            }
+            _scheduleListenRestart(fromError: true);
           }
         },
       );
@@ -743,10 +760,14 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     }
   }
 
-  void _scheduleListenRestart() {
+  void _scheduleListenRestart({bool fromError = false}) {
     _restartListenTimer?.cancel();
-    _restartListenTimer = Timer(const Duration(milliseconds: 250), () {
-      if (mounted && widget.isRecording) {
+    // Exponential backoff: normal pause 600ms, 1st error 1500ms, 2nd+ error 3000ms
+    final int delayMs = fromError
+        ? (_consecutiveErrors >= _maxConsecutiveErrors ? 3000 : 1500)
+        : 600;
+    _restartListenTimer = Timer(Duration(milliseconds: delayMs), () {
+      if (mounted && widget.isRecording && !_speech.isListening) {
         _listenContinuous();
       }
     });
@@ -758,11 +779,14 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     try {
       final locales = await _speech.locales();
       final localeId = _resolveLocale(locales);
+      debugPrint('[LockOverlay STT] Starting listen locale: ${localeId ?? "system-default"}');
 
       await _speech.listen(
         onResult: (result) {
-          if (!mounted) return;
+          if (!mounted || result.recognizedWords.isEmpty) return;
+          _consecutiveErrors = 0; // reset on any recognized speech
           final spoken = result.recognizedWords;
+          debugPrint('[LockOverlay STT] Recognized: $spoken (final=${result.finalResult})');
           setState(() {
             _liveSpokenText = spoken;
           });
@@ -772,15 +796,16 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
           listenMode: stt.ListenMode.dictation,
           partialResults: true,
           cancelOnError: false,
-          listenFor: const Duration(seconds: 40),
-          pauseFor: const Duration(seconds: 5),
+          listenFor: const Duration(seconds: 30),
+          pauseFor: const Duration(seconds: 3),
           localeId: localeId,
         ),
       );
     } catch (e) {
       debugPrint('[LockOverlay STT] listenContinuous error: $e');
+      _consecutiveErrors++;
       _fallbackToDefaultLocale = true;
-      _scheduleListenRestart();
+      _scheduleListenRestart(fromError: true);
     }
   }
 
@@ -812,6 +837,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   void didUpdateWidget(covariant _RecordStep oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (!oldWidget.isRecording && widget.isRecording) {
+      _sessionFailed = false;
       _startSTT();
     } else if (oldWidget.isRecording && !widget.isRecording) {
       _stopSTT();
@@ -822,11 +848,13 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     setState(() {
       _liveSpokenText = '';
       _initMatchedWords();
+      _sessionFailed = false;
     });
     if (!_speechAvailable) {
       await _initSpeech();
     }
     _fallbackToDefaultLocale = false;
+    _consecutiveErrors = 0;
     await _listenContinuous();
   }
 
@@ -834,7 +862,9 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     _restartListenTimer?.cancel();
     try {
       await _speech.stop();
-    } catch (_) {}
+    } catch (e) {
+      debugPrint('[LockOverlay STT] stop error: $e');
+    }
   }
 
   @override
@@ -848,17 +878,16 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   // ── Word splitting & Matching helpers ──────────────────────────────────────
 
   List<String> _splitWords(String text) {
-    if (text.isEmpty) return [];
     return text
+        .trim()
         .split(RegExp(r'\s+'))
-        .map((w) => w.replaceAll(RegExp(r'''[^\u0600-\u06FF\u0980-\u09FFa-zA-Z0-9]'''), '').trim())
         .where((w) => w.isNotEmpty)
         .toList();
   }
 
   String _normalizeArabic(String w) {
     return w
-        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll(RegExp(r'[\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
         .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
         .replaceAll('ة', 'ه')
         .replaceAll('ى', 'ي')
@@ -869,6 +898,8 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   String _normalizeBangla(String w) {
     return w
         .replaceAll(RegExp(r'[\s\u200c\u200d\u09CD\.\,\?\!\-\—]'), '')
+        .replaceAll("'", '')
+        .replaceAll('"', '')
         .replaceAll(RegExp(r'[^\u0980-\u09FF]'), '')
         .trim();
   }
@@ -880,6 +911,27 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
         .trim();
   }
 
+  int _levenshtein(String s, String t) {
+    if (s == t) return 0;
+    if (s.isEmpty) return t.length;
+    if (t.isEmpty) return s.length;
+
+    List<int> v0 = List<int>.generate(t.length + 1, (i) => i);
+    List<int> v1 = List<int>.filled(t.length + 1, 0);
+
+    for (int i = 0; i < s.length; i++) {
+      v1[0] = i + 1;
+      for (int j = 0; j < t.length; j++) {
+        final cost = (s.codeUnitAt(i) == t.codeUnitAt(j)) ? 0 : 1;
+        v1[j + 1] = [v1[j] + 1, v0[j + 1] + 1, v0[j] + cost].reduce((a, b) => a < b ? a : b);
+      }
+      for (int j = 0; j <= t.length; j++) {
+        v0[j] = v1[j];
+      }
+    }
+    return v0[t.length];
+  }
+
   bool _wordMatches(String expected, String spoken) {
     if (expected.isEmpty || spoken.isEmpty) return false;
 
@@ -887,36 +939,86 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     final eAr = _normalizeArabic(expected);
     final sAr = _normalizeArabic(spoken);
     if (eAr.isNotEmpty && sAr.isNotEmpty) {
-      if (sAr == eAr || sAr.contains(eAr) || eAr.contains(sAr)) return true;
-      if (eAr.length >= 2 && sAr.length >= 2 && eAr.substring(0, 2) == sAr.substring(0, 2)) return true;
+      if (sAr == eAr) return true;
+      if (sAr == 'و$eAr' || eAr == 'و$sAr' || sAr == 'ف$eAr' || eAr == 'ف$sAr') return true;
+      if (eAr.length >= 4 && sAr.length >= 4) {
+        if (_levenshtein(eAr, sAr) <= 1) return true;
+      }
     }
 
     // Check Bangla
     final eBn = _normalizeBangla(expected);
     final sBn = _normalizeBangla(spoken);
     if (eBn.isNotEmpty && sBn.isNotEmpty) {
-      if (sBn == eBn || sBn.contains(eBn) || eBn.contains(sBn)) return true;
-      if (eBn.length >= 3 && sBn.length >= 3 && eBn.substring(0, 3) == sBn.substring(0, 3)) return true;
+      if (sBn == eBn) return true;
+      if (eBn.length >= 4 && sBn.length >= 4) {
+        if (_levenshtein(eBn, sBn) <= 1) return true;
+        if (sBn.startsWith(eBn) || eBn.startsWith(sBn)) {
+          final minLen = eBn.length < sBn.length ? eBn.length : sBn.length;
+          final maxLen = eBn.length > sBn.length ? eBn.length : sBn.length;
+          if (minLen >= 5 && (maxLen - minLen) <= 2) return true;
+        }
+      }
     }
 
-    // Check Latin
+    // Check Latin / English
     final eLa = _normalizeLatin(expected);
     final sLa = _normalizeLatin(spoken);
     if (eLa.isNotEmpty && sLa.isNotEmpty) {
-      if (sLa == eLa || sLa.contains(eLa) || eLa.contains(sLa)) return true;
-      if (eLa.length >= 3 && sLa.length >= 3 && eLa.substring(0, 3) == sLa.substring(0, 3)) return true;
+      if (sLa == eLa) return true;
+      if (eLa.length >= 4 && sLa.length >= 4) {
+        if (_levenshtein(eLa, sLa) <= 1) return true;
+        if (sLa.startsWith(eLa) || eLa.startsWith(sLa)) {
+          final minLen = eLa.length < sLa.length ? eLa.length : sLa.length;
+          final maxLen = eLa.length > sLa.length ? eLa.length : sLa.length;
+          if (minLen >= 5 && (maxLen - minLen) <= 2) return true;
+        }
+      }
     }
 
     return false;
   }
 
-  bool _phraseContainsWord(String fullPhrase, String word) {
-    final wLa = _normalizeLatin(word);
-    final wBn = _normalizeBangla(word);
-    final wAr = _normalizeArabic(word);
-    if (wLa.length >= 3 && fullPhrase.contains(wLa)) return true;
-    if (wBn.length >= 3 && fullPhrase.contains(wBn)) return true;
-    if (wAr.length >= 2 && fullPhrase.contains(wAr)) return true;
+  bool _matchesTargetSlot(int slotIndex, List<String> targetWords, String spokenWord) {
+    if (slotIndex < 0 || slotIndex >= targetWords.length) return false;
+    final expected = targetWords[slotIndex];
+
+    // 1. Direct match with target word
+    if (_wordMatches(expected, spokenWord)) return true;
+
+    // 2. Cross-mode candidates for this exact slot
+    final arWords = _splitWords(widget.verse.arabic);
+    final bnWords = _splitWords(widget.verse.banglaPronunciation);
+    final trWords = _splitWords(widget.verse.transliteration);
+
+    final crossCandidates = <String>[];
+    if (slotIndex < arWords.length) crossCandidates.add(arWords[slotIndex]);
+    if (slotIndex < bnWords.length) crossCandidates.add(bnWords[slotIndex]);
+    if (slotIndex < trWords.length) crossCandidates.add(trWords[slotIndex]);
+
+    for (final cand in crossCandidates) {
+      if (cand != expected && _wordMatches(cand, spokenWord)) {
+        return true;
+      }
+    }
+
+    // 3. Known phonetic mappings for compound religious phrases
+    final sBn = _normalizeBangla(spokenWord);
+    final sLa = _normalizeLatin(spokenWord);
+    final eAr = _normalizeArabic(expected);
+
+    if (eAr == 'الحمد' && (sBn.startsWith('আলহামদু') || sLa.startsWith('alhamdu'))) return true;
+    if (eAr == 'لله' && (sBn.contains('লিল্লাহ') || sBn.contains('আল্লাহ') || sLa.contains('lillah') || sLa.contains('allah'))) return true;
+    if (eAr == 'سبحان' && (sBn.startsWith('সুবহান') || sLa.startsWith('subhan'))) return true;
+    if (eAr == 'الله' && (sBn.contains('আল্লাহ') || sLa.contains('allah'))) return true;
+    if (eAr == 'وبحمده' && (sBn.contains('হামদিহ') || sLa.contains('hamdih'))) return true;
+    if (eAr == 'استغفر' && (sBn.startsWith('আস্তাগফির') || sLa.startsWith('astaghfir'))) return true;
+    if (eAr == 'واتوب' && (sBn.contains('তূবু') || sBn.contains('তওবা') || sLa.contains('atubu'))) return true;
+    if (eAr == 'اليه' && (sBn.contains('ইলাইহ') || sLa.contains('ilayh'))) return true;
+    if (eAr == 'رب' && (sBn.contains('রব') || sLa.contains('rabb'))) return true;
+    if (eAr == 'العالمين' && (sBn.contains('আলামীন') || sBn.contains('আলামিন') || sLa.contains('alamin') || sLa.contains('alameen'))) return true;
+    if (eAr == 'اكبر' && (sBn.contains('আকবার') || sLa.contains('akbar'))) return true;
+
     return false;
   }
 
@@ -938,7 +1040,6 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   void _updateWordMatches(String spokenText) {
     if (spokenText.trim().isEmpty) return;
     final spokenWords = spokenText.split(RegExp(r'\s+'));
-    final fullPhrase = '${_normalizeLatin(spokenText)} ${_normalizeBangla(spokenText)} ${_normalizeArabic(spokenText)}';
     final targetWords = _currentWords;
     if (targetWords.isEmpty) return;
 
@@ -951,49 +1052,33 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     }
 
     bool newlyMatched = false;
-    for (int i = 0; i < targetWords.length; i++) {
-      if (updated[i]) continue;
-      final expected = targetWords[i];
 
-      bool found = false;
-      for (final spoken in spokenWords) {
-        if (_wordMatches(expected, spoken)) {
-          found = true;
-          break;
-        }
-      }
-      if (!found && _phraseContainsWord(fullPhrase, expected)) {
-        found = true;
-      }
+    // Strict sequential matching:
+    // Find first unmatched target word index
+    int targetIdx = 0;
+    while (targetIdx < targetWords.length && updated[targetIdx]) {
+      targetIdx++;
+    }
 
-      // Cross-mode check
-      if (!found) {
-        final arWords = _splitWords(widget.verse.arabic);
-        final bnWords = _splitWords(widget.verse.banglaPronunciation);
-        final trWords = _splitWords(widget.verse.transliteration);
+    for (final spoken in spokenWords) {
+      if (targetIdx >= targetWords.length) break;
 
-        final crossCandidates = <String>[];
-        if (i < arWords.length) crossCandidates.add(arWords[i]);
-        if (i < bnWords.length) crossCandidates.add(bnWords[i]);
-        if (i < trWords.length) crossCandidates.add(trWords[i]);
-
-        for (final cand in crossCandidates) {
-          for (final spoken in spokenWords) {
-            if (_wordMatches(cand, spoken)) {
-              found = true;
-              break;
-            }
-          }
-          if (found || _phraseContainsWord(fullPhrase, cand)) {
-            found = true;
-            break;
-          }
-        }
-      }
-
-      if (found) {
-        updated[i] = true;
+      // Check current expected word
+      if (_matchesTargetSlot(targetIdx, targetWords, spoken)) {
+        updated[targetIdx] = true;
         newlyMatched = true;
+        targetIdx++;
+
+        // Check if this spoken word also covers compound next word (e.g. "আলহামদুলিল্লাহি" -> "الحمد" + "لله")
+        if (targetIdx < targetWords.length && _matchesTargetSlot(targetIdx, targetWords, spoken)) {
+          updated[targetIdx] = true;
+          targetIdx++;
+        }
+      } else if (targetIdx + 1 < targetWords.length && _matchesTargetSlot(targetIdx + 1, targetWords, spoken)) {
+        // Allowed skip of at most 1 word if a tiny conjunction was skipped
+        updated[targetIdx + 1] = true;
+        newlyMatched = true;
+        targetIdx += 2;
       }
     }
 
@@ -1001,6 +1086,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
       HapticFeedback.selectionClick();
       setState(() {
         _matchedWords = updated;
+        _sessionFailed = false;
       });
 
       final matchedCount = updated.where((m) => m).length;
@@ -1023,6 +1109,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
       _fallbackToDefaultLocale = false;
       _liveSpokenText = '';
       _initMatchedWords();
+      _sessionFailed = false;
     });
     if (widget.isRecording) {
       _speech.stop().then((_) => _scheduleListenRestart());
@@ -1083,6 +1170,30 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
           ),
           const SizedBox(height: 16),
 
+          // Status / Error Banner when failed
+          if (_sessionFailed)
+            Container(
+              margin: const EdgeInsets.only(bottom: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              decoration: BoxDecoration(
+                color: const Color(0xFF3B1212),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: const Color(0xFFEF4444)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.error_outline_rounded, color: Color(0xFFEF4444), size: 18),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: Text(
+                      'সঠিকভাবে পড়া হয়নি (${(ratio * 100).toInt()}%) — লাল চিহ্নিত শব্দগুলো পুনরায় পড়ুন',
+                      style: const TextStyle(fontSize: 12, color: Color(0xFFFCA5A5), fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+
           // Word Chips Card
           Container(
             width: double.infinity,
@@ -1090,7 +1201,11 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
             decoration: BoxDecoration(
               color: const Color(0xFF0E2418),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1FE08F).withValues(alpha: 0.3)),
+              border: Border.all(
+                color: _sessionFailed
+                    ? const Color(0xFFEF4444).withValues(alpha: 0.5)
+                    : const Color(0xFF1FE08F).withValues(alpha: 0.3),
+              ),
             ),
             child: Column(
               children: [
@@ -1103,6 +1218,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                   children: List.generate(words.length, (idx) {
                     final word = words[idx];
                     final isMatched = idx < _matchedWords.length && _matchedWords[idx];
+                    final isFailed = _sessionFailed && !isMatched;
 
                     return GestureDetector(
                       onTap: () {
@@ -1110,6 +1226,7 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                         setState(() {
                           if (idx < _matchedWords.length) {
                             _matchedWords[idx] = !_matchedWords[idx];
+                            _sessionFailed = false;
                           }
                         });
                       },
@@ -1122,13 +1239,13 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                         decoration: BoxDecoration(
                           color: isMatched
                               ? const Color(0xFF1FE08F)
-                              : const Color(0xFF163825),
+                              : (isFailed ? const Color(0xFF3B1212) : const Color(0xFF163825)),
                           borderRadius: BorderRadius.circular(10),
                           border: Border.all(
                             color: isMatched
                                 ? const Color(0xFF1FE08F)
-                                : const Color(0xFF1FE08F).withValues(alpha: 0.3),
-                            width: isMatched ? 2 : 1,
+                                : (isFailed ? const Color(0xFFEF4444) : const Color(0xFF1FE08F).withValues(alpha: 0.3)),
+                            width: (isMatched || isFailed) ? 2 : 1,
                           ),
                           boxShadow: isMatched
                               ? [
@@ -1138,7 +1255,15 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                                     spreadRadius: 1,
                                   ),
                                 ]
-                              : null,
+                              : (isFailed
+                                  ? [
+                                      BoxShadow(
+                                        color: const Color(0xFFEF4444).withValues(alpha: 0.45),
+                                        blurRadius: 10,
+                                        spreadRadius: 1,
+                                      ),
+                                    ]
+                                  : null),
                         ),
                         child: Row(
                           mainAxisSize: MainAxisSize.min,
@@ -1146,13 +1271,18 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                             if (isMatched) ...[
                               const Icon(Icons.check_circle_rounded, size: 16, color: Colors.black),
                               const SizedBox(width: 4),
+                            ] else if (isFailed) ...[
+                              const Icon(Icons.close_rounded, size: 16, color: Color(0xFFEF4444)),
+                              const SizedBox(width: 4),
                             ],
                             Text(
                               word,
                               style: TextStyle(
                                 fontSize: _activeMode == 0 ? 22 : 14,
-                                fontWeight: isMatched ? FontWeight.bold : FontWeight.w500,
-                                color: isMatched ? Colors.black : Colors.white,
+                                fontWeight: (isMatched || isFailed) ? FontWeight.bold : FontWeight.w500,
+                                color: isMatched
+                                    ? Colors.black
+                                    : (isFailed ? const Color(0xFFFCA5A5) : Colors.white),
                               ),
                             ),
                           ],
@@ -1174,9 +1304,9 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                           ? widget.verse.banglaMeaning
                           : widget.verse.transliteration),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontSize: 13,
-                    color: Color(0xFF1FE08F),
+                    color: _sessionFailed ? const Color(0xFFFCA5A5) : const Color(0xFF1FE08F),
                     fontStyle: FontStyle.italic,
                   ),
                 ),
@@ -1209,10 +1339,14 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                         ? 'শুনছি: "$_liveSpokenText"'
                         : (widget.isRecording
                             ? 'কথার শব্দ বলুন (উচ্চারণ বা অর্থ যা বলবেন মিলবে)...'
-                            : 'মাইকে চাপ দিয়ে পাঠ শুরু করুন'),
+                            : (_sessionFailed
+                                ? 'আবার চেষ্টা করতে নিচের মাইকে চাপ দিন'
+                                : 'মাইকে চাপ দিয়ে পাঠ শুরু করুন')),
                     style: TextStyle(
                       fontSize: 12,
-                      color: _liveSpokenText.isNotEmpty ? const Color(0xFF1FE08F) : Colors.white54,
+                      color: _liveSpokenText.isNotEmpty
+                          ? const Color(0xFF1FE08F)
+                          : (_sessionFailed ? const Color(0xFFFCA5A5) : Colors.white54),
                     ),
                     overflow: TextDirection.ltr == TextDirection.ltr ? TextOverflow.ellipsis : null,
                     maxLines: 1,
@@ -1234,7 +1368,11 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
               ),
               Text(
                 '${(ratio * 100).toInt()}%',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1FE08F)),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.bold,
+                  color: _sessionFailed ? const Color(0xFFEF4444) : const Color(0xFF1FE08F),
+                ),
               ),
             ],
           ),
@@ -1245,7 +1383,9 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
               value: ratio,
               minHeight: 5,
               backgroundColor: Colors.white10,
-              valueColor: const AlwaysStoppedAnimation(Color(0xFF1FE08F)),
+              valueColor: AlwaysStoppedAnimation(
+                _sessionFailed ? const Color(0xFFEF4444) : const Color(0xFF1FE08F),
+              ),
             ),
           ),
 
@@ -1255,11 +1395,13 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
           Text(
             widget.isRecording
                 ? '${widget.recordingSeconds.toStringAsFixed(1)}s'
-                : 'পাঠের সময়',
+                : (_sessionFailed ? 'অসম্পূর্ণ' : 'পাঠের সময়'),
             style: TextStyle(
-              fontSize: widget.isRecording ? 36 : 14,
+              fontSize: widget.isRecording ? 36 : 16,
               fontWeight: FontWeight.bold,
-              color: widget.isRecording ? const Color(0xFF1FE08F) : Colors.white38,
+              color: widget.isRecording
+                  ? const Color(0xFF1FE08F)
+                  : (_sessionFailed ? const Color(0xFFEF4444) : Colors.white38),
             ),
           ),
 
@@ -1270,8 +1412,21 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
             onTap: () {
               if (widget.isRecording) {
                 final curRatio = words.isNotEmpty ? (_matchedWords.where((m) => m).length / words.length) : 0.0;
-                widget.onStop(curRatio);
+                if (curRatio >= 0.75) {
+                  _sessionFailed = false;
+                  widget.onStop(curRatio);
+                } else {
+                  HapticFeedback.heavyImpact();
+                  _stopSTT();
+                  setState(() {
+                    _sessionFailed = true;
+                  });
+                  widget.onPause?.call();
+                }
               } else {
+                setState(() {
+                  _sessionFailed = false;
+                });
                 widget.onStart();
               }
             },
@@ -1303,10 +1458,28 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
 
           const SizedBox(height: 10),
           Text(
-            widget.isRecording ? 'থামাতে আলতো চাপুন' : 'শুরু করতে মাইকে ট্যাপ করুন',
-            style: const TextStyle(fontSize: 12, color: Colors.white54),
+            widget.isRecording
+                ? 'থামাতে আলতো চাপুন'
+                : (_sessionFailed ? 'পুনরায় পড়তে মাইকে ট্যাপ করুন' : 'শুরু করতে মাইকে ট্যাপ করুন'),
+            style: TextStyle(
+              fontSize: 12,
+              color: _sessionFailed ? const Color(0xFFFCA5A5) : Colors.white54,
+            ),
           ),
-          const SizedBox(height: 16),
+          if (_sessionFailed) ...[
+            const SizedBox(height: 8),
+            TextButton(
+              onPressed: () {
+                final curRatio = words.isNotEmpty ? (_matchedWords.where((m) => m).length / words.length) : 0.0;
+                widget.onStop(curRatio);
+              },
+              child: const Text(
+                'এভাবেই জমা দিন (ব্যর্থ হিসেবে গণ্য হবে)',
+                style: TextStyle(color: Colors.white38, fontSize: 11, decoration: TextDecoration.underline),
+              ),
+            ),
+          ],
+          const SizedBox(height: 12),
         ],
       ),
     );
