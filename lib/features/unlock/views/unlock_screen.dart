@@ -803,16 +803,20 @@ class _UnlockScreenState extends State<UnlockScreen>
 
                     // Circular MIC Button for optional audio recitation
                     GestureDetector(
-                      onTap: () {
-                        controller.toggleRecording();
-                        if (controller.isRecording.value) {
-                          // Auto advance count after speech
-                          Future.delayed(const Duration(seconds: 4), () {
+                      onTap: () async {
+                        if (!controller.isRecording.value) {
+                          await controller.startRecording();
+                          // Auto-stop after 6 seconds if still recording
+                          Future.delayed(const Duration(seconds: 6), () {
                             if (mounted && controller.isRecording.value) {
-                              controller.stopRecordingAndScore();
-                              _onRepetitionTapped();
+                              controller.stopRecordingAndScore().then((_) {
+                                if (mounted) _onRepetitionTapped();
+                              });
                             }
                           });
+                        } else {
+                          await controller.stopRecordingAndScore();
+                          if (mounted) _onRepetitionTapped();
                         }
                       },
                       child: Container(

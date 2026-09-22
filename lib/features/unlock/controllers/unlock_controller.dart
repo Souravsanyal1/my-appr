@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import '../../../core/services/firebase_realtime_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/pin_security_service.dart';
@@ -42,6 +45,14 @@ class UnlockController extends GetxController {
     null,
   );
   Timer? _recordingTimer;
+
+  // Real AudioRecorder state
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  String? _recordingPath;
+  double _peakAmplitudeDb = -160.0;
+  double _avgAmplitudeSum = 0.0;
+  int _ampSamples = 0;
+  Timer? _amplitudeTimer;
 
   List<QuranVerseToRecite> get verses =>
       RecitationScoringService.challengeVerses;
@@ -92,6 +103,8 @@ class UnlockController extends GetxController {
   void onClose() {
     _ticker?.cancel();
     _recordingTimer?.cancel();
+    _amplitudeTimer?.cancel();
+    _audioRecorder.dispose();
     super.onClose();
   }
 
@@ -122,21 +135,89 @@ class UnlockController extends GetxController {
     }
   }
 
-  void startRecording() {
-    isRecording.value = true;
-    recordingSeconds.value = 0;
-    recitationResult.value = null;
-    HapticFeedback.mediumImpact();
+  Future<void> startRecording() async {
+    try {
+      // Check permission
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (!hasPermission) {
+        debugPrint('[UnlockController] Mic permission denied');
+        return;
+      }
 
-    _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
-      recordingSeconds.value++;
-    });
+      // Reset amplitude trackers
+      _peakAmplitudeDb = -160.0;
+      _avgAmplitudeSum = 0.0;
+      _ampSamples = 0;
+      recordingSeconds.value = 0;
+      recitationResult.value = null;
+
+      // Build temp file path
+      final dir = await getTemporaryDirectory();
+      _recordingPath = '${dir.path}/recitation_${DateTime.now().millisecondsSinceEpoch}.m4a';
+
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+          numChannels: 1,
+        ),
+        path: _recordingPath!,
+      );
+
+      isRecording.value = true;
+      HapticFeedback.mediumImpact();
+
+      // Elapsed time ticker
+      _recordingTimer = Timer.periodic(const Duration(seconds: 1), (_) {
+        recordingSeconds.value++;
+      });
+
+      // Amplitude sampler — every 250ms to track peak + average
+      _amplitudeTimer = Timer.periodic(const Duration(milliseconds: 250), (_) async {
+        try {
+          final amp = await _audioRecorder.getAmplitude();
+          final db = amp.current; // dBFS value
+          if (db > _peakAmplitudeDb) _peakAmplitudeDb = db;
+          _avgAmplitudeSum += db;
+          _ampSamples++;
+        } catch (_) {}
+      });
+    } catch (e) {
+      debugPrint('[UnlockController] startRecording error: $e');
+    }
   }
 
   Future<void> stopRecordingAndScore() async {
-    isRecording.value = false;
     _recordingTimer?.cancel();
+    _amplitudeTimer?.cancel();
     HapticFeedback.mediumImpact();
+
+    String? savedPath;
+    try {
+      savedPath = await _audioRecorder.stop();
+    } catch (e) {
+      debugPrint('[UnlockController] recorder.stop() error: $e');
+      savedPath = _recordingPath;
+    }
+
+    isRecording.value = false;
+
+    final double avgDb = _ampSamples > 0
+        ? _avgAmplitudeSum / _ampSamples
+        : -160.0;
+
+    // Get recorded file size for silence check
+    int? fileSizeBytes;
+    try {
+      if (savedPath != null) {
+        fileSizeBytes = await File(savedPath).length();
+      }
+    } catch (_) {}
+
+    debugPrint('[UnlockController] Recording done: path=$savedPath '
+        'size=${fileSizeBytes}B peak=${_peakAmplitudeDb.toStringAsFixed(1)}dBFS '
+        'avg=${avgDb.toStringAsFixed(1)}dBFS duration=${recordingSeconds.value}s');
 
     isAnalyzing.value = true;
     try {
@@ -146,6 +227,10 @@ class UnlockController extends GetxController {
         durationSeconds: recordingSeconds.value,
         minDurationSeconds: currentVerse.minRecitationSeconds,
         unlockThreshold: configuredThreshold,
+        audioPath: savedPath,
+        peakAmplitudeDb: _peakAmplitudeDb,
+        averageAmplitudeDb: avgDb,
+        audioFileSizeBytes: fileSizeBytes,
       );
 
       recitationResult.value = result;
