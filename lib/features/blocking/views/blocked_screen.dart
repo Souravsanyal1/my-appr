@@ -126,9 +126,8 @@ class BlockedScreen extends StatelessWidget {
                           ],
                         ),
                         const SizedBox(height: 12),
-                        Obx(() {
-                          // Prefer AppSelectionController cache for real icons;
-                          // gracefully falls back to package-derived name if not loaded.
+                        Builder(builder: (context) {
+                          // Use AppSelectionController cache if available for real icons.
                           final selCtrl = Get.isRegistered<AppSelectionController>()
                               ? Get.find<AppSelectionController>()
                               : null;
