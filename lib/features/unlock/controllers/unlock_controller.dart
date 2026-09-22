@@ -319,9 +319,6 @@ class UnlockController extends GetxController {
           liveRecognizedText.value = spoken;
           _updateWordMatches(spoken);
         },
-        listenFor: const Duration(seconds: 40),
-        pauseFor: const Duration(seconds: 4),
-        localeId: localeId,
         onSoundLevelChange: (level) {
           soundLevel.value = level;
         },
@@ -329,6 +326,9 @@ class UnlockController extends GetxController {
           listenMode: stt.ListenMode.dictation,
           partialResults: true,
           cancelOnError: false,
+          listenFor: const Duration(seconds: 40),
+          pauseFor: const Duration(seconds: 4),
+          localeId: localeId,
         ),
       );
     } catch (e) {
