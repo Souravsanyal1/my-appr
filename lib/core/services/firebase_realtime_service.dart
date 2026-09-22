@@ -8,10 +8,16 @@ import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class FirebaseRealtimeService extends GetxService {
+  static const String _rtdbUrl =
+      'https://focusdeen-f8295-default-rtdb.asia-southeast1.firebasedatabase.app';
+
   FirebaseDatabase? get _database {
     try {
       if (Firebase.apps.isNotEmpty) {
-        return FirebaseDatabase.instance;
+        return FirebaseDatabase.instanceFor(
+          app: Firebase.app(),
+          databaseURL: _rtdbUrl,
+        );
       }
     } catch (e) {
       debugPrint('FirebaseDatabase instance notice: $e');

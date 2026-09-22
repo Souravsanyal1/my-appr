@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/features/dashboard/bindings/dashboard_binding.dart';
 import 'package:focus_deen/features/dashboard/views/dashboard_screen.dart';
 import 'package:focus_deen/features/learning/views/learning_catalog_screen.dart';
@@ -39,8 +38,6 @@ class _MainShellState extends State<MainShell> {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-
     return Scaffold(
       body: IndexedStack(
         index: _currentIndex,
@@ -49,41 +46,39 @@ class _MainShellState extends State<MainShell> {
       bottomNavigationBar: NavigationBar(
         selectedIndex: _currentIndex,
         onDestinationSelected: (idx) => setState(() => _currentIndex = idx),
-        destinations: [
+        destinations: const [
           NavigationDestination(
-            icon: const Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(Icons.dashboard, color: _navColor(isDark)),
+            icon: Icon(Icons.dashboard_outlined),
+            selectedIcon: Icon(Icons.dashboard),
             label: 'Home',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(Icons.menu_book, color: _navColor(isDark)),
+            icon: Icon(Icons.menu_book_outlined),
+            selectedIcon: Icon(Icons.menu_book),
             label: 'Learning',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.timer_outlined),
-            selectedIcon: Icon(Icons.timer, color: _navColor(isDark)),
+            icon: Icon(Icons.timer_outlined),
+            selectedIcon: Icon(Icons.timer),
             label: 'Limits',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.alarm_outlined),
-            selectedIcon: Icon(Icons.alarm, color: _navColor(isDark)),
+            icon: Icon(Icons.alarm_outlined),
+            selectedIcon: Icon(Icons.alarm),
             label: 'Schedule',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(Icons.bar_chart, color: _navColor(isDark)),
+            icon: Icon(Icons.bar_chart_outlined),
+            selectedIcon: Icon(Icons.bar_chart),
             label: 'Stats',
           ),
           NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: Icon(Icons.settings, color: _navColor(isDark)),
+            icon: Icon(Icons.settings_outlined),
+            selectedIcon: Icon(Icons.settings),
             label: 'Settings',
           ),
         ],
       ),
     );
   }
-
-  Color _navColor(bool isDark) => AppColors.primaryEmerald;
 }

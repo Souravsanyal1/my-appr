@@ -27,9 +27,17 @@ class DataLayerService extends GetxService {
     return null;
   }
 
+  static const String _rtdbUrl =
+      'https://focusdeen-f8295-default-rtdb.asia-southeast1.firebasedatabase.app';
+
   FirebaseDatabase? get _rtdb {
     try {
-      if (Firebase.apps.isNotEmpty) return FirebaseDatabase.instance;
+      if (Firebase.apps.isNotEmpty) {
+        return FirebaseDatabase.instanceFor(
+          app: Firebase.app(),
+          databaseURL: _rtdbUrl,
+        );
+      }
     } catch (e) {
       debugPrint('[DataLayer] RTDB instance notice: $e');
     }
