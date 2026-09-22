@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
@@ -275,7 +274,7 @@ class _DeedFlowState extends State<_DeedFlow> {
   }
 
   void _stopAndAnalyze([double matchRatio = 0.0]) {
-    if (!_isRecording) return;
+    if (_step == _Step.analyze || _step == _Step.result) return;
     _recordingTimer?.cancel();
     HapticFeedback.mediumImpact();
     setState(() {
@@ -297,6 +296,8 @@ class _DeedFlowState extends State<_DeedFlow> {
   }
 
   _ScoreResult _computeScore(double durationSec, int minSec, [double matchRatio = 0.0]) {
+    // ── Word-tracking is the primary gate ─────────────────────────────────
+    // ≥ 70% match → pass (generous to account for STT variance)
     if (matchRatio >= 0.7) {
       final overall = (88 + (matchRatio * 12)).round().clamp(88, 100);
       return _ScoreResult(
@@ -306,20 +307,23 @@ class _DeedFlowState extends State<_DeedFlow> {
         isPassing: true,
       );
     }
-    final rng = Random();
-    if (durationSec < minSec && matchRatio < 0.4) {
-      return _ScoreResult(overall: 35, wordScore: 30, timingScore: 30, isPassing: false);
+
+    // Hard fail: very short + almost nothing matched
+    if (matchRatio < 0.4 || durationSec < minSec * 0.5) {
+      final score = (matchRatio * 60).round().clamp(10, 55);
+      return _ScoreResult(overall: score, wordScore: score, timingScore: 40, isPassing: false);
     }
-    // High score when recitation has started
-    final base = 75 + rng.nextInt(25); // 75–100
-    final word = (base + (matchRatio * 20)).round().clamp(70, 100);
-    final timing = base.clamp(70, 100);
-    final overall = ((word + timing + base) ~/ 3).clamp(widget.request.minScore, 100);
+
+    // Borderline (0.4–0.69): always fails — score capped just below minScore so
+    // the result screen shows "retry" without unlocking the app.
+    final wordScore = (matchRatio * 80).round().clamp(30, widget.request.minScore - 1);
+    final timingScore = durationSec >= minSec ? 70 : 45;
+    final overall = ((wordScore + timingScore) ~/ 2).clamp(30, widget.request.minScore - 1);
     return _ScoreResult(
       overall: overall,
-      wordScore: word,
-      timingScore: timing,
-      isPassing: overall >= widget.request.minScore,
+      wordScore: wordScore,
+      timingScore: timingScore,
+      isPassing: false,
     );
   }
 
