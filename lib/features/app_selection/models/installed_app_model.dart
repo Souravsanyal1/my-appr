@@ -18,12 +18,26 @@ class InstalledAppModel {
     this.isMonitored = false,
     this.category = 'Social media',
     Uint8List? cachedIconBytes,
-  }) : _cachedIconBytes = cachedIconBytes ?? _decodeBase64(iconBase64);
+  }) : _cachedIconBytes = cachedIconBytes ??
+            _decodeBase64(iconBase64, packageName: packageName);
 
-  static Uint8List? _decodeBase64(String? base64Str) {
+  static final Map<String, Uint8List> _globalIconCache = {};
+
+  static Uint8List? _decodeBase64(String? base64Str, {String? packageName}) {
     if (base64Str == null || base64Str.isEmpty) return null;
+    if (packageName != null && _globalIconCache.containsKey(packageName)) {
+      return _globalIconCache[packageName];
+    }
     try {
-      return base64Decode(base64Str);
+      var sanitized = base64Str.trim().replaceAll(RegExp(r'\s+'), '');
+      if (sanitized.contains(',')) {
+        sanitized = sanitized.split(',').last;
+      }
+      final decoded = base64Decode(sanitized);
+      if (packageName != null) {
+        _globalIconCache[packageName] = decoded;
+      }
+      return decoded;
     } catch (_) {
       return null;
     }
@@ -57,14 +71,15 @@ class InstalledAppModel {
     bool isMonitored = false,
   }) {
     final rawBase64 = map['iconBase64'] as String?;
+    final pkgName = map['packageName'] as String? ?? '';
     return InstalledAppModel(
-      packageName: map['packageName'] as String? ?? '',
+      packageName: pkgName,
       appName: map['appName'] as String? ?? '',
       isSystemApp: map['isSystemApp'] as bool? ?? false,
       iconBase64: rawBase64,
       isMonitored: isMonitored,
       category: map['category'] as String? ?? 'Social media',
-      cachedIconBytes: _decodeBase64(rawBase64),
+      cachedIconBytes: _decodeBase64(rawBase64, packageName: pkgName),
     );
   }
 }

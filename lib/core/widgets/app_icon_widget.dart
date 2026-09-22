@@ -1,7 +1,9 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import '../../features/app_selection/models/installed_app_model.dart';
 import '../constants/app_colors.dart';
+import '../services/native_bridge_service.dart';
 
 class AppIconWidget extends StatelessWidget {
   final InstalledAppModel? app;
@@ -29,7 +31,16 @@ class AppIconWidget extends StatelessWidget {
         .trim()
         .toLowerCase();
     final effectiveName = (appName ?? app?.appName ?? '').trim();
-    final effectiveBytes = iconBytes ?? app?.iconBytes;
+    Uint8List? effectiveBytes = iconBytes ?? app?.iconBytes;
+
+    // Automatic resolution from NativeBridgeService cache if iconBytes not passed
+    if (effectiveBytes == null && effectivePkg.isNotEmpty) {
+      if (Get.isRegistered<NativeBridgeService>()) {
+        final cached =
+            Get.find<NativeBridgeService>().getAppByPackage(effectivePkg);
+        effectiveBytes = cached?.iconBytes;
+      }
+    }
 
     if (effectiveBytes != null && effectiveBytes.isNotEmpty) {
       return Container(

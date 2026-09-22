@@ -590,11 +590,11 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
 
     private fun drawableToBase64(drawable: Drawable): String? {
         return try {
-            val bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null) {
+            val bitmap = if (drawable is BitmapDrawable && drawable.bitmap != null && !drawable.bitmap.isRecycled) {
                 drawable.bitmap
             } else {
-                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 40
-                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 40
+                val width = if (drawable.intrinsicWidth > 0) drawable.intrinsicWidth else 64
+                val height = if (drawable.intrinsicHeight > 0) drawable.intrinsicHeight else 64
                 val b = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
                 val canvas = Canvas(b)
                 drawable.setBounds(0, 0, canvas.width, canvas.height)
@@ -602,10 +602,14 @@ class FocusDeenMethodChannel(private val context: Context) : MethodChannel.Metho
                 b
             }
 
-            // Scale down to compact 40x40 to keep binder IPC buffer payload tiny and fast (<1KB per app)
-            val scaled = Bitmap.createScaledBitmap(bitmap, 40, 40, true)
+            // Scale to 56x56 for high-DPI clarity while keeping payload under 1.5KB
+            val scaled = if (bitmap.width == 56 && bitmap.height == 56) {
+                bitmap
+            } else {
+                Bitmap.createScaledBitmap(bitmap, 56, 56, true)
+            }
             val stream = ByteArrayOutputStream()
-            scaled.compress(Bitmap.CompressFormat.PNG, 75, stream)
+            scaled.compress(Bitmap.CompressFormat.PNG, 85, stream)
             val byteArray = stream.toByteArray()
             Base64.encodeToString(byteArray, Base64.NO_WRAP)
         } catch (e: Exception) {

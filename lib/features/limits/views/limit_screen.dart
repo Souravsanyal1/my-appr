@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
 import 'package:focus_deen/core/services/pin_security_service.dart';
+import 'package:focus_deen/core/widgets/app_icon_widget.dart';
 import 'package:focus_deen/features/limits/controllers/limit_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
 import 'package:focus_deen/features/security/views/pin_dialog.dart';
@@ -176,19 +177,36 @@ class LimitScreen extends GetView<LimitController> {
           children: [
             Row(
               children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: (isBlock ? AppColors.danger : AppColors.warning)
-                        .withValues(alpha: 0.15),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  alignment: Alignment.center,
-                  child: Icon(
-                    isBlock ? Icons.block : Icons.notifications_active_outlined,
-                    color: isBlock ? AppColors.danger : AppColors.warning,
-                  ),
+                Stack(
+                  children: [
+                    AppIconWidget(
+                      packageName: limit.packageName,
+                      appName: limit.appName,
+                      size: 44,
+                      borderRadius: 12,
+                    ),
+                    Positioned(
+                      right: 0,
+                      bottom: 0,
+                      child: Container(
+                        width: 14,
+                        height: 14,
+                        decoration: BoxDecoration(
+                          color: isBlock ? AppColors.danger : AppColors.warning,
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: isDark ? const Color(0xFF1A1A1A) : Colors.white,
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          isBlock ? Icons.block : Icons.access_time_rounded,
+                          size: 8,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
                 const SizedBox(width: 14),
                 Expanded(
