@@ -30,6 +30,10 @@ abstract class PronunciationAnalyzer {
     required int durationSeconds,
     required int minDurationSeconds,
     required int unlockThreshold,
+    String? audioPath,
+    double? averageAmplitudeDb,
+    double? peakAmplitudeDb,
+    int? audioFileSizeBytes,
   });
 }
 
@@ -43,16 +47,53 @@ class LocalPronunciationAnalyzer implements PronunciationAnalyzer {
     required int durationSeconds,
     required int minDurationSeconds,
     required int unlockThreshold,
+    String? audioPath,
+    double? averageAmplitudeDb,
+    double? peakAmplitudeDb,
+    int? audioFileSizeBytes,
   }) async {
     // Artificial non-blocking async delay to simulate acoustic analysis
     await Future.delayed(const Duration(milliseconds: 650));
 
+    // -------------------------------------------------------------------------
+    // 1. REAL ACOUSTIC CHECK: Silence / Low Energy / Missing File Detection
+    // -------------------------------------------------------------------------
+    // dBFS values range from -160 dBFS (total silence) to 0 dBFS (clipping peak).
+    // Normal conversational speech into microphone is typically between -35 dBFS and -10 dBFS.
+    // Ambient silence or muted background noise typically stays below -46 dBFS.
+    final bool hasAudioFile = audioPath != null &&
+        audioPath.isNotEmpty &&
+        (audioFileSizeBytes == null || audioFileSizeBytes > 1500);
+
+    // If audio recording was provided, verify genuine sound energy was captured
+    final bool isSilentOrNoSpeech = (peakAmplitudeDb != null && peakAmplitudeDb < -46.0) ||
+        (averageAmplitudeDb != null && averageAmplitudeDb < -52.0) ||
+        (!hasAudioFile && audioPath != null);
+
+    if (isSilentOrNoSpeech) {
+      // REAL: The microphone captured near silence, white noise, or an empty file.
+      return const PronunciationResult(
+        overallScore: 28,
+        wordRecognitionScore: 20,
+        timingScore: 35,
+        audioSimilarityScore: 25,
+        earnedUnlockMinutes: 0,
+        isPassing: false,
+        feedback:
+            'No clear recitation speech detected. Please speak clearly and audibly into the microphone.',
+      );
+    }
+
+    // -------------------------------------------------------------------------
+    // 2. REAL DURATION / TARTIL PACING CHECK
+    // -------------------------------------------------------------------------
+    // Hurrying through Quranic words violates Tartil (measured, rhythmic pacing).
     if (durationSeconds < minDurationSeconds) {
       return PronunciationResult(
-        overallScore: 55,
-        wordRecognitionScore: 50,
-        timingScore: 40,
-        audioSimilarityScore: 55,
+        overallScore: 54,
+        wordRecognitionScore: 48,
+        timingScore: 42,
+        audioSimilarityScore: 52,
         earnedUnlockMinutes: 0,
         isPassing: false,
         feedback:
@@ -60,20 +101,44 @@ class LocalPronunciationAnalyzer implements PronunciationAnalyzer {
       );
     }
 
-    // Evaluate metrics based on duration and audio flow
+    // -------------------------------------------------------------------------
+    // 3. REAL ACOUSTIC ENERGY & VOLUME METRICS
+    // -------------------------------------------------------------------------
+    // Assess volume stability and loudness from real amplitude
+    int volumeScore = 88;
+    if (peakAmplitudeDb != null) {
+      if (peakAmplitudeDb > -5.0) {
+        // Too close or clipping
+        volumeScore = 80;
+      } else if (peakAmplitudeDb < -35.0) {
+        // Very faint / distant voice
+        volumeScore = 72;
+      } else {
+        // Optimal recitation volume (-30 dBFS to -8 dBFS)
+        volumeScore = 92;
+      }
+    }
+
+    // -------------------------------------------------------------------------
+    // 4. SIMULATED PHONEME & TAJWEED ALIGNMENT
+    // -------------------------------------------------------------------------
+    // NOTE (Architecture boundary): Full on-device Arabic phonetic/makhraj
+    // recognition requires a dedicated neural speech model (e.g. TFLite/Whisper).
+    // Here, phonetic match is simulated within a realistic variance window anchored
+    // by the genuine acoustic metrics (volume score, pacing duration, energy).
     final int baseVariance = _random.nextInt(6);
     int wordRecognition;
     int timing;
     int audioSimilarity;
 
     if (durationSeconds >= minDurationSeconds + 2) {
-      wordRecognition = 88 + baseVariance;
-      timing = 85 + _random.nextInt(10);
-      audioSimilarity = 87 + _random.nextInt(8);
+      wordRecognition = (86 + baseVariance + (volumeScore > 85 ? 4 : 0)).clamp(0, 100);
+      timing = (84 + _random.nextInt(10)).clamp(0, 100);
+      audioSimilarity = (85 + _random.nextInt(8) + (volumeScore > 85 ? 3 : 0)).clamp(0, 100);
     } else {
-      wordRecognition = 78 + baseVariance;
-      timing = 74 + _random.nextInt(8);
-      audioSimilarity = 77 + _random.nextInt(9);
+      wordRecognition = (78 + baseVariance).clamp(0, 100);
+      timing = (74 + _random.nextInt(8)).clamp(0, 100);
+      audioSimilarity = (76 + _random.nextInt(9)).clamp(0, 100);
     }
 
     // Weighted average practice score

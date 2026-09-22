@@ -65,9 +65,15 @@ class _AnalysisViewState extends State<AnalysisView> {
           _progress = 100;
           _progressTimer?.cancel();
 
-          final durationSeconds = (Get.arguments is Map)
-              ? (Get.arguments['durationSeconds'] as int? ?? 4)
-              : 4;
+          final args = (Get.arguments is Map)
+              ? Map<String, dynamic>.from(Get.arguments as Map)
+              : <String, dynamic>{};
+
+          final durationSeconds = (args['durationSeconds'] as int?) ?? 4;
+          final audioPath = args['audioPath'] as String?;
+          final averageAmplitude = (args['averageAmplitude'] as num?)?.toDouble();
+          final peakAmplitude = (args['peakAmplitude'] as num?)?.toDouble();
+          final audioFileSizeBytes = args['audioFileSizeBytes'] as int?;
 
           final storage = Get.find<StorageService>();
           final int threshold =
@@ -76,11 +82,15 @@ class _AnalysisViewState extends State<AnalysisView> {
           final analyzer = LocalPronunciationAnalyzer();
           analyzer
               .analyze(
-                expectedArabic: 'أَسْتَغْفِرُ اللَّهَ',
-                expectedTransliteration: 'Astaghfirullah',
+                expectedArabic: args['expectedArabic'] as String? ?? 'أَسْتَغْفِرُ اللَّهَ',
+                expectedTransliteration: args['expectedTransliteration'] as String? ?? 'Astaghfirullah',
                 durationSeconds: durationSeconds,
                 minDurationSeconds: 3,
                 unlockThreshold: threshold,
+                audioPath: audioPath,
+                averageAmplitudeDb: averageAmplitude,
+                peakAmplitudeDb: peakAmplitude,
+                audioFileSizeBytes: audioFileSizeBytes,
               )
               .then((res) {
                 if (!mounted) return;
