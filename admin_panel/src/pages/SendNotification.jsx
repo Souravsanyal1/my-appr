@@ -21,7 +21,8 @@ import {
   CheckCircle,
   AlertCircle,
 } from 'lucide-react';
-import { db, functions } from '../firebase';
+import { ref as rtdbRef, set as rtdbSet } from 'firebase/database';
+import { db, functions, rtdb } from '../firebase';
 import PhonePreview from '../components/PhonePreview';
 import ConfirmSendModal from '../components/ConfirmSendModal';
 
@@ -177,10 +178,24 @@ export default function SendNotification() {
           isScheduled: true,
         });
 
+        // Also save scheduled to RTDB
+        try {
+          await rtdbSet(rtdbRef(rtdb, `notifications_broadcast/${notificationId}`), {
+            ...payload,
+            status: 'scheduled',
+            scheduledAt: scheduledDateTime,
+            scheduledTimestampMs: scheduledTimestamp,
+            isScheduled: true,
+            sentAt: Date.now(),
+          });
+        } catch (rtdbErr) {
+          console.warn('[RTDB] Scheduled broadcast notice:', rtdbErr.message);
+        }
+
         showToast('Notification successfully scheduled and broadcasted to devices!', 'success');
       } else {
         // Immediate dispatch
-        // 2. Publish to notifications_broadcast for instant free-tier sync to all active apps
+        // 2. Publish to notifications_broadcast for instant client synchronization
         await addDoc(collection(db, 'notifications_broadcast'), {
           ...payload,
           status: 'active',
@@ -188,14 +203,46 @@ export default function SendNotification() {
           sentAt: serverTimestamp(),
         });
 
-        // 3. Record in legacy notifications_log for backward compatibility
+        // 3. Publish to RTDB for instant zero-latency WebSocket broadcast
+        try {
+          await rtdbSet(rtdbRef(rtdb, `notifications_broadcast/${notificationId}`), {
+            ...payload,
+            status: 'active',
+            isScheduled: false,
+            sentAt: Date.now(),
+          });
+          console.log('[RTDB] Broadcast published successfully');
+        } catch (rtdbErr) {
+          console.warn('[RTDB] Broadcast notice:', rtdbErr.message);
+        }
+
+        // 4. Try Cloud Function sendNotification for direct FCM push delivery to system tray
+        try {
+          const sendFn = httpsCallable(functions, 'sendNotification');
+          const fcmResult = await sendFn({
+            title: title.trim(),
+            body: body.trim(),
+            imageUrl: imageUrl.trim() || null,
+            route: route || null,
+            targetType,
+            targetPlatform: targetType === 'platform' ? platformTarget : null,
+            targetLanguage: targetType === 'language' ? languageTarget : null,
+            targetDeviceId: targetType === 'specific' ? specificDeviceId.trim() : null,
+            notificationId,
+          });
+          console.log('[FCM] Cloud Function push dispatched:', fcmResult.data);
+        } catch (fcmErr) {
+          console.warn('[FCM] Cloud Function dispatch notice (using realtime broadcast fallback):', fcmErr.message);
+        }
+
+        // 5. Record in legacy notifications_log for backward compatibility
         await setDoc(doc(db, 'notifications_log', notificationId), {
           ...payload,
           status: 'sent',
           sentAt: serverTimestamp(),
         });
 
-        showToast(`Successfully dispatched to ~${recipientCount} devices (100% Free)!`, 'success');
+        showToast(`Successfully dispatched to ~${recipientCount} devices!`, 'success');
       }
 
       setShowConfirmModal(false);

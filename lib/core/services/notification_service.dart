@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_database/firebase_database.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
@@ -8,6 +9,7 @@ import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import '../../features/notifications/models/inbox_notification_model.dart';
 import 'device_identity_service.dart';
+import 'language_service.dart';
 import 'storage_service.dart';
 
 const String _kInboxKey = 'local_notification_inbox';
@@ -46,6 +48,7 @@ class NotificationService extends GetxService {
     await _initLocalNotifications();
     await _initFirebaseMessaging();
     _initBroadcastSync();
+    _initRtdbBroadcastSync();
     return this;
   }
 
@@ -76,13 +79,23 @@ class NotificationService extends GetxService {
       _kAndroidChannelId,
       _kAndroidChannelName,
       description: 'DeenFlow reminders and notifications',
-      importance: Importance.high,
+      importance: Importance.max,
       enableVibration: true,
+      playSound: true,
     );
 
-    await _localNotifications
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    final androidPlugin = _localNotifications
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>();
+
+    await androidPlugin?.createNotificationChannel(channel);
+
+    // Explicitly request POST_NOTIFICATIONS permission on Android 13+ (API 33+)
+    try {
+      final granted = await androidPlugin?.requestNotificationsPermission();
+      debugPrint('[Notifications] Android 13+ POST_NOTIFICATIONS granted: $granted');
+    } catch (e) {
+      debugPrint('[Notifications] Android permission notice: $e');
+    }
   }
 
   void _onNotificationTapped(NotificationResponse response) {
@@ -201,10 +214,18 @@ class NotificationService extends GetxService {
   static const _androidDetails = AndroidNotificationDetails(
     _kAndroidChannelId,
     _kAndroidChannelName,
-    importance: Importance.high,
+    channelDescription: 'DeenFlow reminders and notifications',
+    importance: Importance.max,
     priority: Priority.high,
+    playSound: true,
+    enableVibration: true,
+    icon: '@mipmap/ic_launcher',
   );
-  static const _iosDetails = DarwinNotificationDetails();
+  static const _iosDetails = DarwinNotificationDetails(
+    presentAlert: true,
+    presentBadge: true,
+    presentSound: true,
+  );
   static const _details = NotificationDetails(
     android: _androidDetails,
     iOS: _iosDetails,
@@ -231,8 +252,8 @@ class NotificationService extends GetxService {
       final title = data['title'] as String? ?? '';
       final body = data['body'] as String? ?? '';
       final route = data['route'] as String?;
-      final timestampMs = int.tryParse(data['scheduledTimestampMs'] ?? '') ?? 0;
-      final notifId = int.tryParse(data['notifId'] ?? '0') ?? 0;
+      final timestampMs = int.tryParse(data['scheduledTimestampMs']?.toString() ?? '') ?? 0;
+      final notifId = int.tryParse(data['notifId']?.toString() ?? '0') ?? 0;
 
       if (title.isEmpty || timestampMs == 0) return;
 
@@ -256,8 +277,9 @@ class NotificationService extends GetxService {
 
       debugPrint('[FCM] Local alarm scheduled for $scheduledAt, id=$notifId');
 
+      final storedId = data['notificationId']?.toString() ?? notifId.toString();
       _addToInbox(InboxNotificationModel(
-        id: notifId.toString(),
+        id: storedId,
         title: title,
         body: body,
         route: route,
@@ -268,7 +290,7 @@ class NotificationService extends GetxService {
     }
   }
 
-  // ─── Free-Tier Firestore Live Broadcast Sync ──────────────────────────────
+  // ─── Dual-Channel Live Broadcast Sync (Firestore & Realtime Database) ─────
 
   void _initBroadcastSync() {
     if (Firebase.apps.isEmpty) return;
@@ -280,7 +302,10 @@ class NotificationService extends GetxService {
           .listen((snapshot) async {
         for (final change in snapshot.docChanges) {
           if (change.type == DocumentChangeType.added) {
-            await _processBroadcastDoc(change.doc);
+            final data = change.doc.data();
+            if (data != null) {
+              await _processBroadcastData(change.doc.id, data);
+            }
           }
         }
       }, onError: (e) {
@@ -291,16 +316,43 @@ class NotificationService extends GetxService {
     }
   }
 
-  Future<void> _processBroadcastDoc(DocumentSnapshot doc) async {
+  void _initRtdbBroadcastSync() {
+    if (Firebase.apps.isEmpty) return;
+
     try {
-      final docId = doc.id;
+      final rtdb = FirebaseDatabase.instanceFor(
+        app: Firebase.app(),
+        databaseURL:
+            'https://focusdeen-f8295-default-rtdb.asia-southeast1.firebasedatabase.app',
+      );
+      rtdb.ref('notifications_broadcast').limitToLast(20).onChildAdded.listen(
+        (event) async {
+          final val = event.snapshot.value;
+          if (val is Map) {
+            final data = Map<String, dynamic>.from(val);
+            final key = event.snapshot.key ?? '';
+            await _processBroadcastData(key, data);
+          }
+        },
+        onError: (e) {
+          debugPrint('[RTDB BroadcastSync] Error: $e');
+        },
+      );
+    } catch (e) {
+      debugPrint('[RTDB BroadcastSync] Init error: $e');
+    }
+  }
+
+  Future<void> _processBroadcastData(String sourceId, Map<String, dynamic> data) async {
+    try {
+      final notifId = data['notificationId']?.toString() ??
+          data['id']?.toString() ??
+          sourceId;
+
       final processed = List<String>.from(
         _storage.read<List<dynamic>>('processed_broadcasts') ?? <String>[],
       );
-      if (processed.contains(docId)) return;
-
-      final data = doc.data() as Map<String, dynamic>?;
-      if (data == null) return;
+      if (processed.contains(notifId) || processed.contains(sourceId)) return;
 
       final targetType = data['targetType'] as String? ?? 'all';
       final currentPlatform = defaultTargetPlatform == TargetPlatform.android ? 'android' : 'ios';
@@ -314,21 +366,30 @@ class NotificationService extends GetxService {
             ? DeviceIdentityService.to.deviceId
             : '';
         if (targetDeviceId.isNotEmpty && targetDeviceId != myDeviceId) return;
+      } else if (targetType == 'language') {
+        final targetLang = (data['targetLanguage'] as String? ?? '').toLowerCase();
+        final myLang = Get.isRegistered<LanguageService>()
+            ? LanguageService.to.currentLanguage.value.toLowerCase()
+            : 'bn';
+        if (targetLang.isNotEmpty && !myLang.startsWith(targetLang)) return;
       }
 
       // Mark as processed so it never triggers duplicate notifications
-      processed.add(docId);
-      if (processed.length > 200) processed.removeRange(0, processed.length - 200);
+      processed.add(sourceId);
+      if (notifId != sourceId) processed.add(notifId);
+      if (processed.length > 300) processed.removeRange(0, processed.length - 300);
       _storage.write('processed_broadcasts', processed);
 
-      // Record delivery receipt to Firestore
-      recordDeliveryReceipt(docId);
+      // Record delivery receipt to Firestore under the true notification ID
+      recordDeliveryReceipt(notifId);
 
       final title = data['title'] as String? ?? '';
       final body = data['body'] as String? ?? '';
       final route = data['route'] as String?;
       final isScheduled = data['isScheduled'] as bool? ?? false;
-      final scheduledTimestampMs = data['scheduledTimestampMs'] as int?;
+      final scheduledTimestampMs = data['scheduledTimestampMs'] is int
+          ? data['scheduledTimestampMs'] as int
+          : int.tryParse(data['scheduledTimestampMs']?.toString() ?? '');
 
       if (title.isEmpty) return;
 
@@ -338,17 +399,18 @@ class NotificationService extends GetxService {
           'body': body,
           'route': route,
           'scheduledTimestampMs': scheduledTimestampMs.toString(),
-          'notifId': docId.hashCode.toString(),
+          'notifId': notifId.hashCode.toString(),
+          'notificationId': notifId,
         });
       } else {
         await _showLocalNow(
-          id: docId.hashCode,
+          id: notifId.hashCode,
           title: title,
           body: body,
           route: route,
         );
         _addToInbox(InboxNotificationModel(
-          id: docId,
+          id: notifId,
           title: title,
           body: body,
           imageUrl: data['imageUrl'] as String?,
@@ -357,7 +419,7 @@ class NotificationService extends GetxService {
         ));
       }
     } catch (e) {
-      debugPrint('[BroadcastSync] _processBroadcastDoc error: $e');
+      debugPrint('[BroadcastSync] _processBroadcastData error: $e');
     }
   }
 

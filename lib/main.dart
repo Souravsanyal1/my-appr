@@ -22,6 +22,7 @@ import 'core/services/pin_security_service.dart';
 import 'core/services/storage_service.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'features/limits/controllers/limit_controller.dart';
 import 'features/usage/controllers/usage_controller.dart';
 
@@ -29,7 +30,32 @@ import 'features/usage/controllers/usage_controller.dart';
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
   debugPrint('[FCM Background] Received: ${message.messageId}');
-  // No initialization needed here; local scheduling is deferred to next app open.
+  if (message.notification == null && message.data.isNotEmpty) {
+    try {
+      final title = message.data['title']?.toString() ?? '';
+      final body = message.data['body']?.toString() ?? '';
+      if (title.isNotEmpty) {
+        final fln = FlutterLocalNotificationsPlugin();
+        const androidDetails = AndroidNotificationDetails(
+          'deenflow_notifications',
+          'DeenFlow Reminders',
+          channelDescription: 'DeenFlow reminders and notifications',
+          importance: Importance.max,
+          priority: Priority.high,
+          icon: '@mipmap/ic_launcher',
+        );
+        await fln.show(
+          id: message.messageId.hashCode,
+          title: title,
+          body: body,
+          notificationDetails: const NotificationDetails(android: androidDetails),
+          payload: message.data['route']?.toString(),
+        );
+      }
+    } catch (e) {
+      debugPrint('[FCM Background] display notice: $e');
+    }
+  }
 }
 
 void main() async {

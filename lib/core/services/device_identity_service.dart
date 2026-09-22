@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'package:get/get.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -89,14 +90,25 @@ class DeviceIdentityService extends GetxService {
 
       final String platform = Platform.isAndroid ? 'android' : 'ios';
 
+      String? token = fcmToken;
+      if (token == null || token.isEmpty) {
+        token = _storage.read<String>('fcm_token');
+      }
+      if (token == null || token.isEmpty) {
+        try {
+          token = await FirebaseMessaging.instance.getToken();
+          if (token != null) _storage.write('fcm_token', token);
+        } catch (_) {}
+      }
+
       final Map<String, dynamic> data = {
         'deviceId': _deviceId,
         'platform': platform,
         'language': lang,
         'appVersion': appVersion,
         'lastActiveAt': FieldValue.serverTimestamp(),
-        'notificationsEnabled': fcmToken != null && fcmToken.isNotEmpty,
-        if (fcmToken != null && fcmToken.isNotEmpty) 'fcmToken': fcmToken,
+        'notificationsEnabled': true,
+        if (token != null && token.isNotEmpty) 'fcmToken': token,
         // App stats
         'streak': gamification?.currentStreak.value ?? 0,
         'totalDeeds': gamification?.deedHistory.length ?? 0,
@@ -124,6 +136,7 @@ class DeviceIdentityService extends GetxService {
   /// Lightweight FCM token refresh — called by NotificationService when token rotates.
   Future<void> updateFcmToken(String token) async {
     try {
+      _storage.write('fcm_token', token);
       if (Firebase.apps.isEmpty || _deviceId.isEmpty) return;
       await FirebaseFirestore.instance
           .collection('users')
@@ -132,7 +145,9 @@ class DeviceIdentityService extends GetxService {
             'deviceId': _deviceId,
             'fcmToken': token,
             'notificationsEnabled': true,
+            'lastActiveAt': FieldValue.serverTimestamp(),
           }, SetOptions(merge: true));
+      debugPrint('[DeviceIdentity] FCM token updated in Firestore');
     } catch (e) {
       debugPrint('[DeviceIdentity] updateFcmToken notice: $e');
     }
