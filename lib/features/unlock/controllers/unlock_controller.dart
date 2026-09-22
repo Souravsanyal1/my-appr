@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 import '../../../core/services/firebase_realtime_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/pin_security_service.dart';
@@ -15,6 +16,13 @@ import '../services/pronunciation_analyzer.dart';
 import '../services/recitation_scoring_service.dart';
 
 import '../models/good_deed_model.dart';
+
+enum VoiceTrackMode {
+  arabic, // 🇸🇦 আরবি
+  banglaPronun, // 🇧🇩 উচ্চারণ
+  banglaMeaning, // 📖 বাংলা অর্থ
+  englishMeaning, // 🇬🇧 English Meaning
+}
 
 class UnlockController extends GetxController {
   final StorageService _storageService = Get.find<StorageService>();
@@ -54,6 +62,16 @@ class UnlockController extends GetxController {
   int _ampSamples = 0;
   Timer? _amplitudeTimer;
 
+  // ── Word-by-word voice tracking ──────────────────────────────────────────
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  final RxBool speechAvailable = false.obs;
+  final RxBool isWordTracking = false.obs;
+  final RxString liveRecognizedText = ''.obs;
+  final RxString trackingStatusMessage = ''.obs;
+  final RxDouble soundLevel = 0.0.obs;
+  final Rx<VoiceTrackMode> activeVoiceMode = VoiceTrackMode.arabic.obs;
+  final RxList<bool> currentWordMatches = <bool>[].obs;
+
   List<QuranVerseToRecite> get verses =>
       RecitationScoringService.challengeVerses;
   QuranVerseToRecite get currentVerse => verses[selectedVerseIndex.value];
@@ -72,6 +90,20 @@ class UnlockController extends GetxController {
     randomizeDeed();
     loadActiveSessions();
     _startCountdownTicker();
+    _initSpeech();
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      final available = await _speech.initialize(
+        onError: (e) => debugPrint('[STT] error: ${e.errorMsg}'),
+        onStatus: (s) => debugPrint('[STT] status: $s'),
+      );
+      speechAvailable.value = available;
+      debugPrint('[STT] initialized: $available');
+    } catch (e) {
+      debugPrint('[STT] init failed: $e');
+    }
   }
 
   void randomizeDeed() {
@@ -105,6 +137,7 @@ class UnlockController extends GetxController {
     _recordingTimer?.cancel();
     _amplitudeTimer?.cancel();
     _audioRecorder.dispose();
+    _speech.stop();
     super.onClose();
   }
 
@@ -117,6 +150,257 @@ class UnlockController extends GetxController {
 
   void loadActiveSessions() {
     activeSessions.assignAll(_storageService.getUnlockSessions());
+  }
+
+  // ── Word-by-word tracking helpers ────────────────────────────────────────
+
+  /// Split text into individual words, stripping punctuation & symbols.
+  List<String> _splitWords(String text) {
+    if (text.isEmpty) return [];
+    return text
+        .split(RegExp(r'\s+'))
+        .map((w) => w.replaceAll(RegExp(r'''[^\u0600-\u06FF\u0980-\u09FFa-zA-Z0-9]'''), '').trim())
+        .where((w) => w.isNotEmpty)
+        .toList();
+  }
+
+  /// Normalize Arabic text (remove tashkeel, harmonize alef, yaa, taa marbuta).
+  String _normalizeArabic(String w) {
+    return w
+        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .replaceAll(RegExp(r'[^\u0600-\u06FF]'), '')
+        .trim();
+  }
+
+  /// Normalize Bangla text.
+  String _normalizeBangla(String w) {
+    return w
+        .replaceAll(RegExp(r'[\s\u200c\u200d\u09CD\.\,\?\!\-\—]'), '')
+        .replaceAll(RegExp(r'[^\u0980-\u09FF]'), '')
+        .trim();
+  }
+
+  /// Normalize Latin / English text.
+  String _normalizeLatin(String w) {
+    return w
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '')
+        .trim();
+  }
+
+  /// Check if [spoken] matches [expected] word across Arabic, Bangla, or Latin.
+  bool _wordMatches(String expected, String spoken) {
+    if (expected.isEmpty || spoken.isEmpty) return false;
+
+    // Check Arabic
+    final eAr = _normalizeArabic(expected);
+    final sAr = _normalizeArabic(spoken);
+    if (eAr.isNotEmpty && sAr.isNotEmpty) {
+      if (sAr.contains(eAr) || eAr.contains(sAr)) return true;
+      if (eAr.length > 2 && sAr.startsWith(eAr.substring(0, eAr.length - 1))) return true;
+    }
+
+    // Check Bangla
+    final eBn = _normalizeBangla(expected);
+    final sBn = _normalizeBangla(spoken);
+    if (eBn.isNotEmpty && sBn.isNotEmpty) {
+      if (sBn.contains(eBn) || eBn.contains(sBn)) return true;
+      if (eBn.length > 2 && sBn.startsWith(eBn.substring(0, eBn.length - 1))) return true;
+    }
+
+    // Check Latin / English
+    final eLa = _normalizeLatin(expected);
+    final sLa = _normalizeLatin(spoken);
+    if (eLa.isNotEmpty && sLa.isNotEmpty) {
+      if (sLa.contains(eLa) || eLa.contains(sLa)) return true;
+      if (eLa.length > 3 && sLa.startsWith(eLa.substring(0, eLa.length - 1))) return true;
+    }
+
+    return false;
+  }
+
+  /// Current word list for selected voice mode.
+  List<String> get currentWords {
+    switch (activeVoiceMode.value) {
+      case VoiceTrackMode.arabic:
+        return arabicWords;
+      case VoiceTrackMode.banglaPronun:
+        return banglaPronunWords.isNotEmpty ? banglaPronunWords : translitWords;
+      case VoiceTrackMode.banglaMeaning:
+        return banglaMeaningWords;
+      case VoiceTrackMode.englishMeaning:
+        return englishMeaningWords;
+    }
+  }
+
+  /// Arabic word list for current deed.
+  List<String> get arabicWords => _splitWords(activeDeed.value.arabic);
+  /// Transliteration word list.
+  List<String> get translitWords => _splitWords(activeDeed.value.transliteration);
+  /// Bangla pronunciation word list.
+  List<String> get banglaPronunWords => _splitWords(activeDeed.value.banglaPronunciation);
+  /// Bangla meaning / ortho word list.
+  List<String> get banglaMeaningWords => _splitWords(activeDeed.value.translationBn);
+  /// English meaning word list.
+  List<String> get englishMeaningWords => _splitWords(activeDeed.value.translationEn);
+
+  void resetWordTracking() {
+    liveRecognizedText.value = '';
+    currentWordMatches.assignAll(List.filled(currentWords.length, false));
+  }
+
+  void setVoiceMode(VoiceTrackMode mode) {
+    if (activeVoiceMode.value == mode) return;
+    activeVoiceMode.value = mode;
+    resetWordTracking();
+    if (isWordTracking.value) {
+      _speech.stop().then((_) => startWordTracking());
+    }
+  }
+
+  Future<void> toggleWordTracking() async {
+    if (isWordTracking.value) {
+      await stopWordTracking();
+    } else {
+      await startWordTracking();
+    }
+  }
+
+  String _resolveLocale(List<stt.LocaleName> locales) {
+    String prefix;
+    String fallback;
+    switch (activeVoiceMode.value) {
+      case VoiceTrackMode.arabic:
+        prefix = 'ar';
+        fallback = 'ar_SA';
+        break;
+      case VoiceTrackMode.banglaPronun:
+      case VoiceTrackMode.banglaMeaning:
+        prefix = 'bn';
+        fallback = 'bn_BD';
+        break;
+      case VoiceTrackMode.englishMeaning:
+        prefix = 'en';
+        fallback = 'en_US';
+        break;
+    }
+    for (final l in locales) {
+      if (l.localeId.toLowerCase().startsWith(prefix)) {
+        return l.localeId;
+      }
+    }
+    return fallback;
+  }
+
+  Future<void> startWordTracking() async {
+    if (!speechAvailable.value) {
+      await _initSpeech();
+      if (!speechAvailable.value) {
+        trackingStatusMessage.value = 'স্পিচ সার্ভিস সক্রিয় নয়';
+        return;
+      }
+    }
+
+    resetWordTracking();
+    isWordTracking.value = true;
+    trackingStatusMessage.value = 'শুনছি... পাঠ শুরু করুন';
+    HapticFeedback.mediumImpact();
+
+    try {
+      final locales = await _speech.locales();
+      final localeId = _resolveLocale(locales);
+
+      await _speech.listen(
+        onResult: (result) {
+          final spoken = result.recognizedWords;
+          liveRecognizedText.value = spoken;
+          _updateWordMatches(spoken);
+        },
+        listenFor: const Duration(seconds: 40),
+        pauseFor: const Duration(seconds: 4),
+        localeId: localeId,
+        onSoundLevelChange: (level) {
+          soundLevel.value = level;
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          partialResults: true,
+          cancelOnError: false,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[STT] listen error: $e');
+      isWordTracking.value = false;
+    }
+  }
+
+  Future<void> stopWordTracking() async {
+    await _speech.stop();
+    isWordTracking.value = false;
+    trackingStatusMessage.value = '';
+    HapticFeedback.mediumImpact();
+  }
+
+  void _updateWordMatches(String spokenText) {
+    if (spokenText.trim().isEmpty) return;
+    final spokenWords = spokenText.split(RegExp(r'\s+'));
+    final targetWords = currentWords;
+    if (targetWords.isEmpty) return;
+
+    final updated = List<bool>.from(currentWordMatches);
+    if (updated.length != targetWords.length) {
+      updated.length = targetWords.length;
+      for (int i = 0; i < updated.length; i++) {
+        updated[i] = false;
+      }
+    }
+
+    // Secondary candidates for cross-matching
+    List<String> secondary = [];
+    if (activeVoiceMode.value == VoiceTrackMode.arabic) {
+      secondary = translitWords.isNotEmpty ? translitWords : banglaPronunWords;
+    } else if (activeVoiceMode.value == VoiceTrackMode.banglaPronun) {
+      secondary = translitWords;
+    }
+
+    for (int i = 0; i < targetWords.length; i++) {
+      if (updated[i]) continue;
+      final expected = targetWords[i];
+      final bool matched = spokenWords.any((sw) => _wordMatches(expected, sw)) ||
+          (i < secondary.length && spokenWords.any((sw) => _wordMatches(secondary[i], sw)));
+      if (matched) {
+        updated[i] = true;
+        HapticFeedback.selectionClick();
+      }
+    }
+
+    currentWordMatches.assignAll(updated);
+
+    final matchedCount = updated.where((m) => m).length;
+    final totalCount = updated.length;
+
+    final isCompleted = totalCount > 0 && (
+      (totalCount <= 3 && matchedCount == totalCount) ||
+      (totalCount > 3 && matchedCount >= (totalCount * 0.75).ceil())
+    );
+
+    if (isCompleted) {
+      HapticFeedback.heavyImpact();
+      incrementRepetition();
+      trackingStatusMessage.value = '✓ মাশাআল্লাহ! পাঠ সফল হয়েছে';
+      Future.delayed(const Duration(milliseconds: 1400), () {
+        if (repetitionCount.value < activeDeed.value.targetRepetitions) {
+          resetWordTracking();
+          trackingStatusMessage.value = 'পরবর্তী পুনরাবৃত্তি পাঠ করুন...';
+        } else {
+          stopWordTracking();
+          trackingStatusMessage.value = 'লক্ষ্য সম্পন্ন হয়েছে!';
+        }
+      });
+    }
   }
 
   void selectVerse(int index) {

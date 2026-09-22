@@ -353,8 +353,7 @@ class _UnlockScreenState extends State<UnlockScreen>
       final deed = controller.activeDeed.value;
       final count = controller.repetitionCount.value;
       final target = deed.targetRepetitions;
-      final isRec = controller.isRecording.value;
-      final seconds = controller.recordingSeconds.value;
+      final isRec = controller.isRecording.value || controller.isWordTracking.value;
 
       final diffColor = deed.difficulty == 'Hard'
           ? const Color(0xFFFF5252)
@@ -492,19 +491,241 @@ class _UnlockScreenState extends State<UnlockScreen>
                     ),
                     child: Column(
                       children: [
-                        // Large Arabic text with full tashkeel
-                        Text(
-                          deed.arabic,
-                          textAlign: TextAlign.center,
-                          textDirection: TextDirection.rtl,
-                          style: const TextStyle(
-                            fontSize: 27,
-                            height: 1.85,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.white,
-                            fontFamily: 'Amiri',
-                          ),
-                        ),
+                        // Voice tracking mode selection tabs: [ 🇸🇦 আরবি | 🇧🇩 উচ্চারণ | 📖 অর্থ | 🇬🇧 English ]
+                        Obx(() {
+                          final currentMode = controller.activeVoiceMode.value;
+                          final isTracking = controller.isWordTracking.value;
+                          return Container(
+                            margin: const EdgeInsets.only(bottom: 14),
+                            padding: const EdgeInsets.all(3),
+                            decoration: BoxDecoration(
+                              color: Colors.black38,
+                              borderRadius: BorderRadius.circular(12),
+                              border: Border.all(
+                                color: isTracking
+                                    ? AppColors.brightGreen.withValues(alpha: 0.4)
+                                    : Colors.white12,
+                              ),
+                            ),
+                            child: Row(
+                              children: [
+                                _buildVoiceModePill(
+                                  title: 'আরবি',
+                                  mode: VoiceTrackMode.arabic,
+                                  flag: '🇸🇦',
+                                  isSelected: currentMode == VoiceTrackMode.arabic,
+                                  onTap: () => controller.setVoiceMode(VoiceTrackMode.arabic),
+                                ),
+                                _buildVoiceModePill(
+                                  title: 'উচ্চারণ',
+                                  mode: VoiceTrackMode.banglaPronun,
+                                  flag: '🇧🇩',
+                                  isSelected: currentMode == VoiceTrackMode.banglaPronun,
+                                  onTap: () => controller.setVoiceMode(VoiceTrackMode.banglaPronun),
+                                ),
+                                _buildVoiceModePill(
+                                  title: 'অর্থ',
+                                  mode: VoiceTrackMode.banglaMeaning,
+                                  flag: '📖',
+                                  isSelected: currentMode == VoiceTrackMode.banglaMeaning,
+                                  onTap: () => controller.setVoiceMode(VoiceTrackMode.banglaMeaning),
+                                ),
+                                _buildVoiceModePill(
+                                  title: 'English',
+                                  mode: VoiceTrackMode.englishMeaning,
+                                  flag: '🇬🇧',
+                                  isSelected: currentMode == VoiceTrackMode.englishMeaning,
+                                  onTap: () => controller.setVoiceMode(VoiceTrackMode.englishMeaning),
+                                ),
+                              ],
+                            ),
+                          );
+                        }),
+
+                        // Word-by-word tracking display
+                        Obx(() {
+                          final mode = controller.activeVoiceMode.value;
+                          final matches = controller.currentWordMatches;
+                          final liveText = controller.liveRecognizedText.value;
+                          final statusMsg = controller.trackingStatusMessage.value;
+                          final isTracking = controller.isWordTracking.value;
+
+                          List<String> words;
+                          bool isRtl = false;
+                          double fontSize = 18;
+                          String? fontFam;
+
+                          switch (mode) {
+                            case VoiceTrackMode.arabic:
+                              words = controller.arabicWords;
+                              isRtl = true;
+                              fontSize = 24;
+                              fontFam = 'Amiri';
+                              break;
+                            case VoiceTrackMode.banglaPronun:
+                              words = controller.banglaPronunWords.isNotEmpty
+                                  ? controller.banglaPronunWords
+                                  : controller.translitWords;
+                              fontSize = 16;
+                              break;
+                            case VoiceTrackMode.banglaMeaning:
+                              words = controller.banglaMeaningWords;
+                              fontSize = 15;
+                              break;
+                            case VoiceTrackMode.englishMeaning:
+                              words = controller.englishMeaningWords;
+                              fontSize = 15;
+                              break;
+                          }
+
+                          return Column(
+                            children: [
+                              // Status message banner (e.g. recitation celebration)
+                              if (statusMsg.isNotEmpty)
+                                AnimatedContainer(
+                                  duration: const Duration(milliseconds: 250),
+                                  margin: const EdgeInsets.only(bottom: 12),
+                                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.brightGreen.withValues(alpha: 0.2),
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(color: AppColors.brightGreen.withValues(alpha: 0.5)),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      const Icon(Icons.check_circle, color: AppColors.brightGreen, size: 16),
+                                      const SizedBox(width: 6),
+                                      Text(
+                                        statusMsg,
+                                        style: const TextStyle(
+                                          color: AppColors.brightGreen,
+                                          fontSize: 12,
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+
+                              // The Interactive Word Chips
+                              Wrap(
+                                alignment: WrapAlignment.center,
+                                spacing: 8,
+                                runSpacing: 8,
+                                textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                                children: List.generate(words.length, (i) {
+                                  final matched = i < matches.length && matches[i];
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 250),
+                                    padding: EdgeInsets.symmetric(
+                                      horizontal: isRtl ? 12 : 10,
+                                      vertical: isRtl ? 8 : 6,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: matched
+                                          ? AppColors.brightGreen.withValues(alpha: 0.28)
+                                          : Colors.white.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(12),
+                                      border: Border.all(
+                                        color: matched
+                                            ? AppColors.brightGreen
+                                            : Colors.white24,
+                                        width: matched ? 1.8 : 1,
+                                      ),
+                                      boxShadow: [
+                                        if (matched)
+                                          BoxShadow(
+                                            color: AppColors.brightGreen.withValues(alpha: 0.35),
+                                            blurRadius: 10,
+                                            spreadRadius: 1,
+                                          ),
+                                      ],
+                                    ),
+                                    child: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                                      children: [
+                                        if (matched) ...[
+                                          const Icon(
+                                            Icons.check,
+                                            size: 13,
+                                            color: AppColors.brightGreen,
+                                          ),
+                                          const SizedBox(width: 4),
+                                        ],
+                                        Text(
+                                          words[i],
+                                          textDirection: isRtl ? TextDirection.rtl : TextDirection.ltr,
+                                          style: TextStyle(
+                                            fontSize: fontSize,
+                                            height: isRtl ? 1.7 : 1.3,
+                                            fontWeight: matched ? FontWeight.bold : FontWeight.w600,
+                                            color: matched ? AppColors.brightGreen : Colors.white,
+                                            fontFamily: fontFam,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                }),
+                              ),
+
+                              // In Arabic mode, also show pronunciation underneath for easy reading
+                              if (mode == VoiceTrackMode.arabic && deed.banglaPronunciation.isNotEmpty) ...[
+                                const SizedBox(height: 12),
+                                Text(
+                                  deed.banglaPronunciation,
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    color: Colors.white.withValues(alpha: 0.65),
+                                    fontStyle: FontStyle.italic,
+                                  ),
+                                ),
+                              ],
+
+                              // Live STT voice wave / feedback bar
+                              if (isTracking || liveText.isNotEmpty) ...[
+                                const SizedBox(height: 14),
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                  decoration: BoxDecoration(
+                                    color: Colors.black45,
+                                    borderRadius: BorderRadius.circular(20),
+                                    border: Border.all(
+                                      color: isTracking
+                                          ? AppColors.brightGreen.withValues(alpha: 0.3)
+                                          : Colors.white12,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isTracking ? Icons.mic : Icons.mic_none,
+                                        size: 14,
+                                        color: isTracking ? AppColors.brightGreen : Colors.white54,
+                                      ),
+                                      const SizedBox(width: 6),
+                                      Flexible(
+                                        child: Text(
+                                          liveText.isNotEmpty ? '"$liveText"' : (isBn ? 'শুনছি... পাঠ করুন' : 'Listening... speak now'),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                          style: TextStyle(
+                                            fontSize: 11,
+                                            color: isTracking ? AppColors.brightGreen : Colors.white60,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ],
+                          );
+                        }),
                         const SizedBox(height: 18),
 
                         // "Translate" Toggle Button
@@ -801,45 +1022,30 @@ class _UnlockScreenState extends State<UnlockScreen>
                     ),
                     const SizedBox(width: 14),
 
-                    // Circular MIC Button for optional audio recitation
+                    // Circular MIC Button for word-by-word voice tracking
                     GestureDetector(
-                      onTap: () async {
-                        if (!controller.isRecording.value) {
-                          await controller.startRecording();
-                          // Auto-stop after 6 seconds if still recording
-                          Future.delayed(const Duration(seconds: 6), () {
-                            if (mounted && controller.isRecording.value) {
-                              controller.stopRecordingAndScore().then((_) {
-                                if (mounted) _onRepetitionTapped();
-                              });
-                            }
-                          });
-                        } else {
-                          await controller.stopRecordingAndScore();
-                          if (mounted) _onRepetitionTapped();
-                        }
-                      },
+                      onTap: () => controller.toggleWordTracking(),
                       child: Container(
                         width: 56,
                         height: 56,
                         decoration: BoxDecoration(
                           shape: BoxShape.circle,
                           color: isRec
-                              ? const Color(0xFFFF5252)
+                              ? AppColors.brightGreen
                               : AppColors.cardBackground,
                           border: Border.all(
                             color: isRec
-                                ? const Color(0xFFFF5252)
+                                ? AppColors.brightGreen
                                 : AppColors.border,
                             width: 2,
                           ),
                           boxShadow: [
                             if (isRec)
                               BoxShadow(
-                                color: const Color(0xFFFF5252).withValues(
-                                  alpha: 0.4,
+                                color: AppColors.brightGreen.withValues(
+                                  alpha: 0.5,
                                 ),
-                                blurRadius: 16,
+                                blurRadius: 18,
                                 spreadRadius: 3,
                               ),
                           ],
@@ -847,7 +1053,7 @@ class _UnlockScreenState extends State<UnlockScreen>
                         child: Center(
                           child: Icon(
                             isRec ? Iconsax.stop : Iconsax.microphone_2,
-                            color: isRec ? Colors.white : AppColors.primaryGold,
+                            color: isRec ? Colors.black : AppColors.primaryGold,
                             size: 24,
                           ),
                         ),
@@ -860,12 +1066,16 @@ class _UnlockScreenState extends State<UnlockScreen>
                 // Helper text
                 Text(
                   isRec
-                      ? 'Recording... 00:${seconds.toString().padLeft(2, '0')}'
-                      : lang.t('recitation_optional'),
+                      ? (isBn
+                          ? 'ভয়েস ট্র্যাকিং চলছে... উচ্চারণ বা অর্থ পাঠ করুন'
+                          : 'Voice tracking active... speak now')
+                      : (isBn
+                          ? 'মাইক চেপে কণ্ঠের সাথে শব্দ ট্র্যাকিং করুন'
+                          : lang.t('recitation_optional')),
                   style: TextStyle(
                     fontSize: 11,
                     color: isRec
-                        ? const Color(0xFFFF5252)
+                        ? AppColors.brightGreen
                         : AppColors.textSecondary,
                   ),
                 ),
@@ -1129,5 +1339,48 @@ class _UnlockScreenState extends State<UnlockScreen>
         ),
       );
     });
+  }
+
+  Widget _buildVoiceModePill({
+    required String title,
+    required VoiceTrackMode mode,
+    required String flag,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return Expanded(
+      child: GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.brightGreen.withValues(alpha: 0.22)
+                : Colors.transparent,
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(
+              color: isSelected ? AppColors.brightGreen : Colors.transparent,
+              width: 1.2,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(flag, style: const TextStyle(fontSize: 10)),
+              const SizedBox(width: 4),
+              Text(
+                title,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  color: isSelected ? AppColors.brightGreen : Colors.white60,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }
