@@ -77,6 +77,10 @@ class DataLayerService extends GetxService {
   void onInit() {
     super.onInit();
     _initRtdb();
+    // Non-blocking async background data hygiene pass
+    Future.delayed(const Duration(seconds: 5), () {
+      _runBackgroundDataHygiene();
+    });
   }
 
   @override
@@ -400,5 +404,77 @@ class DataLayerService extends GetxService {
         .orderBy('createdAt', descending: true)
         .limit(limitCount)
         .snapshots();
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // 8. DATA HYGIENE: AUTO-CLEANUP & RETENTION PRUNING
+  // ═══════════════════════════════════════════════════════════════
+
+  void _runBackgroundDataHygiene() {
+    pruneOldDeedHistory();
+    _pruneExpiredUnlockState();
+  }
+
+  /// Reset expired unlock state in RTDB if it expired while app was closed
+  Future<void> _pruneExpiredUnlockState() async {
+    final rtdb = _rtdb;
+    final deviceId = _deviceId;
+    if (rtdb == null || deviceId.isEmpty) return;
+
+    try {
+      final snap = await rtdb.ref('unlockState/$deviceId').get();
+      if (snap.exists && snap.value is Map) {
+        final data = snap.value as Map;
+        final expiresAt = (data['unlockedUntil'] as num?)?.toInt() ?? 0;
+        final isUnlocked = data['isUnlocked'] == true;
+        if (isUnlocked &&
+            expiresAt > 0 &&
+            expiresAt <= DateTime.now().millisecondsSinceEpoch) {
+          await setUnlockState(
+            isUnlocked: false,
+            unlockedUntil: 0,
+            unlockedBy: '',
+          );
+          debugPrint(
+            '[DataLayer] Pruned expired RTDB unlockState for $deviceId',
+          );
+        }
+      }
+    } catch (e) {
+      debugPrint('[DataLayer] _pruneExpiredUnlockState notice: $e');
+    }
+  }
+
+  /// Data hygiene: prune deed history in Firestore beyond retention window (default: 90 days)
+  Future<void> pruneOldDeedHistory({int retentionDays = 90}) async {
+    final firestore = _firestore;
+    final deviceId = _deviceId;
+    if (firestore == null || deviceId.isEmpty) return;
+
+    try {
+      final cutoffDate = DateTime.now().subtract(Duration(days: retentionDays));
+      final itemsRef = firestore
+          .collection('deedHistory')
+          .doc(deviceId)
+          .collection('items');
+
+      final oldDocs = await itemsRef
+          .where('completedAt', isLessThan: Timestamp.fromDate(cutoffDate))
+          .limit(50)
+          .get();
+
+      if (oldDocs.docs.isNotEmpty) {
+        final batch = firestore.batch();
+        for (final doc in oldDocs.docs) {
+          batch.delete(doc.reference);
+        }
+        await batch.commit();
+        debugPrint(
+          '[DataLayer] Pruned ${oldDocs.docs.length} stale deeds from Firestore',
+        );
+      }
+    } catch (e) {
+      debugPrint('[DataLayer] pruneOldDeedHistory notice: $e');
+    }
   }
 }

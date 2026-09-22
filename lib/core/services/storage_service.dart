@@ -70,23 +70,31 @@ class StorageService extends GetxService {
     }
   }
 
-  // Temporary Unlock Sessions
+  // Temporary Unlock Sessions (Auto-pruning data hygiene)
   List<UnlockSessionModel> getUnlockSessions() {
     final raw = _box.read<List<dynamic>>(keyUnlockSessions);
-    if (raw == null) return [];
+    if (raw == null || raw.isEmpty) return [];
     final now = DateTime.now().millisecondsSinceEpoch;
-    final sessions = raw
+    final allSessions = raw
         .map(
           (e) =>
               UnlockSessionModel.fromMap(Map<String, dynamic>.from(e as Map)),
         )
-        .where((s) => s.expiresAtTimestamp > now) // filter out expired
         .toList();
-    return sessions;
+    final validSessions =
+        allSessions.where((s) => s.expiresAtTimestamp > now).toList();
+
+    // Persist pruned list if expired entries were removed to keep local storage bounded
+    if (validSessions.length != allSessions.length) {
+      saveUnlockSessions(validSessions);
+    }
+    return validSessions;
   }
 
   void saveUnlockSessions(List<UnlockSessionModel> sessions) {
-    final raw = sessions.map((e) => e.toMap()).toList();
+    final now = DateTime.now().millisecondsSinceEpoch;
+    final validOnly = sessions.where((s) => s.expiresAtTimestamp > now).toList();
+    final raw = validOnly.map((e) => e.toMap()).toList();
     _box.write(keyUnlockSessions, raw);
   }
 

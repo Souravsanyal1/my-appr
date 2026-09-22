@@ -137,14 +137,20 @@ class GamificationService extends GetxService {
     final activeDays = _storage.getWeeklyActiveDays();
     weeklyCompletedDays.assignAll(activeDays);
 
-    // 5. History
+    // 5. History (Keep last 100 entries max)
     final historyRaw = _storage.read<List<dynamic>>('user_deed_history');
     if (historyRaw != null) {
-      deedHistory.assignAll(
-        historyRaw
-            .map((e) => DeedHistoryItem.fromMap(Map<String, dynamic>.from(e as Map)))
-            .toList(),
-      );
+      final items = historyRaw
+          .map((e) => DeedHistoryItem.fromMap(Map<String, dynamic>.from(e as Map)))
+          .take(100)
+          .toList();
+      deedHistory.assignAll(items);
+      if (historyRaw.length > 100) {
+        _storage.write(
+          'user_deed_history',
+          items.map((e) => e.toMap()).toList(),
+        );
+      }
     }
   }
 
@@ -274,6 +280,9 @@ class GamificationService extends GetxService {
       timestamp: today,
     );
     deedHistory.insert(0, item);
+    if (deedHistory.length > 100) {
+      deedHistory.removeRange(100, deedHistory.length);
+    }
     _storage.write('user_deed_history', deedHistory.map((e) => e.toMap()).toList());
   }
 

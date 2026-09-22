@@ -438,3 +438,81 @@ exports.onUserDeleted = functions.firestore
     }
   });
 
+/**
+ * Cloud Scheduler: pruneStaleRtdbAndDeeds
+ * Runs daily at 04:00 AM to prune expired active_unlocks, stale unlockState, and old deed history.
+ */
+exports.pruneStaleRtdbAndDeeds = functions.pubsub
+  .schedule('0 4 * * *')
+  .onRun(async () => {
+    const now = Date.now();
+    const rtdbUrl = 'https://focusdeen-f8295-default-rtdb.asia-southeast1.firebasedatabase.app';
+    const rtdb = admin.database(rtdbUrl);
+
+    // 1. Prune expired active_unlocks in RTDB
+    try {
+      const activeUnlocksSnap = await rtdb.ref('active_unlocks').once('value');
+      if (activeUnlocksSnap.exists()) {
+        const usersData = activeUnlocksSnap.val();
+        const updates = {};
+        for (const [uid, apps] of Object.entries(usersData)) {
+          if (apps && typeof apps === 'object') {
+            for (const [pkgKey, session] of Object.entries(apps)) {
+              if (session && session.expiresAtTimestamp && session.expiresAtTimestamp < now) {
+                updates[`active_unlocks/${uid}/${pkgKey}`] = null;
+              }
+            }
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          await rtdb.ref().update(updates);
+          console.log(`[Data Hygiene] Pruned ${Object.keys(updates).length} expired RTDB active_unlocks.`);
+        }
+      }
+    } catch (err) {
+      console.error('[Data Hygiene] Error pruning active_unlocks:', err);
+    }
+
+    // 2. Prune expired unlockState in RTDB
+    try {
+      const unlockStateSnap = await rtdb.ref('unlockState').once('value');
+      if (unlockStateSnap.exists()) {
+        const devices = unlockStateSnap.val();
+        const updates = {};
+        for (const [deviceId, state] of Object.entries(devices)) {
+          if (state && state.unlockedUntil && state.unlockedUntil < now && state.isUnlocked) {
+            updates[`unlockState/${deviceId}/isUnlocked`] = false;
+            updates[`unlockState/${deviceId}/unlockedUntil`] = 0;
+          }
+        }
+        if (Object.keys(updates).length > 0) {
+          await rtdb.ref().update(updates);
+          console.log(`[Data Hygiene] Reset ${Object.keys(updates).length} expired unlockState records.`);
+        }
+      }
+    } catch (err) {
+      console.error('[Data Hygiene] Error pruning unlockState:', err);
+    }
+
+    // 3. Prune Firestore deedHistory older than 90 days
+    try {
+      const ninetyDaysAgo = new Date(now - 90 * 24 * 60 * 60 * 1000);
+      const staleDeedsSnap = await db
+        .collectionGroup('items')
+        .where('completedAt', '<', ninetyDaysAgo)
+        .limit(300)
+        .get();
+
+      if (!staleDeedsSnap.empty) {
+        const batch = db.batch();
+        staleDeedsSnap.forEach((doc) => batch.delete(doc.ref));
+        await batch.commit();
+        console.log(`[Data Hygiene] Deleted ${staleDeedsSnap.size} stale deed logs.`);
+      }
+    } catch (err) {
+      console.error('[Data Hygiene] Error pruning Firestore deedHistory:', err);
+    }
+
+    return null;
+  });
+

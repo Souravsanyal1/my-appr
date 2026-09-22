@@ -129,6 +129,9 @@ class FirebaseRealtimeService extends GetxService {
             );
             if (session.expiresAtTimestamp > now) {
               list.add(session);
+            } else {
+              // Expired! Prune from Realtime Database asynchronously
+              ref.child(key.toString()).remove().catchError((_) {});
             }
           }
         });
