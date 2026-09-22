@@ -218,6 +218,83 @@ class DataLayerService {
       throw err;
     }
   }
+
+  /**
+   * Fetch delivery & open receipts for a notification
+   * returns: { deliveredCount, openedCount, totalCount, recipients: [...] }
+   */
+  async getNotificationRecipients(notificationId) {
+    if (!notificationId) {
+      return { recipients: [], deliveredCount: 0, openedCount: 0, totalCount: 0 };
+    }
+    try {
+      const recRef = collection(db, 'notifications', notificationId, 'recipients');
+      const snapshot = await getDocs(recRef);
+      const recipients = [];
+      let deliveredCount = 0;
+      let openedCount = 0;
+
+      snapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        if (data.deliveredAt) deliveredCount++;
+        if (data.openedAt) openedCount++;
+        recipients.push({
+          deviceId: docSnap.id,
+          ...data,
+        });
+      });
+
+      return {
+        recipients,
+        deliveredCount,
+        openedCount,
+        totalCount: snapshot.size,
+      };
+    } catch (err) {
+      console.error('[DataLayer] getNotificationRecipients error:', err);
+      return { recipients: [], deliveredCount: 0, openedCount: 0, totalCount: 0 };
+    }
+  }
+
+  /**
+   * Real-time subscription to recipients of a specific notification
+   */
+  subscribeNotificationRecipients(notificationId, callback) {
+    if (!notificationId) {
+      callback({ recipients: [], deliveredCount: 0, openedCount: 0, totalCount: 0 });
+      return () => {};
+    }
+    const recRef = collection(db, 'notifications', notificationId, 'recipients');
+    return onSnapshot(
+      recRef,
+      (snapshot) => {
+        const recipients = [];
+        let deliveredCount = 0;
+        let openedCount = 0;
+
+        snapshot.forEach((docSnap) => {
+          const data = docSnap.data();
+          if (data.deliveredAt) deliveredCount++;
+          if (data.openedAt) openedCount++;
+          recipients.push({
+            deviceId: docSnap.id,
+            ...data,
+          });
+        });
+
+        callback({
+          recipients,
+          deliveredCount,
+          openedCount,
+          totalCount: snapshot.size,
+        });
+      },
+      (err) => {
+        console.warn('[DataLayer] subscribeNotificationRecipients notice:', err.message);
+        callback({ recipients: [], deliveredCount: 0, openedCount: 0, totalCount: 0 });
+      }
+    );
+  }
 }
 
 export const dataLayer = new DataLayerService();

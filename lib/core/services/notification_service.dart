@@ -141,11 +141,18 @@ class NotificationService extends GetxService {
     final type = data['type'] as String?;
     debugPrint('[FCM Foreground] type=$type id=${message.messageId}');
 
+    final notifId = data['notificationId']?.toString() ??
+        data['notifId']?.toString() ??
+        message.messageId;
+    if (notifId != null && notifId.isNotEmpty) {
+      recordDeliveryReceipt(notifId);
+    }
+
     if (type == 'schedule_local') {
       await _scheduleLocalFromPayload(data);
     } else if (type == 'cancel_schedule') {
-      final notifId = int.tryParse(data['notifId'] ?? '');
-      if (notifId != null) await _localNotifications.cancel(id: notifId);
+      final scheduleId = int.tryParse(data['notifId'] ?? '');
+      if (scheduleId != null) await _localNotifications.cancel(id: scheduleId);
     } else {
       final notification = message.notification;
       final title = notification?.title ?? data['title'] ?? '';
@@ -153,14 +160,15 @@ class NotificationService extends GetxService {
       final route = data['route'] as String?;
 
       if (title.isNotEmpty) {
+        final localId = notifId != null ? notifId.hashCode : message.messageId.hashCode;
         await _showLocalNow(
-          id: message.messageId.hashCode,
+          id: localId,
           title: title,
           body: body,
           route: route,
         );
         _addToInbox(InboxNotificationModel(
-          id: message.messageId ?? DateTime.now().toIso8601String(),
+          id: notifId ?? DateTime.now().toIso8601String(),
           title: title,
           body: body,
           imageUrl: data['imageUrl'],
@@ -172,6 +180,13 @@ class NotificationService extends GetxService {
   }
 
   void _handleNotificationOpened(RemoteMessage message) {
+    final notifId = message.data['notificationId']?.toString() ??
+        message.data['notifId']?.toString() ??
+        message.messageId;
+    if (notifId != null && notifId.isNotEmpty) {
+      recordOpenedReceipt(notifId);
+    }
+
     final route = message.data['route'] as String?;
     if (route != null && route.isNotEmpty) {
       _markReadByRoute(route);
@@ -306,6 +321,9 @@ class NotificationService extends GetxService {
       if (processed.length > 200) processed.removeRange(0, processed.length - 200);
       _storage.write('processed_broadcasts', processed);
 
+      // Record delivery receipt to Firestore
+      recordDeliveryReceipt(docId);
+
       final title = data['title'] as String? ?? '';
       final body = data['body'] as String? ?? '';
       final route = data['route'] as String?;
@@ -373,6 +391,7 @@ class NotificationService extends GetxService {
       inbox.refresh();
       _persistInbox();
       _recalcUnread();
+      recordOpenedReceipt(id);
     }
   }
 
@@ -394,6 +413,7 @@ class NotificationService extends GetxService {
       if (inbox[i].route == route && !inbox[i].isRead) {
         inbox[i] = inbox[i].copyWith(isRead: true);
         changed = true;
+        recordOpenedReceipt(inbox[i].id);
       }
     }
     if (changed) {
@@ -409,5 +429,53 @@ class NotificationService extends GetxService {
 
   void _recalcUnread() {
     unreadCount.value = inbox.where((n) => !n.isRead).length;
+  }
+
+  // ─── Delivery & Opened Receipts ──────────────────────────────────────────
+
+  Future<void> recordDeliveryReceipt(String notificationId) async {
+    if (notificationId.isEmpty) return;
+    try {
+      final deviceId = Get.isRegistered<DeviceIdentityService>()
+          ? DeviceIdentityService.to.deviceId
+          : '';
+      if (deviceId.isEmpty) return;
+
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .collection('recipients')
+          .doc(deviceId)
+          .set({
+        'deviceId': deviceId,
+        'deliveredAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      debugPrint('[NotificationService] Delivery receipt recorded for $notificationId');
+    } catch (e) {
+      debugPrint('[NotificationService] recordDeliveryReceipt notice: $e');
+    }
+  }
+
+  Future<void> recordOpenedReceipt(String notificationId) async {
+    if (notificationId.isEmpty) return;
+    try {
+      final deviceId = Get.isRegistered<DeviceIdentityService>()
+          ? DeviceIdentityService.to.deviceId
+          : '';
+      if (deviceId.isEmpty) return;
+
+      await FirebaseFirestore.instance
+          .collection('notifications')
+          .doc(notificationId)
+          .collection('recipients')
+          .doc(deviceId)
+          .set({
+        'deviceId': deviceId,
+        'openedAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      debugPrint('[NotificationService] Opened receipt recorded for $notificationId');
+    } catch (e) {
+      debugPrint('[NotificationService] recordOpenedReceipt notice: $e');
+    }
   }
 }

@@ -2,6 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   collection,
+  doc,
+  setDoc,
   addDoc,
   getDocs,
   serverTimestamp,
@@ -137,7 +139,13 @@ export default function SendNotification() {
   const handleSendNotification = async () => {
     setIsSubmitting(true);
     try {
+      // Allocate persistent notification doc ID in Firestore
+      const notifDocRef = doc(collection(db, 'notifications'));
+      const notificationId = notifDocRef.id;
+
       const payload = {
+        notificationId,
+        id: notificationId,
         title: title.trim(),
         body: body.trim(),
         imageUrl: imageUrl.trim() || null,
@@ -150,6 +158,13 @@ export default function SendNotification() {
         targetSummary,
         createdAt: serverTimestamp(),
       };
+
+      // 1. Save to permanent 'notifications' collection
+      await setDoc(notifDocRef, {
+        ...payload,
+        status: isScheduled ? 'scheduled' : 'sent',
+        sentAt: serverTimestamp(),
+      });
 
       if (isScheduled) {
         // Save to notifications_broadcast for 100% free-tier instant client synchronization
@@ -165,7 +180,7 @@ export default function SendNotification() {
         showToast('Notification successfully scheduled and broadcasted to devices!', 'success');
       } else {
         // Immediate dispatch
-        // 1. Publish to notifications_broadcast for instant free-tier sync to all active apps
+        // 2. Publish to notifications_broadcast for instant free-tier sync to all active apps
         await addDoc(collection(db, 'notifications_broadcast'), {
           ...payload,
           status: 'active',
@@ -173,8 +188,8 @@ export default function SendNotification() {
           sentAt: serverTimestamp(),
         });
 
-        // 2. Record in notifications_log
-        await addDoc(collection(db, 'notifications_log'), {
+        // 3. Record in legacy notifications_log for backward compatibility
+        await setDoc(doc(db, 'notifications_log', notificationId), {
           ...payload,
           status: 'sent',
           sentAt: serverTimestamp(),
