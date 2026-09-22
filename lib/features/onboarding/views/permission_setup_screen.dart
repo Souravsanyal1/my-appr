@@ -99,8 +99,8 @@ class _PermissionSetupScreenState extends State<PermissionSetupScreen>
           children: [
             Text(
               isBn
-                  ? 'DeenFlow আপনার নির্ধারিত সুরক্ষিত অ্যাপসমূহ (যেমনঃ TikTok, YouTube) খোলার সময় সনাক্ত করতে এবং স্ক্রিন লক করে আমল প্রদর্শন করতে অ্যাক্সেসিবিলিটি সার্ভিস ব্যবহার করে।'
-                  : 'DeenFlow uses the Accessibility Service API strictly to detect when you launch protected applications (e.g. TikTok, YouTube) and present your Islamic deed screen.',
+                  ? 'FocusDeen আপনার নির্ধারিত সুরক্ষিত অ্যাপসমূহ (যেমনঃ TikTok, YouTube) খোলার সময় সনাক্ত করতে এবং স্ক্রিন লক করে আমল প্রদর্শন করতে অ্যাক্সেসিবিলিটি সার্ভিস ব্যবহার করে।'
+                  : 'FocusDeen uses the Accessibility Service API strictly to detect when you launch protected applications (e.g. TikTok, YouTube) and present your Islamic deed screen.',
               style: const TextStyle(
                 color: AppColors.textPrimary,
                 fontSize: 13,
@@ -226,7 +226,7 @@ class _PermissionSetupScreenState extends State<PermissionSetupScreen>
                       Text(
                         isBn
                             ? 'অ্যাপ লক এবং সঠিক সময়ে আমল আসার জন্য নিচের অনুমতিগুলো চালু করুন।'
-                            : 'Enable the permissions below to allow DeenFlow to protect apps and run timers accurately.',
+                            : 'Enable the permissions below to allow FocusDeen to protect apps and run timers accurately.',
                         style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textSecondary,
@@ -240,7 +240,7 @@ class _PermissionSetupScreenState extends State<PermissionSetupScreen>
                         icon: Icons.accessibility_new_rounded,
                         title: isBn ? 'অ্যাপ মনিটরিং (অ্যাক্সেসিবিলিটি)' : 'App Blocker (Accessibility)',
                         description: isBn
-                            ? 'সুরক্ষিত অ্যাপ ওপেন হলে DeenFlow স্ক্রিন আনতে প্রয়োজন। কোনো ব্যক্তিগত ডাটা দেখা হয় না।'
+                            ? 'সুরক্ষিত অ্যাপ ওপেন হলে FocusDeen স্ক্রিন আনতে প্রয়োজন। কোনো ব্যক্তিগত ডাটা দেখা হয় না।'
                             : 'Detects when locked apps open to display your deed. No personal data is read.',
                         isGranted: _status.accessibilityGranted,
                         isRequired: true,
@@ -284,7 +284,7 @@ class _PermissionSetupScreenState extends State<PermissionSetupScreen>
                         title: isBn ? 'ব্যাকগ্রাউন্ড সুরক্ষা (ব্যাটারি অপ্টিমাইজেশন)' : 'Battery Optimization Exclusion',
                         description: isBn
                             ? 'ফোন স্লিপে গেলে লক বন্ধ হওয়া রোধ করতে "No restrictions" নির্বাচন করুন।'
-                            : 'Prevents the OS from killing DeenFlow timer service in the background.',
+                            : 'Prevents the OS from killing FocusDeen timer service in the background.',
                         isGranted: _status.batteryOptimizationIgnored,
                         isRequired: false,
                         onTap: () => BlockerService.to.blocker.openPermissionSettings(
@@ -497,7 +497,7 @@ class _PermissionSetupScreenState extends State<PermissionSetupScreen>
           const SizedBox(height: 8),
           Text(
             isBn
-                ? 'কিছু ফোনে (MIUI, ColorOS, OneUI) স্বয়ংক্রিয় ব্যাকগ্রাউন্ড কিলিং থাকে। নিশ্চিত করুন DeenFlow এর Autostart চালু আছে এবং ব্যাটারি সেভারে "No Restrictions" বা "Unrestricted" দেওয়া আছে।'
+                ? 'কিছু ফোনে (MIUI, ColorOS, OneUI) স্বয়ংক্রিয় ব্যাকগ্রাউন্ড কিলিং থাকে। নিশ্চিত করুন FocusDeen এর Autostart চালু আছে এবং ব্যাটারি সেভারে "No Restrictions" বা "Unrestricted" দেওয়া আছে।'
                 : 'Aggressive battery savers on Xiaomi (MIUI), Oppo, and Samsung can terminate background locks. Please enable "Autostart" and set Battery to "No restrictions".',
             style: const TextStyle(
               fontSize: 11,

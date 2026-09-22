@@ -20,7 +20,7 @@
         tools:ignore="QueryAllPackagesPermission" />
 
     <application
-        android:label="DeenFlow"
+        android:label="FocusDeen"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:enableOnBackInvokedCallback="true">

@@ -21,6 +21,7 @@ import android.widget.TextView
 import android.widget.Toast
 import com.focusdeen.focus_deen.R
 import com.focusdeen.focus_deen.services.AppMonitorService
+import com.focusdeen.focus_deen.services.FocusAccessibilityService
 
 /**
  * Floating timer overlay shown on top of the unlocked app.
@@ -213,6 +214,7 @@ class FloatingTimerController(
 
     fun onForegroundPackageChanged(newPkg: String) {
         val target = currentPkg ?: return
+        if (FocusAccessibilityService.isSystemOrTransientPackage(newPkg)) return
         if (newPkg == target) {
             rootView?.visibility = View.VISIBLE
         } else {

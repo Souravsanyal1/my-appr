@@ -13,8 +13,8 @@ import 'language_service.dart';
 import 'storage_service.dart';
 
 const String _kInboxKey = 'local_notification_inbox';
-const String _kAndroidChannelId = 'deenflow_notifications';
-const String _kAndroidChannelName = 'DeenFlow Reminders';
+const String _kAndroidChannelId = 'focusdeen_notifications';
+const String _kAndroidChannelName = 'FocusDeen Reminders';
 
 /// Top-level handler for background / killed-state FCM messages.
 /// Must be defined at the top level and registered in main().

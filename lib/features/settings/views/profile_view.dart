@@ -169,7 +169,7 @@ class ProfileView extends StatelessWidget {
               const SizedBox(height: 10),
               _buildSettingTile(
                 icon: Icons.info_outline_rounded,
-                title: isBn ? 'দ্বীনফ্লো সম্পর্কে' : 'About DeenFlow',
+                title: isBn ? 'ফোকাসদ্বীন সম্পর্কে' : 'About FocusDeen',
                 subtitle: isBn
                     ? 'ভার্সন ১.০.০ • স্ক্রল করার আগে শিখুন'
                     : 'Version 1.0.0 • Learn Before You Scroll',

@@ -50,7 +50,7 @@ class EndScreenView extends StatelessWidget {
               const SizedBox(height: AppSpacing.lg),
 
               const Text(
-                'DeenFlow',
+                'FocusDeen',
                 style: TextStyle(
                   fontSize: 30,
                   fontWeight: FontWeight.w900,

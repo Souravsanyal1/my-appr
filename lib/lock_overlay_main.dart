@@ -11,9 +11,15 @@ import 'package:flutter/services.dart';
 // ---------------------------------------------------------------------------
 
 @pragma('vm:entry-point')
-void lockOverlayMain() {
+void runLockOverlay() {
+  debugPrint('[LockOverlay] runLockOverlay executing');
   WidgetsFlutterBinding.ensureInitialized();
   runApp(const LockOverlayApp());
+}
+
+@pragma('vm:entry-point')
+void lockOverlayMain() {
+  runLockOverlay();
 }
 
 // ---------------------------------------------------------------------------
@@ -61,19 +67,29 @@ class _LockOverlayAppState extends State<LockOverlayApp> {
   @override
   void initState() {
     super.initState();
+    debugPrint('[LockOverlay] LockOverlayApp.initState() called');
     _channel.setMethodCallHandler(_onNativeCall);
+    // Signal engine ready to native immediately
     _channel.invokeMethod<void>('engineReady');
+    // Remove the native cover as soon as Flutter draws the very first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      debugPrint('[LockOverlay] Initial postFrameCallback -> shown');
+      _channel.invokeMethod<void>('shown');
+    });
   }
 
   Future<dynamic> _onNativeCall(MethodCall call) async {
+    debugPrint('[LockOverlay] Native call: ${call.method}');
     if (call.method == 'onShow') {
       final req = _LockRequest.fromMap(call.arguments as Map);
+      debugPrint('[LockOverlay] onShow for package: ${req.package_}, minScore: ${req.minScore}');
       setState(() {
         _request = req;
         _session++;
       });
-      // Tell native to remove the cover view once the first real frame is drawn
+      // Ensure native cover stays removed after re-shows
       WidgetsBinding.instance.addPostFrameCallback((_) {
+        debugPrint('[LockOverlay] onShow postFrameCallback -> shown');
         _channel.invokeMethod<void>('shown');
       });
     }
@@ -94,19 +110,28 @@ class _LockOverlayAppState extends State<LockOverlayApp> {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: _buildTheme(),
-      home: Scaffold(
-        backgroundColor: const Color(0xE806120E),
-        body: SafeArea(
-          child: req == null
-              ? const SizedBox.shrink()
-              : KeyedSubtree(
-                  key: ValueKey(_session),
-                  child: _DeedFlow(
-                    request: req,
-                    onPassed: _onPass,
-                    onCancel: _onCancel,
+      home: PopScope(
+        canPop: false,
+        onPopInvokedWithResult: (didPop, result) {
+          if (!didPop) {
+            debugPrint('[LockOverlay] Back gesture/key intercepted in LockOverlayApp -> _onCancel()');
+            _onCancel();
+          }
+        },
+        child: Scaffold(
+          backgroundColor: Colors.black,
+          body: SafeArea(
+            child: req == null
+                ? const SizedBox.shrink()
+                : KeyedSubtree(
+                    key: ValueKey(_session),
+                    child: _DeedFlow(
+                      request: req,
+                      onPassed: _onPass,
+                      onCancel: _onCancel,
+                    ),
                   ),
-                ),
+          ),
         ),
       ),
     );
@@ -114,11 +139,11 @@ class _LockOverlayAppState extends State<LockOverlayApp> {
 
   ThemeData _buildTheme() {
     return ThemeData.dark(useMaterial3: true).copyWith(
-      scaffoldBackgroundColor: const Color(0xE806120E),
+      scaffoldBackgroundColor: Colors.black,
       colorScheme: const ColorScheme.dark(
         primary: Color(0xFF1FE08F),
         secondary: Color(0xFFD4A853),
-        surface: Color(0xD90E2418),
+        surface: Color(0xFF111111),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -289,9 +314,24 @@ class _DeedFlowState extends State<_DeedFlow> {
 
   @override
   Widget build(BuildContext context) {
-    return AnimatedSwitcher(
-      duration: const Duration(milliseconds: 300),
-      child: _buildStep(context),
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) {
+        if (didPop) return;
+        if (_step == _Step.learn || _step == _Step.record) {
+          setState(() {
+            _isRecording = false;
+            _recordingTimer?.cancel();
+            _step = _Step.intro;
+          });
+        } else {
+          widget.onCancel();
+        }
+      },
+      child: AnimatedSwitcher(
+        duration: const Duration(milliseconds: 300),
+        child: _buildStep(context),
+      ),
     );
   }
 
@@ -421,7 +461,7 @@ class _IntroStep extends StatelessWidget {
             width: double.infinity,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
-              color: const Color(0xFF0E2418),
+              color: const Color(0xFF101612),
               borderRadius: BorderRadius.circular(16),
               border: Border.all(color: const Color(0xFF1FE08F).withValues(alpha: 0.3)),
             ),
@@ -469,7 +509,7 @@ class _IntroStep extends StatelessWidget {
                   duration: const Duration(milliseconds: 200),
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: selected ? const Color(0xFF1FE08F).withValues(alpha: 0.2) : const Color(0xFF0E2418),
+                    color: selected ? const Color(0xFF1FE08F).withValues(alpha: 0.2) : const Color(0xFF161616),
                     borderRadius: BorderRadius.circular(20),
                     border: Border.all(
                       color: selected ? const Color(0xFF1FE08F) : Colors.white24,
@@ -505,6 +545,15 @@ class _IntroStep extends StatelessWidget {
               onPressed: onLearn,
               icon: const Icon(Icons.headphones_outlined, size: 18),
               label: const Text('Learn First'),
+            ),
+          ),
+          const SizedBox(height: 8),
+          SizedBox(
+            width: double.infinity,
+            child: TextButton.icon(
+              onPressed: onCancel,
+              icon: const Icon(Icons.arrow_back, size: 16, color: Colors.white54),
+              label: const Text('Back to Home', style: TextStyle(color: Colors.white54, fontSize: 14)),
             ),
           ),
         ],

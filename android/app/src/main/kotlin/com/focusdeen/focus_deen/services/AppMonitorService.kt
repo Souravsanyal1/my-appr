@@ -57,6 +57,8 @@ class AppMonitorService private constructor(private val context: Context) {
     }
 
     companion object {
+        const val ALL_PROTECTED_APPS = "com.all_protected.apps"
+
         @Volatile
         private var INSTANCE: AppMonitorService? = null
 
@@ -108,6 +110,11 @@ class AppMonitorService private constructor(private val context: Context) {
     }
 
     fun isTemporarilyUnlocked(packageName: String): Boolean {
+        // Also check if all protected apps were unlocked in a single session
+        if (packageName != ALL_PROTECTED_APPS && isTemporarilyUnlocked(ALL_PROTECTED_APPS)) {
+            return true
+        }
+
         val now = System.currentTimeMillis()
         val currentElapsed = android.os.SystemClock.elapsedRealtime()
 

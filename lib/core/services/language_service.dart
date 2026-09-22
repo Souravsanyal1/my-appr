@@ -38,7 +38,7 @@ class LanguageService extends GetxService {
   // Quick helper for UI labels
   String t(String key) {
     final Map<String, Map<String, String>> localizedStrings = {
-      'app_name': {'en': 'DeenFlow', 'bn': 'দ্বীনফ্লো'},
+      'app_name': {'en': 'FocusDeen', 'bn': 'ফোকাসদ্বীন'},
       'home': {'en': 'Home', 'bn': 'হোম'},
       'progress': {'en': 'Progress', 'bn': 'অগ্রগতি'},
       'deeds': {'en': 'Deeds', 'bn': 'আমল'},

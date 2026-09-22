@@ -37,15 +37,34 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
             return instance?.performGlobalAction(GLOBAL_ACTION_HOME) ?: false
         }
 
-        // System UI, keyboard, permission dialog: eder upor overlay dekhano jabe na.
-        private val IGNORED = setOf(
-            "com.android.systemui",
-            "com.google.android.permissioncontroller",
-            "com.android.permissioncontroller",
-            "com.google.android.inputmethod.latin",
-            "com.samsung.android.honeyboard",
-            "com.touchtype.swiftkey",
-        )
+        // System UI, keyboards, permission controllers, OEM overlays: ignore these so
+        // they neither steal foreground focus nor cause the lock overlay to self-dismiss.
+        fun isSystemOrTransientPackage(pkg: String): Boolean {
+            val lower = pkg.lowercase()
+            return lower == "android" ||
+                lower == "com.android.systemui" ||
+                lower.contains("permissioncontroller") ||
+                lower.contains("inputmethod") ||
+                lower.contains("keyboard") ||
+                lower.contains("honeyboard") ||
+                lower.contains("swiftkey") ||
+                lower.contains("systemui") ||
+                lower.startsWith("com.transsion.folax") ||
+                lower.startsWith("com.transsion.smartpanel") ||
+                lower.startsWith("com.transsion.mol") ||
+                lower.startsWith("com.transsion.notification") ||
+                lower.startsWith("com.transsion.aod") ||
+                lower.startsWith("com.transsion.os.") ||
+                lower.startsWith("com.transsion.notifysync") ||
+                lower.startsWith("com.google.android.overlay") ||
+                lower.startsWith("com.android.internal.") ||
+                lower == "com.android.settings.intelligence" ||
+                lower == "com.google.android.packageinstaller" ||
+                lower == "com.android.packageinstaller" ||
+                lower == "com.miui.securitycenter" ||
+                lower == "com.miui.securityadd" ||
+                lower == "com.coloros.safecenter"
+        }
     }
 
     private val mainHandler = Handler(Looper.getMainLooper())
@@ -79,7 +98,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
             } catch (e: Exception) {
                 Log.e(TAG, "autoLockTicker error", e)
             }
-            mainHandler.postDelayed(this, 1500L)
+            mainHandler.postDelayed(this, 500L)
         }
     }
 
@@ -91,7 +110,7 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         launcherPkgs = resolveLauncherPackages()
         registerReceiver(screenOffReceiver, IntentFilter(Intent.ACTION_SCREEN_OFF))
         mainHandler.removeCallbacks(autoLockTicker)
-        mainHandler.postDelayed(autoLockTicker, 1500L)
+        mainHandler.postDelayed(autoLockTicker, 500L)
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent?) {
@@ -100,14 +119,27 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
 
         // Nijer overlay window er event ignore (nahole overlay nijeke dismiss kore felbe)
         if (pkg == packageName) return
-        if (pkg in IGNORED) return
+        if (isSystemOrTransientPackage(pkg)) return
 
         // Launcher e gele overlay soriye dao
-        if (pkg in launcherPkgs) {
+        if (isLauncherPackage(pkg)) {
             currentForegroundPackage = null
             lastForegroundPackage = null
             if (::overlay.isInitialized) overlay.dismiss()
             if (::floatingTimer.isInitialized) floatingTimer.onForegroundPackageChanged("")
+            return
+        }
+
+        // Always ensure blocked protected apps show overlay even if pkg == lastForegroundPackage
+        val monitor = AppMonitorService.getInstance(applicationContext)
+        val check = monitor.checkPackage(pkg)
+        if (check is AppMonitorService.CheckResult.Blocked) {
+            currentForegroundPackage = pkg
+            lastForegroundPackage = pkg
+            if (::floatingTimer.isInitialized) floatingTimer.dismiss()
+            if (::overlay.isInitialized && !overlay.isShowingFor(pkg)) {
+                showOverlayFor(pkg, check)
+            }
             return
         }
 
@@ -125,7 +157,6 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
             if (::floatingTimer.isInitialized) floatingTimer.onForegroundPackageChanged(pkg)
 
             // Check if app has an active unlock session
-            val monitor = AppMonitorService.getInstance(applicationContext)
             if (monitor.isTemporarilyUnlocked(pkg)) {
                 val session = monitor.unlockSessionsMap[pkg]
                 val expiresAt = session?.expiresAtMillis ?: (System.currentTimeMillis() + getDurationMinutes() * 60 * 1000L)
@@ -134,19 +165,14 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
                 }
             }
 
-            // Check if blocked
-            when (val check = monitor.checkPackage(pkg)) {
-                is AppMonitorService.CheckResult.Blocked -> {
-                    if (::floatingTimer.isInitialized) floatingTimer.dismiss()
-                    showOverlayFor(pkg, check)
-                }
+            when (check) {
                 is AppMonitorService.CheckResult.Warning -> {
                     mainHandler.post {
                         onLimitWarningListener?.invoke(pkg, check.appName, check.minutesLeft)
                     }
                 }
-                AppMonitorService.CheckResult.Allowed -> {
-                    // App allowed
+                is AppMonitorService.CheckResult.Allowed, is AppMonitorService.CheckResult.Blocked -> {
+                    // Handled above
                 }
             }
         }
@@ -174,14 +200,6 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         // Notify event channel
         mainHandler.post {
             onAppBlockedListener?.invoke(pkg, check.appName, check.usedMinutes, check.limitMinutes)
-        }
-
-        // Show notifications (non-blocking info only)
-        try {
-            val notificationService = NotificationService(applicationContext)
-            notificationService.showLockNotification(pkg, check.appName)
-        } catch (e: Exception) {
-            Log.e(TAG, "Notification error", e)
         }
 
         if (::overlay.isInitialized) {
@@ -247,14 +265,17 @@ class FocusAccessibilityService : AccessibilityService(), OverlayController.Call
         super.onDestroy()
     }
 
-    private fun isSystemOrOwnPackage(pkg: String): Boolean {
+    private fun isLauncherPackage(pkg: String): Boolean {
+        if (pkg in launcherPkgs) return true
         val lower = pkg.lowercase()
-        return pkg == packageName ||
-            lower == "com.android.systemui" ||
-            lower.contains("launcher") ||
-            lower.contains("inputmethod") ||
-            lower.contains("systemui") ||
-            lower == "android"
+        return lower.contains("launcher") ||
+            lower == "com.transsion.hilauncher" ||
+            lower.contains("nexuslauncher") ||
+            lower.contains("trebuchet")
+    }
+
+    private fun isSystemOrOwnPackage(pkg: String): Boolean {
+        return pkg == packageName || isLauncherPackage(pkg) || isSystemOrTransientPackage(pkg)
     }
 
     private fun resolveLauncherPackages(): Set<String> {

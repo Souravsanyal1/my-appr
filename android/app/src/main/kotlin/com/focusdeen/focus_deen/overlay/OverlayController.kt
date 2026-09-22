@@ -2,6 +2,7 @@ package com.focusdeen.focus_deen.overlay
 
 import android.accessibilityservice.AccessibilityService
 import android.content.Context
+import android.content.Intent
 import android.graphics.Color
 import android.graphics.PixelFormat
 import android.media.AudioAttributes
@@ -20,7 +21,7 @@ import android.view.WindowManager
 import android.widget.FrameLayout
 import android.widget.TextView
 import io.flutter.FlutterInjector
-import io.flutter.embedding.android.FlutterTextureView
+import io.flutter.embedding.android.FlutterSurfaceView
 import io.flutter.embedding.android.FlutterView
 import io.flutter.embedding.engine.FlutterEngine
 import io.flutter.embedding.engine.FlutterEngineCache
@@ -28,6 +29,7 @@ import io.flutter.embedding.engine.dart.DartExecutor
 import io.flutter.plugin.common.MethodCall
 import io.flutter.plugin.common.MethodChannel
 import io.flutter.plugins.GeneratedPluginRegistrant
+import com.focusdeen.focus_deen.services.FocusAccessibilityService
 
 /**
  * Protected app er UPORE full-screen Flutter lock/deed UI dekhay.
@@ -56,8 +58,8 @@ class OverlayController(
         const val CHANNEL = "deenflow/lock_overlay"
         const val ENGINE_ID = "deenflow_lock_overlay_engine"
         private const val DART_ENTRYPOINT = "lockOverlayMain"
-        private const val FIRST_FRAME_TIMEOUT_MS = 3000L
-        private const val COVER_COLOR = "#E606120E"
+        private const val FIRST_FRAME_TIMEOUT_MS = 8000L
+        private const val COVER_COLOR = "#FF000000"
     }
 
     private val main = Handler(Looper.getMainLooper())
@@ -79,9 +81,7 @@ class OverlayController(
 
     private val watchdog = Runnable {
         val pkg = currentPkg ?: return@Runnable
-        Log.w(TAG, "Flutter first frame delayed for $pkg — revealing content, never auto-backing")
-        // Never dismiss to home! Keep overlay displayed over the app.
-        cover?.visibility = View.GONE
+        Log.w(TAG, "Flutter first frame delayed for $pkg — keeping cover displayed")
     }
 
     val isShowing: Boolean get() = root != null
@@ -131,7 +131,7 @@ class OverlayController(
             setOnTouchListener { _, _ -> true } // pichone kono tap jabe na
         }
 
-        val fv = FlutterView(service, FlutterTextureView(service))
+        val fv = FlutterView(service, FlutterSurfaceView(service, true))
         container.addView(
             fv,
             FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT),
@@ -142,7 +142,7 @@ class OverlayController(
             setBackgroundColor(Color.parseColor(COVER_COLOR))
             addView(
                 TextView(service).apply {
-                    text = "DeenFlow"
+                    text = "FocusDeen"
                     setTextColor(Color.parseColor("#1FE08F"))
                     textSize = 28f
                     gravity = Gravity.CENTER
@@ -172,6 +172,9 @@ class OverlayController(
         e.lifecycleChannel.appIsResumed()
         container.requestFocus()
         requestAudioFocus()
+        pauseBackgroundMedia()
+        main.postDelayed({ pauseBackgroundMedia() }, 150L)
+        main.postDelayed({ pauseBackgroundMedia() }, 400L)
 
         val args = mapOf(
             "package" to pkg,
@@ -198,6 +201,8 @@ class OverlayController(
     /** Foreground package badle gele service eta call korbe. */
     fun onForegroundPackageChanged(newPkg: String) {
         val showing = currentPkg ?: return
+        if (newPkg == service.packageName) return
+        if (FocusAccessibilityService.isSystemOrTransientPackage(newPkg)) return
         if (newPkg != showing) dismiss()
     }
 
@@ -235,12 +240,14 @@ class OverlayController(
     private fun onDartCall(call: MethodCall, result: MethodChannel.Result) {
         when (call.method) {
             "engineReady" -> {
+                Log.i(TAG, "Dart reported engineReady")
                 dartReady = true
                 pendingShowArgs?.let { channel?.invokeMethod("onShow", it) }
                 pendingShowArgs = null
                 result.success(null)
             }
             "shown" -> { // Flutter er prothom real frame draw hoyeche
+                Log.i(TAG, "Dart reported shown -> hiding native cover")
                 main.removeCallbacks(watchdog)
                 cover?.visibility = View.GONE
                 result.success(null)
@@ -275,6 +282,13 @@ class OverlayController(
 
     private fun goHome(pkg: String?) {
         dismiss()
+        try {
+            val homeIntent = Intent(Intent.ACTION_MAIN).apply {
+                addCategory(Intent.CATEGORY_HOME)
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_RESET_TASK_IF_NEEDED
+            }
+            service.startActivity(homeIntent)
+        } catch (_: Throwable) {}
         service.performGlobalAction(AccessibilityService.GLOBAL_ACTION_HOME)
         if (pkg != null) callbacks.onCancel(pkg)
     }
@@ -324,12 +338,22 @@ class OverlayController(
         }
     }
 
-    // ----------------------------------------------------------- audio focus
+    // ----------------------------------------------------------- audio & media pause
 
-    /** Pichoner TikTok/YouTube er sound/video pause korte chay (kichu app ignore korte pare). */
+    /** Pichoner TikTok/YouTube/Media auto-pause korar jonno. */
+    fun pauseBackgroundMedia() {
+        try {
+            audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_DOWN, KeyEvent.KEYCODE_MEDIA_PAUSE))
+            audio.dispatchMediaKeyEvent(KeyEvent(KeyEvent.ACTION_UP, KeyEvent.KEYCODE_MEDIA_PAUSE))
+            Log.d(TAG, "Dispatched KEYCODE_MEDIA_PAUSE to pause background video/audio")
+        } catch (t: Throwable) {
+            Log.w(TAG, "pauseBackgroundMedia dispatch failed", t)
+        }
+    }
+
     private fun requestAudioFocus() {
         if (Build.VERSION.SDK_INT >= 26) {
-            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN)
+            val req = AudioFocusRequest.Builder(AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
                 .setAudioAttributes(
                     AudioAttributes.Builder()
                         .setUsage(AudioAttributes.USAGE_MEDIA)
@@ -342,7 +366,7 @@ class OverlayController(
             focusRequest = req
         } else {
             @Suppress("DEPRECATION")
-            audio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN)
+            audio.requestAudioFocus(null, AudioManager.STREAM_MUSIC, AudioManager.AUDIOFOCUS_GAIN_TRANSIENT)
         }
     }
 
@@ -356,17 +380,53 @@ class OverlayController(
         }
     }
 
-    /** Back key intercept korar jonno. */
+    /** Back key / gesture intercept korar jonno. */
     private class KeyFrameLayout(
         context: Context,
         private val onBack: () -> Unit,
     ) : FrameLayout(context) {
+
+        init {
+            isFocusable = true
+            isFocusableInTouchMode = true
+        }
+
         override fun dispatchKeyEvent(event: KeyEvent): Boolean {
             if (event.keyCode == KeyEvent.KEYCODE_BACK) {
-                if (event.action == KeyEvent.ACTION_UP) onBack()
+                if (event.action == KeyEvent.ACTION_UP) {
+                    Log.i(TAG, "Back pressed in KeyFrameLayout -> onBack()")
+                    onBack()
+                }
                 return true
             }
             return super.dispatchKeyEvent(event)
+        }
+
+        override fun dispatchKeyEventPreIme(event: KeyEvent): Boolean {
+            if (event.keyCode == KeyEvent.KEYCODE_BACK) {
+                if (event.action == KeyEvent.ACTION_UP) {
+                    Log.i(TAG, "Back pressed in dispatchKeyEventPreIme -> onBack()")
+                    onBack()
+                }
+                return true
+            }
+            return super.dispatchKeyEventPreIme(event)
+        }
+
+        override fun onAttachedToWindow() {
+            super.onAttachedToWindow()
+            if (Build.VERSION.SDK_INT >= 33) {
+                try {
+                    findOnBackInvokedDispatcher()?.registerOnBackInvokedCallback(
+                        android.window.OnBackInvokedDispatcher.PRIORITY_DEFAULT
+                    ) {
+                        Log.i(TAG, "OnBackInvokedCallback fired -> onBack()")
+                        onBack()
+                    }
+                } catch (t: Throwable) {
+                    Log.w(TAG, "Failed to register OnBackInvokedCallback", t)
+                }
+            }
         }
     }
 }

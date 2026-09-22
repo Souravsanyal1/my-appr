@@ -77,7 +77,7 @@ class NotificationService(private val context: Context) {
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(android.R.drawable.ic_lock_lock)
-            .setContentTitle("DeenFlow: $appName Locked")
+            .setContentTitle("FocusDeen: $appName Locked")
             .setContentText("Your unlock time for $appName has expired. Recite again to unlock.")
             .setPriority(NotificationCompat.PRIORITY_HIGH)
             .setAutoCancel(true)

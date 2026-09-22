@@ -3,9 +3,7 @@ import 'package:get/get.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'firebase_options.dart';
-// ignore: unused_import
-import 'lock_overlay_main.dart'; // Ensures lockOverlayMain entrypoint is included in the build
-
+import 'lock_overlay_main.dart';
 import 'core/blocker/blocker_service.dart';
 import 'core/routes/app_pages.dart';
 import 'core/routes/app_routes.dart';
@@ -26,6 +24,13 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'features/limits/controllers/limit_controller.dart';
 import 'features/usage/controllers/usage_controller.dart';
 
+// Entrypoint for dedicated lock overlay FlutterEngine
+@pragma('vm:entry-point')
+void lockOverlayMain() {
+  debugPrint('[LockOverlay] lockOverlayMain top-level entrypoint invoked from main.dart');
+  runLockOverlay();
+}
+
 // Top-level FCM background handler — must be registered BEFORE Firebase.initializeApp
 @pragma('vm:entry-point')
 Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
@@ -37,9 +42,9 @@ Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
       if (title.isNotEmpty) {
         final fln = FlutterLocalNotificationsPlugin();
         const androidDetails = AndroidNotificationDetails(
-          'deenflow_notifications',
-          'DeenFlow Reminders',
-          channelDescription: 'DeenFlow reminders and notifications',
+          'focusdeen_notifications',
+          'FocusDeen Reminders',
+          channelDescription: 'FocusDeen reminders and notifications',
           importance: Importance.max,
           priority: Priority.high,
           icon: '@mipmap/ic_launcher',
