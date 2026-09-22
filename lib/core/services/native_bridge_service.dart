@@ -165,30 +165,56 @@ class NativeBridgeService extends GetxService {
       (await checkPermissions())['overlay'] ?? false;
   Future<bool> requestUsageAccess() async => requestPermission('usageStats');
 
-  /// Get installed launcher apps
-  Future<List<InstalledAppModel>> getInstalledApps() async {
+  List<InstalledAppModel>? _cachedApps;
+  final Map<String, InstalledAppModel> _appsByPackage = {};
+
+  InstalledAppModel? getAppByPackage(String packageName) {
+    return _appsByPackage[packageName.trim().toLowerCase()];
+  }
+
+  /// Get installed launcher apps (cached in memory)
+  Future<List<InstalledAppModel>> getInstalledApps({bool forceRefresh = false}) async {
+    if (!forceRefresh && _cachedApps != null && _cachedApps!.isNotEmpty) {
+      return _cachedApps!;
+    }
+
     if (!isAndroidNative) {
       // Return sample demo data when testing on desktop/emulator
-      return _getDemoApps();
+      final demo = _getDemoApps();
+      _cachedApps = demo;
+      for (final a in demo) {
+        _appsByPackage[a.packageName.trim().toLowerCase()] = a;
+      }
+      return demo;
     }
 
     try {
       final List<dynamic>? res = await _methodChannel
           .invokeMethod<List<dynamic>>(ChannelConstants.getInstalledApps);
       if (res != null) {
-        return res
+        final list = res
             .map(
               (e) => InstalledAppModel.fromMap(
                 Map<String, dynamic>.from(e as Map),
               ),
             )
             .toList();
+        _cachedApps = list;
+        for (final a in list) {
+          _appsByPackage[a.packageName.trim().toLowerCase()] = a;
+        }
+        return list;
       }
     } catch (e) {
       debugPrint('Error getting installed apps: $e');
     }
 
-    return _getDemoApps();
+    final fallback = _getDemoApps();
+    _cachedApps = fallback;
+    for (final a in fallback) {
+      _appsByPackage[a.packageName.trim().toLowerCase()] = a;
+    }
+    return fallback;
   }
 
   /// Get app usage in milliseconds for packages
@@ -284,6 +310,28 @@ class NativeBridgeService extends GetxService {
     }
   }
 
+  /// Sync overlay settings (minScore, unlockDurationMinutes) to native SharedPreferences.
+  /// Called whenever the user changes these values in Settings.
+  Future<bool> syncSettings({
+    required int minScore,
+    required int unlockDurationMinutes,
+  }) async {
+    if (!isAndroidNative) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        'syncSettings',
+        {
+          'minScore': minScore,
+          'unlockDurationMinutes': unlockDurationMinutes,
+        },
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error syncing settings: $e');
+      return false;
+    }
+  }
+
   /// Close the foreground app via accessibility service
   Future<bool> closeForegroundApp() async {
     if (!isAndroidNative) return true;
@@ -294,6 +342,21 @@ class NativeBridgeService extends GetxService {
       return res ?? false;
     } catch (e) {
       debugPrint('Error closing foreground app: $e');
+      return false;
+    }
+  }
+
+  /// Launch an installed application by package name
+  Future<bool> launchApp(String packageName) async {
+    if (!isAndroidNative) return true;
+    try {
+      final res = await _methodChannel.invokeMethod<bool>(
+        'launchApp',
+        {'packageName': packageName},
+      );
+      return res ?? false;
+    } catch (e) {
+      debugPrint('Error launching app $packageName: $e');
       return false;
     }
   }
@@ -327,7 +390,7 @@ class NativeBridgeService extends GetxService {
   }
 
   List<InstalledAppModel> _getDemoApps() {
-    return const [
+    return [
       InstalledAppModel(
         packageName: 'com.facebook.katana',
         appName: 'Facebook',

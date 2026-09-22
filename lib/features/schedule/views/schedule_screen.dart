@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../core/constants/app_colors.dart';
+import '../../../core/widgets/app_icon_widget.dart';
 import '../controllers/schedule_controller.dart';
 import '../models/schedule_model.dart';
 
@@ -14,6 +15,7 @@ class ScheduleScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Block Schedules',
           style: TextStyle(fontWeight: FontWeight.bold),
@@ -176,12 +178,30 @@ class ScheduleScreen extends StatelessWidget {
                                 : Colors.black.withValues(alpha: 0.05),
                             borderRadius: BorderRadius.circular(8),
                           ),
-                          child: Text(
-                            '${schedule.blockedPackages.length} Apps Blocked',
-                            style: const TextStyle(
-                              fontSize: 12,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              if (schedule.blockedPackages.isNotEmpty) ...[
+                                ...schedule.blockedPackages.take(3).map(
+                                      (pkg) => Padding(
+                                        padding: const EdgeInsets.only(right: 4),
+                                        child: AppIconWidget(
+                                          packageName: pkg,
+                                          size: 16,
+                                          borderRadius: 4,
+                                        ),
+                                      ),
+                                    ),
+                                const SizedBox(width: 2),
+                              ],
+                              Text(
+                                '${schedule.blockedPackages.length} Apps Blocked',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                         const Spacer(),

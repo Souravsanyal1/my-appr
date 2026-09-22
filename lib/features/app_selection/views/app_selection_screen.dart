@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
+import 'package:focus_deen/core/widgets/app_icon_widget.dart';
 import 'package:focus_deen/features/app_selection/controllers/app_selection_controller.dart';
 import 'package:focus_deen/features/app_selection/models/installed_app_model.dart';
 
@@ -161,17 +162,10 @@ class AppSelectionScreen extends GetView<AppSelectionController> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return ListTile(
-      leading: Container(
-        width: 44,
-        height: 44,
-        decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(10),
-          color: isDark ? AppColors.darkCard : Colors.grey.shade200,
-        ),
-        clipBehavior: Clip.antiAlias,
-        child: app.iconBytes != null
-            ? Image.memory(app.iconBytes!, fit: BoxFit.cover)
-            : const Icon(Icons.android, color: AppColors.emerald),
+      leading: AppIconWidget(
+        app: app,
+        size: 44,
+        borderRadius: 10,
       ),
       title: Text(
         app.appName,

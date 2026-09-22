@@ -6,12 +6,14 @@ class WaveformView extends StatefulWidget {
   final bool isRecording;
   final double height;
   final int barCount;
+  final double? normalizedAmplitude;
 
   const WaveformView({
     super.key,
     required this.isRecording,
     this.height = 42.0,
     this.barCount = 18,
+    this.normalizedAmplitude,
   });
 
   @override
@@ -60,6 +62,7 @@ class _WaveformViewState extends State<WaveformView>
 
   @override
   Widget build(BuildContext context) {
+    final amp = (widget.normalizedAmplitude ?? 0.0).clamp(0.0, 1.0);
     return SizedBox(
       height: widget.height,
       child: Row(
@@ -67,7 +70,11 @@ class _WaveformViewState extends State<WaveformView>
         crossAxisAlignment: CrossAxisAlignment.center,
         children: List.generate(widget.barCount, (index) {
           final double normalized = widget.isRecording
-              ? (0.2 + 0.8 * _random.nextDouble())
+              ? (0.15 +
+                  0.85 *
+                      (amp > 0.05
+                          ? (amp * (0.6 + 0.4 * _random.nextDouble()))
+                          : (0.25 * _random.nextDouble())))
               : 0.15;
           final barHeight = (widget.height * normalized).clamp(
             4.0,
@@ -80,7 +87,9 @@ class _WaveformViewState extends State<WaveformView>
             height: barHeight,
             decoration: BoxDecoration(
               color: widget.isRecording
-                  ? AppColors.brightGreen
+                  ? (amp > 0.05
+                      ? AppColors.brightGreen
+                      : AppColors.brightGreen.withValues(alpha: 0.65))
                   : AppColors.border,
               borderRadius: BorderRadius.circular(3),
             ),

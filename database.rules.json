@@ -1,0 +1,37 @@
+{
+  "rules": {
+    "presence": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "live_status": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "liveStats": {
+      ".read": true,
+      ".write": true
+    },
+    "unlockState": {
+      "$deviceId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "active_unlocks": {
+      "$userId": {
+        ".read": true,
+        ".write": true
+      }
+    },
+    "scheduledJobs": {
+      ".indexOn": ["targetDeviceId", "status", "scheduledFor"],
+      ".read": true,
+      ".write": "auth != null && (auth.token.firebase.sign_in_provider == 'password' || auth.token.admin == true)"
+    }
+  }
+}

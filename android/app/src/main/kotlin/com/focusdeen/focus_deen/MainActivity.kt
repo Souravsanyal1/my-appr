@@ -43,15 +43,14 @@ class MainActivity : FlutterActivity() {
 
     private fun handleRouteIntent(intent: Intent?) {
         val route = intent?.getStringExtra("route")
-        if (route == "/blocked") {
-            val packageName = intent.getStringExtra("packageName") ?: ""
-            val appName = intent.getStringExtra("appName") ?: ""
-            val usedMinutes = intent.getIntExtra("usedMinutes", 0)
-            val limitMinutes = intent.getIntExtra("limitMinutes", 0)
+        val blockedPkg = intent?.getStringExtra("blocked_pkg") ?: intent?.getStringExtra("packageName") ?: ""
+        if (route == "/blocked" || (blockedPkg.isNotEmpty() && intent?.hasExtra("blocked_pkg") == true)) {
+            val appName = intent?.getStringExtra("appName") ?: ""
+            val usedMinutes = intent?.getIntExtra("usedMinutes", 0) ?: 0
+            val limitMinutes = intent?.getIntExtra("limitMinutes", 0) ?: 0
 
-            // When Flutter engine is ready, push route or navigate
             flutterEngine?.navigationChannel?.pushRoute(
-                "/blocked?package=$packageName&appName=$appName&used=$usedMinutes&limit=$limitMinutes"
+                "/blocked?package=$blockedPkg&appName=$appName&used=$usedMinutes&limit=$limitMinutes"
             )
         }
     }

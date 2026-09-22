@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:focus_deen/core/constants/app_colors.dart';
+import 'package:focus_deen/core/constants/app_spacing.dart';
 import 'package:focus_deen/core/constants/app_strings.dart';
+import 'package:focus_deen/core/services/language_service.dart';
 import 'package:focus_deen/core/services/native_bridge_service.dart';
-import 'package:focus_deen/core/theme/theme_controller.dart';
+import 'package:focus_deen/core/services/notification_service.dart';
+import 'package:focus_deen/core/widgets/app_icon_widget.dart';
+import 'package:focus_deen/core/widgets/rank_shield_card.dart';
 import 'package:focus_deen/core/widgets/restricted_settings_dialog.dart';
 import 'package:focus_deen/features/dashboard/controllers/dashboard_controller.dart';
 import 'package:focus_deen/features/limits/models/app_limit_model.dart';
@@ -13,158 +17,132 @@ class DashboardScreen extends GetView<DashboardController> {
 
   @override
   Widget build(BuildContext context) {
-    final themeController = Get.find<ThemeController>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final langService = LanguageService.to;
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.mosque, color: AppColors.primaryGold, size: 22),
-            SizedBox(width: 8),
-            Text(
-              AppStrings.appName,
-              style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
-            ),
+    return Obx(() {
+      final isBn = langService.isBangla;
+
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(
+            isBn ? 'ফোকাসদ্বীন' : AppStrings.appName,
+            style: const TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),
+          ),
+          automaticallyImplyLeading: false,
+          actions: [
+            Obx(() {
+              final notifService = Get.isRegistered<NotificationService>()
+                  ? NotificationService.to
+                  : null;
+              final unread = notifService?.unreadCount.value ?? 0;
+              return Stack(
+                alignment: Alignment.center,
+                children: [
+                  IconButton(
+                    tooltip: isBn ? 'বিজ্ঞপ্তি' : 'Notifications',
+                    icon: const Icon(Icons.notifications_outlined),
+                    onPressed: () => Get.toNamed('/notifications'),
+                  ),
+                  if (unread > 0)
+                    Positioned(
+                      top: 8,
+                      right: 8,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: const BoxDecoration(
+                          color: Colors.redAccent,
+                          shape: BoxShape.circle,
+                        ),
+                        constraints: const BoxConstraints(
+                          minWidth: 16,
+                          minHeight: 16,
+                        ),
+                        child: Text(
+                          unread > 9 ? '9+' : '$unread',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          textAlign: TextAlign.center,
+                        ),
+                      ),
+                    ),
+                ],
+              );
+            }),
           ],
         ),
-        actions: [
-          // Cloud Sync / Account
-          IconButton(
-            tooltip: 'Cloud Backup & Sync',
-            icon: const Icon(Icons.cloud_outlined),
-            onPressed: () => Get.toNamed('/auth'),
-          ),
-          // Settings & Privacy
-          IconButton(
-            tooltip: 'Settings & Privacy',
-            icon: const Icon(Icons.settings_outlined),
-            onPressed: () => Get.toNamed('/settings'),
-          ),
-          // Theme Toggle
-          Obx(
-            () => IconButton(
-              icon: Icon(
-                themeController.isDarkMode.value
-                    ? Icons.light_mode
-                    : Icons.dark_mode,
-                color: AppColors.primaryGold,
-              ),
-              onPressed: themeController.toggleTheme,
+        body: RefreshIndicator(
+          onRefresh: () async => controller.refreshDashboard(),
+          child: ListView(
+            padding: const EdgeInsets.symmetric(
+              horizontal: AppSpacing.md,
+              vertical: AppSpacing.md,
             ),
+            children: [
+              // 1. Islamic Daily Motivation Banner
+              _buildDailyReminderCard(context, isDark, isBn),
+              const SizedBox(height: AppSpacing.md),
+
+              // 2. Rank & Habit Progress Shield (Visual Parity with Blocked & Progress Screens)
+              const RankShieldCard(compact: true),
+              const SizedBox(height: AppSpacing.md),
+
+              // 3. Main Stats Summary Card (Focus Score + Screen Time)
+              _buildStatsOverviewCard(context, isDark, isBn),
+              const SizedBox(height: AppSpacing.md),
+
+              // 4. Battery Optimization Exemption Banner
+              _buildBatteryOptimizationBanner(context, isDark, isBn),
+
+              // 5. Accessibility Service Warning / Restricted Setting Banner
+              _buildAccessibilityWarningBanner(context, isDark, isBn),
+
+              // 6. Active Temporary Unlocks Section (if any)
+              _buildActiveUnlocksSection(context, isDark, isBn),
+
+              // 7. Islamic Focus & Mindfulness Cards
+              _buildMindfulnessToolsSection(context, isDark, isBn),
+              const SizedBox(height: AppSpacing.md),
+
+              // 8. Quick Action Buttons
+              _buildQuickActions(context, isBn),
+              const SizedBox(height: AppSpacing.lg),
+
+              // 9. Monitored Apps & Limits Section
+              _buildMonitoredAppsSection(context, isDark, isBn),
+              const SizedBox(height: AppSpacing.xl),
+            ],
           ),
-          IconButton(
-            icon: const Icon(Icons.refresh),
-            onPressed: controller.refreshDashboard,
-          ),
-        ],
-      ),
-      body: RefreshIndicator(
-        onRefresh: () async => controller.refreshDashboard(),
-        child: ListView(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-          children: [
-            // 1. Islamic Daily Motivation Banner
-            _buildDailyReminderCard(context, isDark),
-            const SizedBox(height: 16),
-
-            // 2. Main Stats Summary Card (Focus Score + Screen Time)
-            _buildStatsOverviewCard(context, isDark),
-            const SizedBox(height: 16),
-
-            // 3. Battery Optimization Exemption Banner
-            _buildBatteryOptimizationBanner(context, isDark),
-
-            // 4. Accessibility Service Warning / Restricted Setting Banner
-            _buildAccessibilityWarningBanner(context, isDark),
-
-            // 5. Active Temporary Unlocks Section (if any)
-            _buildActiveUnlocksSection(context, isDark),
-
-            // 5. Islamic Focus & Mindfulness Cards
-            _buildMindfulnessToolsSection(context, isDark),
-            const SizedBox(height: 16),
-
-            // 6. Quick Action Buttons
-            _buildQuickActions(context),
-            const SizedBox(height: 20),
-
-            // 7. Monitored Apps & Limits Section
-            _buildMonitoredAppsSection(context, isDark),
-          ],
         ),
-      ),
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: 0,
-        onDestinationSelected: (idx) {
-          switch (idx) {
-            case 0:
-              break;
-            case 1:
-              Get.toNamed('/learning');
-              break;
-            case 2:
-              Get.toNamed('/limits');
-              break;
-            case 3:
-              Get.toNamed('/schedule');
-              break;
-            case 4:
-              Get.toNamed('/statistics');
-              break;
-          }
-        },
-        destinations: const [
-          NavigationDestination(
-            icon: Icon(Icons.dashboard_outlined),
-            selectedIcon: Icon(
-              Icons.dashboard,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Home',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.menu_book_outlined),
-            selectedIcon: Icon(
-              Icons.menu_book,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Learning',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.timer_outlined),
-            selectedIcon: Icon(Icons.timer, color: AppColors.primaryEmerald),
-            label: 'Limits',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.alarm_outlined),
-            selectedIcon: Icon(Icons.alarm, color: AppColors.primaryEmerald),
-            label: 'Schedule',
-          ),
-          NavigationDestination(
-            icon: Icon(Icons.bar_chart_outlined),
-            selectedIcon: Icon(
-              Icons.bar_chart,
-              color: AppColors.primaryEmerald,
-            ),
-            label: 'Stats',
-          ),
-        ],
-      ),
-    );
+      );
+    });
   }
 
-  Widget _buildDailyReminderCard(BuildContext context, bool isDark) {
+  Widget _buildDailyReminderCard(BuildContext context, bool isDark, bool isBn) {
+    final quote = isBn
+        ? '“পাঁচটি বিষয় আসার পূর্বে পাঁচটি বিষয়ের সুযোগ গ্রহণ কর: তোমার বার্ধক্যের পূর্বে যৌবন, অসুস্থতার পূর্বে সুস্থতা, দারিদ্র্যের পূর্বে সচ্ছলতা, ব্যস্ততার পূর্বে অবসর এবং মৃত্যুর পূর্বে তোমার জীবন।”'
+        : AppStrings.quoteTime;
+    final source = isBn ? '— রাসূলুল্লাহ ﷺ (আল-হাকিম)' : AppStrings.quoteTimeSource;
+
     return Container(
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(AppSpacing.md),
       decoration: BoxDecoration(
         gradient: isDark ? AppColors.darkCardGradient : null,
         color: isDark ? null : AppColors.lightCard,
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(18),
         border: Border.all(
           color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.2 : 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
+          ),
+        ],
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -186,9 +164,9 @@ class DashboardScreen extends GetView<DashboardController> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  'Daily Reflection',
-                  style: TextStyle(
+                Text(
+                  isBn ? 'দৈনিক উপদেশ' : 'Daily Reflection',
+                  style: const TextStyle(
                     fontWeight: FontWeight.bold,
                     fontSize: 14,
                     color: AppColors.primaryGold,
@@ -196,7 +174,7 @@ class DashboardScreen extends GetView<DashboardController> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  AppStrings.quoteTime,
+                  quote,
                   style: TextStyle(
                     fontSize: 12,
                     fontStyle: FontStyle.italic,
@@ -204,6 +182,15 @@ class DashboardScreen extends GetView<DashboardController> {
                     color: isDark
                         ? AppColors.textSecondaryDark
                         : AppColors.textSecondaryLight,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  source,
+                  style: const TextStyle(
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.primaryGold,
                   ),
                 ),
               ],
@@ -214,7 +201,7 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildStatsOverviewCard(BuildContext context, bool isDark) {
+  Widget _buildStatsOverviewCard(BuildContext context, bool isDark, bool isBn) {
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -223,6 +210,13 @@ class DashboardScreen extends GetView<DashboardController> {
         border: Border.all(
           color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.25 : 0.05),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Obx(() {
         final score = controller.usageController.focusScore.value;
@@ -231,7 +225,9 @@ class DashboardScreen extends GetView<DashboardController> {
 
         final hours = totalMins ~/ 60;
         final mins = totalMins % 60;
-        final timeFormatted = hours > 0 ? '${hours}h ${mins}m' : '${mins}m';
+        final timeFormatted = hours > 0
+            ? (isBn ? '$hoursঘ $minsমি' : '${hours}h ${mins}m')
+            : (isBn ? '$minsমি' : '${mins}m');
 
         return Row(
           mainAxisAlignment: MainAxisAlignment.spaceAround,
@@ -266,9 +262,9 @@ class DashboardScreen extends GetView<DashboardController> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Focus Score',
-                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+                Text(
+                  isBn ? 'ফোকাস স্কোর' : 'Focus Score',
+                  style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
                 ),
               ],
             ),
@@ -282,7 +278,7 @@ class DashboardScreen extends GetView<DashboardController> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  'Restricted Time',
+                  isBn ? 'সীমিত অ্যাপের সময়' : 'Restricted Time',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
@@ -301,7 +297,9 @@ class DashboardScreen extends GetView<DashboardController> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '$limitsCount Active Limit${limitsCount == 1 ? '' : 's'}',
+                  isBn
+                      ? '$limitsCountটি অ্যাপের সীমা সক্রিয়'
+                      : '$limitsCount Active Limit${limitsCount == 1 ? '' : 's'}',
                   style: TextStyle(
                     fontSize: 12,
                     color: isDark
@@ -317,15 +315,15 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildActiveUnlocksSection(BuildContext context, bool isDark) {
+  Widget _buildActiveUnlocksSection(BuildContext context, bool isDark, bool isBn) {
     return Obx(() {
       final unlocks = controller.activeUnlocks;
       if (unlocks.isEmpty) return const SizedBox.shrink();
 
       return Padding(
-        padding: const EdgeInsets.only(bottom: 16.0),
+        padding: const EdgeInsets.only(bottom: AppSpacing.md),
         child: Container(
-          padding: const EdgeInsets.all(16),
+          padding: const EdgeInsets.all(AppSpacing.md),
           decoration: BoxDecoration(
             color: AppColors.emerald.withValues(alpha: 0.12),
             borderRadius: BorderRadius.circular(16),
@@ -334,13 +332,13 @@ class DashboardScreen extends GetView<DashboardController> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Row(
+              Row(
                 children: [
-                  Icon(Icons.lock_open, color: AppColors.emerald, size: 20),
-                  SizedBox(width: 8),
+                  const Icon(Icons.lock_open, color: AppColors.emerald, size: 20),
+                  const SizedBox(width: 8),
                   Text(
-                    'Active Temporary Passes',
-                    style: TextStyle(
+                    isBn ? 'সক্রিয় সাময়িক আনলক পাস' : 'Active Temporary Passes',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppColors.emerald,
                     ),
@@ -387,7 +385,7 @@ class DashboardScreen extends GetView<DashboardController> {
     });
   }
 
-  Widget _buildBatteryOptimizationBanner(BuildContext context, bool isDark) {
+  Widget _buildBatteryOptimizationBanner(BuildContext context, bool isDark, bool isBn) {
     final nativeBridge = Get.find<NativeBridgeService>();
 
     return FutureBuilder<bool>(
@@ -395,7 +393,7 @@ class DashboardScreen extends GetView<DashboardController> {
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data == false) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: AppSpacing.md),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: AppColors.warning.withValues(alpha: 0.12),
@@ -416,16 +414,18 @@ class DashboardScreen extends GetView<DashboardController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Battery Optimization Active',
-                        style: TextStyle(
+                      Text(
+                        isBn ? 'ব্যাটারি অপ্টিমাইজেশন সক্রিয়' : 'Battery Optimization Active',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Exclude FocusDeen so monitoring stays active in background.',
+                        isBn
+                            ? 'ব্যাকগ্রাউন্ডে ট্র্যাকিং নিরবচ্ছিন্ন রাখতে ফোকাসদ্বীনকে অপ্টিমাইজেশন থেকে বাদ দিন।'
+                            : 'Exclude FocusDeen so monitoring stays active in background.',
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -440,9 +440,9 @@ class DashboardScreen extends GetView<DashboardController> {
                   onPressed: () async {
                     await nativeBridge.requestIgnoreBatteryOptimizations();
                   },
-                  child: const Text(
-                    'Fix',
-                    style: TextStyle(
+                  child: Text(
+                    isBn ? 'ঠিক করুন' : 'Fix',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: AppColors.warning,
                     ),
@@ -457,7 +457,7 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildAccessibilityWarningBanner(BuildContext context, bool isDark) {
+  Widget _buildAccessibilityWarningBanner(BuildContext context, bool isDark, bool isBn) {
     final nativeBridge = Get.find<NativeBridgeService>();
 
     return FutureBuilder<Map<String, bool>>(
@@ -465,7 +465,7 @@ class DashboardScreen extends GetView<DashboardController> {
       builder: (context, snapshot) {
         if (snapshot.hasData && snapshot.data?['accessibility'] == false) {
           return Container(
-            margin: const EdgeInsets.only(bottom: 16),
+            margin: const EdgeInsets.only(bottom: AppSpacing.md),
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
               color: Colors.red.withValues(alpha: 0.12),
@@ -484,9 +484,9 @@ class DashboardScreen extends GetView<DashboardController> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'Accessibility Service Inactive',
-                        style: TextStyle(
+                      Text(
+                        isBn ? 'এক্সেসিবিলিটি সার্ভিস নিষ্ক্রিয়' : 'Accessibility Service Inactive',
+                        style: const TextStyle(
                           fontWeight: FontWeight.bold,
                           fontSize: 13,
                           color: Colors.redAccent,
@@ -494,7 +494,9 @@ class DashboardScreen extends GetView<DashboardController> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Required to detect foreground apps. Fix "Restricted setting" if blocked.',
+                        isBn
+                            ? 'অ্যাপ ব্লকিং চালু রাখতে এক্সেসিবিলিটি চালু করুন।'
+                            : 'Required to detect foreground apps. Fix "Restricted setting" if blocked.',
                         style: TextStyle(
                           fontSize: 11,
                           color: isDark
@@ -507,9 +509,9 @@ class DashboardScreen extends GetView<DashboardController> {
                 ),
                 TextButton(
                   onPressed: () => RestrictedSettingsDialog.show(context),
-                  child: const Text(
-                    'Fix / Guide',
-                    style: TextStyle(
+                  child: Text(
+                    isBn ? 'গাইড দেখুন' : 'Fix / Guide',
+                    style: const TextStyle(
                       fontWeight: FontWeight.bold,
                       color: Colors.redAccent,
                     ),
@@ -524,13 +526,13 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildMindfulnessToolsSection(BuildContext context, bool isDark) {
+  Widget _buildMindfulnessToolsSection(BuildContext context, bool isDark, bool isBn) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
-          'Islamic Learning & Focus',
-          style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+        Text(
+          isBn ? 'ইসলামিক শিক্ষা ও আত্মনিয়ন্ত্রণ' : 'Islamic Learning & Focus',
+          style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 10),
 
@@ -570,22 +572,24 @@ class DashboardScreen extends GetView<DashboardController> {
                   ),
                 ),
                 const SizedBox(width: 14),
-                const Expanded(
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Islamic Learning Library',
-                        style: TextStyle(
+                        isBn ? 'ইসলামিক লার্নিং লাইব্রেরি' : 'Islamic Learning Library',
+                        style: const TextStyle(
                           fontSize: 15,
                           fontWeight: FontWeight.bold,
                           color: Colors.white,
                         ),
                       ),
-                      SizedBox(height: 2),
+                      const SizedBox(height: 2),
                       Text(
-                        'Daily Dhikr, Duas, Salah Learning & Short Surahs',
-                        style: TextStyle(fontSize: 11, color: Colors.white70),
+                        isBn
+                            ? 'দৈনিক জিকির, দোয়া, নামাজ শিক্ষা ও প্রয়োজনীয় সূরা'
+                            : 'Daily Dhikr, Duas, Salah Learning & Short Surahs',
+                        style: const TextStyle(fontSize: 11, color: Colors.white70),
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                       ),
@@ -605,8 +609,8 @@ class DashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: _buildToolCard(
                 context,
-                title: 'Focus Session',
-                subtitle: '25m Pomodoro',
+                title: isBn ? 'ফোকাস সেশন' : 'Focus Session',
+                subtitle: isBn ? '২৫মি পোমোডোরো' : '25m Pomodoro',
                 icon: Icons.self_improvement,
                 color: AppColors.emerald,
                 isDark: isDark,
@@ -617,8 +621,8 @@ class DashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: _buildToolCard(
                 context,
-                title: 'Block Schedules',
-                subtitle: 'Study & Night Mode',
+                title: isBn ? 'ব্লক শিডিউল' : 'Block Schedules',
+                subtitle: isBn ? 'পড়া ও নাইট মোড' : 'Study & Night Mode',
                 icon: Icons.alarm_outlined,
                 color: Colors.deepOrangeAccent,
                 isDark: isDark,
@@ -635,8 +639,8 @@ class DashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: _buildToolCard(
                 context,
-                title: 'Digital Tasbih',
-                subtitle: 'Daily Dhikr Counter',
+                title: isBn ? 'ডিজিটাল তাসবীহ' : 'Digital Tasbih',
+                subtitle: isBn ? 'দৈনিক জিকির গণক' : 'Daily Dhikr Counter',
                 icon: Icons.fingerprint,
                 color: AppColors.primaryGold,
                 isDark: isDark,
@@ -647,8 +651,8 @@ class DashboardScreen extends GetView<DashboardController> {
             Expanded(
               child: _buildToolCard(
                 context,
-                title: 'Daily Adhkar',
-                subtitle: 'Morning & Evening',
+                title: isBn ? 'দৈনিক আজকার' : 'Daily Adhkar',
+                subtitle: isBn ? 'সকাল ও সন্ধ্যার আমল' : 'Morning & Evening',
                 icon: Icons.wb_sunny_outlined,
                 color: Colors.teal,
                 isDark: isDark,
@@ -716,13 +720,13 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildQuickActions(BuildContext context) {
+  Widget _buildQuickActions(BuildContext context, bool isBn) {
     return Row(
       children: [
         Expanded(
           child: OutlinedButton.icon(
             icon: const Icon(Icons.apps_outlined, size: 18),
-            label: const Text('Apps'),
+            label: Text(isBn ? 'অ্যাপসমূহ' : 'Apps'),
             onPressed: () => Get.toNamed('/app-selection'),
           ),
         ),
@@ -730,13 +734,13 @@ class DashboardScreen extends GetView<DashboardController> {
         Expanded(
           child: OutlinedButton.icon(
             icon: const Icon(Icons.timer_outlined, size: 18),
-            label: const Text('Limits'),
+            label: Text(isBn ? 'সীমা নির্ধারণ' : 'Limits'),
             onPressed: () => Get.toNamed('/limits'),
           ),
         ),
         const SizedBox(width: 12),
         IconButton.filledTonal(
-          tooltip: 'Preview Block Screen',
+          tooltip: isBn ? 'ব্লক স্ক্রিন প্রিভিউ' : 'Preview Block Screen',
           icon: const Icon(Icons.play_arrow_rounded, color: AppColors.danger),
           onPressed: () {
             Get.toNamed(
@@ -754,20 +758,20 @@ class DashboardScreen extends GetView<DashboardController> {
     );
   }
 
-  Widget _buildMonitoredAppsSection(BuildContext context, bool isDark) {
+  Widget _buildMonitoredAppsSection(BuildContext context, bool isDark, bool isBn) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Row(
           mainAxisAlignment: MainAxisAlignment.spaceBetween,
           children: [
-            const Text(
-              'App Usage & Limits',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            Text(
+              isBn ? 'অ্যাপ ব্যবহার ও সীমা' : 'App Usage & Limits',
+              style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
             ),
             TextButton(
               onPressed: () => Get.toNamed('/limits'),
-              child: const Text('Manage'),
+              child: Text(isBn ? 'পরিচালনা' : 'Manage'),
             ),
           ],
         ),
@@ -775,12 +779,36 @@ class DashboardScreen extends GetView<DashboardController> {
         Obx(() {
           final limits = controller.limitController.limits;
           if (limits.isEmpty) {
-            return const Card(
+            return Card(
+              color: isDark ? AppColors.darkCard : AppColors.lightCard,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(16),
+                side: BorderSide(
+                  color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+                ),
+              ),
               child: Padding(
-                padding: EdgeInsets.all(20),
+                padding: const EdgeInsets.all(24),
                 child: Center(
-                  child: Text(
-                    'No app limits added yet. Tap Limits to configure.',
+                  child: Column(
+                    children: [
+                      Icon(
+                        Icons.hourglass_empty_rounded,
+                        size: 36,
+                        color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        isBn
+                            ? 'এখনো কোনো অ্যাপের সীমা যোগ করা হয়নি। কনফিগার করতে সীমা নির্ধারণে চাপুন।'
+                            : 'No app limits added yet. Tap Limits to configure.',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          fontSize: 13,
+                          color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                        ),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -792,7 +820,7 @@ class DashboardScreen extends GetView<DashboardController> {
               final used = controller.usageController.getUsageForPackage(
                 limit.packageName,
               );
-              return _buildAppUsageCard(context, limit, used, isDark);
+              return _buildAppUsageCard(context, limit, used, isDark, isBn);
             }).toList(),
           );
         }),
@@ -805,6 +833,7 @@ class DashboardScreen extends GetView<DashboardController> {
     AppLimitModel limit,
     int usedMinutes,
     bool isDark,
+    bool isBn,
   ) {
     final progress = (usedMinutes / limit.dailyLimitMinutes).clamp(0.0, 1.0);
     final isExceeded = usedMinutes >= limit.dailyLimitMinutes;
@@ -814,30 +843,34 @@ class DashboardScreen extends GetView<DashboardController> {
             limit.warningThresholdMinutes;
 
     Color statusColor = AppColors.emerald;
-    String statusText = 'Normal';
+    String statusText = isBn ? 'স্বাভাবিক' : 'Normal';
     if (isExceeded) {
       statusColor = AppColors.danger;
-      statusText = "Time's Up";
+      statusText = isBn ? 'সময় শেষ' : "Time's Up";
     } else if (isWarning) {
       statusColor = AppColors.warning;
-      statusText = 'Warning (${limit.dailyLimitMinutes - usedMinutes}m left)';
+      final remaining = limit.dailyLimitMinutes - usedMinutes;
+      statusText = isBn ? 'সতর্কতা ($remainingমি বাকি)' : 'Warning ($remaining min left)';
     }
 
     return Card(
       margin: const EdgeInsets.only(bottom: 10),
+      color: isDark ? AppColors.darkCard : AppColors.lightCard,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(16),
+        side: BorderSide(
+          color: isDark ? AppColors.darkCardBorder : AppColors.lightCardBorder,
+        ),
+      ),
       child: Padding(
         padding: const EdgeInsets.all(14),
         child: Column(
           children: [
             Row(
               children: [
-                CircleAvatar(
-                  backgroundColor: statusColor.withValues(alpha: 0.15),
-                  child: Icon(
-                    isExceeded ? Icons.block : Icons.phone_android,
-                    color: statusColor,
-                    size: 20,
-                  ),
+                AppIconWidget(
+                  packageName: limit.packageName,
+                  size: 40,
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -853,7 +886,9 @@ class DashboardScreen extends GetView<DashboardController> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '$usedMinutes / ${limit.dailyLimitMinutes} minutes',
+                        isBn
+                            ? '$usedMinutes / ${limit.dailyLimitMinutes} মিনিট'
+                            : '$usedMinutes / ${limit.dailyLimitMinutes} minutes',
                         style: TextStyle(
                           fontSize: 12,
                           color: isDark

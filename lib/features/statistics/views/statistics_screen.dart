@@ -33,6 +33,7 @@ class _StatisticsScreenState extends State<StatisticsScreen>
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Wellbeing & Statistics',
           style: TextStyle(fontWeight: FontWeight.bold),

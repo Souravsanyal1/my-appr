@@ -1,7 +1,10 @@
 import 'dart:async';
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import 'package:record/record.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/constants/app_spacing.dart';
 import '../../../core/responsive/responsive_layout.dart';
@@ -21,9 +24,19 @@ class RecordingView extends StatefulWidget {
 
 class _RecordingViewState extends State<RecordingView>
     with WidgetsBindingObserver {
+  final AudioRecorder _audioRecorder = AudioRecorder();
+  StreamSubscription<Amplitude>? _amplitudeSub;
+
   bool _isRecording = false;
+  bool _isProcessing = false;
   double _recordingSeconds = 0.0;
   Timer? _timer;
+
+  // Real audio metrics
+  final List<double> _amplitudes = [];
+  double _peakAmplitude = -160.0;
+  double _currentNormalizedAmplitude = 0.0;
+  String? _recordedFilePath;
 
   @override
   void initState() {
@@ -41,41 +54,168 @@ class _RecordingViewState extends State<RecordingView>
     }
   }
 
-  void _startRecording() {
-    setState(() {
-      _isRecording = true;
-      _recordingSeconds = 0.0;
-    });
-    HapticFeedback.mediumImpact();
+  Future<void> _startRecording() async {
+    if (_isProcessing) return;
 
-    _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
-      if (!mounted) {
-        t.cancel();
+    try {
+      // 1. Verify / Request runtime microphone permission
+      final hasPermission = await _audioRecorder.hasPermission();
+      if (!hasPermission) {
+        _showPermissionDeniedMessage();
         return;
       }
+
+      // 2. Prepare temporary audio storage path
+      final tempDir = await getTemporaryDirectory();
+      final String filePath =
+          '${tempDir.path}/recitation_${DateTime.now().millisecondsSinceEpoch}.m4a';
+      _recordedFilePath = filePath;
+
+      // 3. Reset acoustic tracking
+      _amplitudes.clear();
+      _peakAmplitude = -160.0;
+      _currentNormalizedAmplitude = 0.0;
+
+      // 4. Start native recording stream
+      await _audioRecorder.start(
+        const RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+        ),
+        path: filePath,
+      );
+
+      // 5. Track live amplitude updates for real visualizer feedback
+      _amplitudeSub = _audioRecorder
+          .onAmplitudeChanged(const Duration(milliseconds: 80))
+          .listen((amp) {
+            if (!mounted) return;
+            _amplitudes.add(amp.current);
+            if (amp.max > _peakAmplitude) {
+              _peakAmplitude = amp.max;
+            }
+            // Normalize dBFS (-60 dB to -5 dB) to 0.0..1.0 for dynamic UI waveform
+            final double normalized =
+                ((amp.current + 55.0) / 50.0).clamp(0.0, 1.0);
+            setState(() {
+              _currentNormalizedAmplitude = normalized;
+            });
+          });
+
       setState(() {
-        _recordingSeconds += 0.1;
+        _isRecording = true;
+        _recordingSeconds = 0.0;
       });
-    });
+      HapticFeedback.mediumImpact();
+
+      _timer = Timer.periodic(const Duration(milliseconds: 100), (t) {
+        if (!mounted) {
+          t.cancel();
+          return;
+        }
+        setState(() {
+          _recordingSeconds += 0.1;
+        });
+      });
+    } catch (e) {
+      debugPrint('Error starting audio recording: $e');
+      _showErrorSnackbar(e.toString());
+    }
   }
 
-  void _stopAndAnalyze() {
-    if (!_isRecording) return;
+  Future<void> _stopAndAnalyze() async {
+    if (!_isRecording || _isProcessing) return;
+    _isProcessing = true;
+
     _timer?.cancel();
-    setState(() => _isRecording = false);
+    await _amplitudeSub?.cancel();
+
+    String? finalPath;
+    int fileSizeBytes = 0;
+
+    try {
+      finalPath = await _audioRecorder.stop();
+      if (finalPath != null && finalPath.isNotEmpty) {
+        final file = File(finalPath);
+        if (await file.exists()) {
+          fileSizeBytes = await file.length();
+        }
+      }
+    } catch (e) {
+      debugPrint('Error stopping audio recorder: $e');
+      finalPath = _recordedFilePath;
+    }
+
+    setState(() {
+      _isRecording = false;
+      _currentNormalizedAmplitude = 0.0;
+    });
     HapticFeedback.mediumImpact();
+
+    // Compute average amplitude
+    double averageAmplitude = -160.0;
+    if (_amplitudes.isNotEmpty) {
+      averageAmplitude =
+          _amplitudes.reduce((a, b) => a + b) / _amplitudes.length;
+    }
 
     final existingArgs = (Get.arguments is Map)
         ? Map<String, dynamic>.from(Get.arguments as Map)
         : <String, dynamic>{};
 
-    // Advance to multi-step Analysis screen with recorded duration
+    final lesson = Get.arguments is LearningLessonModel
+        ? Get.arguments as LearningLessonModel
+        : (Get.arguments is Map &&
+                Get.arguments['lesson'] is LearningLessonModel)
+            ? Get.arguments['lesson'] as LearningLessonModel
+            : null;
+
+    // Advance to multi-step Analysis screen with genuine audio metrics
     Get.offNamed(
       '/analysis',
       arguments: {
         ...existingArgs,
         'durationSeconds': _recordingSeconds.round(),
+        'audioPath': finalPath,
+        'averageAmplitude': averageAmplitude,
+        'peakAmplitude': _peakAmplitude,
+        'audioFileSizeBytes': fileSizeBytes,
+        if (lesson != null) ...{
+          'expectedArabic': lesson.arabicText,
+          'expectedTransliteration': lesson.transliteration,
+        },
       },
+    );
+  }
+
+  void _showPermissionDeniedMessage() {
+    final isBn = LanguageService.to.isBangla;
+    Get.snackbar(
+      isBn ? 'মাইক্রোফোন অনুমতি আবশ্যক' : 'Microphone Permission Required',
+      isBn
+          ? 'আপনার তিলাওয়াত রেকর্ড ও মূল্যায়নের জন্য মাইক্রোফোন পারমিশন দিন।'
+          : 'Please enable microphone access in settings to evaluate recitation.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.surface,
+      colorText: AppColors.textPrimary,
+      margin: const EdgeInsets.all(AppSpacing.md),
+      duration: const Duration(seconds: 4),
+      icon: const Icon(Icons.mic_off_rounded, color: Colors.amberAccent),
+    );
+  }
+
+  void _showErrorSnackbar(String error) {
+    final isBn = LanguageService.to.isBangla;
+    Get.snackbar(
+      isBn ? 'রেকর্ডিং ত্রুটি' : 'Recording Error',
+      isBn
+          ? 'অডিও রেকর্ড শুরু করা যায়নি। পুনরায় চেষ্টা করুন।'
+          : 'Could not initialize audio capture. Please try again.',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: AppColors.surface,
+      colorText: AppColors.textPrimary,
+      margin: const EdgeInsets.all(AppSpacing.md),
     );
   }
 
@@ -83,6 +223,8 @@ class _RecordingViewState extends State<RecordingView>
   void dispose() {
     WidgetsBinding.instance.removeObserver(this);
     _timer?.cancel();
+    _amplitudeSub?.cancel();
+    _audioRecorder.dispose();
     super.dispose();
   }
 
@@ -91,10 +233,13 @@ class _RecordingViewState extends State<RecordingView>
     final languageService = LanguageService.to;
     final lesson = Get.arguments is LearningLessonModel
         ? Get.arguments as LearningLessonModel
-        : LearningRepository.allLessons.firstWhere(
-            (l) => l.id == 'dhikr_astaghfirullah',
-            orElse: () => LearningRepository.allLessons.first,
-          );
+        : (Get.arguments is Map &&
+                Get.arguments['lesson'] is LearningLessonModel)
+            ? Get.arguments['lesson'] as LearningLessonModel
+            : LearningRepository.allLessons.firstWhere(
+                (l) => l.id == 'dhikr_astaghfirullah',
+                orElse: () => LearningRepository.allLessons.first,
+              );
 
     return Obx(() {
       final isBn = languageService.isBangla;
@@ -183,8 +328,13 @@ class _RecordingViewState extends State<RecordingView>
 
               const Spacer(),
 
-              // Live Waveform
-              WaveformView(isRecording: _isRecording, height: 44, barCount: 22),
+              // Live Waveform reacting to genuine microphone audio
+              WaveformView(
+                isRecording: _isRecording,
+                height: 44,
+                barCount: 22,
+                normalizedAmplitude: _currentNormalizedAmplitude,
+              ),
               const SizedBox(height: AppSpacing.md),
 
               // Timer / Status

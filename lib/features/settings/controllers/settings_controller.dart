@@ -1,5 +1,7 @@
 import 'package:flutter/widgets.dart';
 import 'package:get/get.dart';
+import 'package:path_provider/path_provider.dart';
+import '../../../core/services/language_service.dart';
 import '../../../core/services/native_bridge_service.dart';
 import '../../../core/services/pin_security_service.dart';
 import '../../../core/services/storage_service.dart';
@@ -78,6 +80,9 @@ class SettingsController extends GetxController {
   void setUnlockThreshold(int threshold) {
     unlockThreshold.value = threshold;
     _storageService.write('unlock_threshold_percentage', threshold);
+    // Sync to native SharedPreferences so the overlay reads the updated threshold
+    final duration = _storageService.read<int>('unlock_duration_minutes') ?? 30;
+    _nativeBridge.syncSettings(minScore: threshold, unlockDurationMinutes: duration);
   }
 
   void toggleNotifyBeforeLimit(bool val) {
@@ -107,10 +112,33 @@ class SettingsController extends GetxController {
   }
 
   Future<void> clearAudioRecordings() async {
-    // Confirm and clear temporary audio
+    int deletedCount = 0;
+    try {
+      final tempDir = await getTemporaryDirectory();
+      if (tempDir.existsSync()) {
+        final entities = tempDir.listSync();
+        for (final entity in entities) {
+          final p = entity.path.toLowerCase();
+          if (p.endsWith('.m4a') || p.endsWith('.aac') || p.endsWith('.wav') || p.contains('recitation')) {
+            try {
+              entity.deleteSync();
+              deletedCount++;
+            } catch (_) {}
+          }
+        }
+      }
+    } catch (_) {}
+
+    final isBn = LanguageService.to.isBangla;
     Get.snackbar(
-      'Privacy Cleaned',
-      'All local recitation audio caches have been deleted.',
+      isBn ? 'গোপনীয়তা সংরক্ষিত' : 'Privacy Cleaned',
+      isBn
+          ? (deletedCount > 0
+              ? '$deletedCountটি সাময়িক অডিও ফাইল মুছে ফেলা হয়েছে।'
+              : 'কোনো সাময়িক অডিও ফাইল অবশিষ্ট নেই।')
+          : (deletedCount > 0
+              ? '$deletedCount temporary audio files deleted.'
+              : 'All local recitation audio caches are clean.'),
       snackPosition: SnackPosition.BOTTOM,
     );
   }

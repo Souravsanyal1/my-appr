@@ -3,6 +3,7 @@ abstract class AppRoutes {
   static const String splash = '/splash';
   static const String welcome = '/welcome';
   static const String chooseApps = '/choose-apps';
+  static const String permissionSetup = '/permission-setup';
   static const String dailyGoal = '/daily-goal';
   static const String home = '/home';
   static const String intention = '/intention';
@@ -33,4 +34,5 @@ abstract class AppRoutes {
   static const String statistics = '/statistics';
   static const String settings = '/settings';
   static const String auth = '/auth';
+  static const String notifications = '/notifications';
 }

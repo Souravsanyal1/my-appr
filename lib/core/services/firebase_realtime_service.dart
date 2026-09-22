@@ -8,10 +8,16 @@ import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 import 'package:firebase_core/firebase_core.dart';
 
 class FirebaseRealtimeService extends GetxService {
+  static const String _rtdbUrl =
+      'https://focusdeen-f8295-default-rtdb.asia-southeast1.firebasedatabase.app';
+
   FirebaseDatabase? get _database {
     try {
       if (Firebase.apps.isNotEmpty) {
-        return FirebaseDatabase.instance;
+        return FirebaseDatabase.instanceFor(
+          app: Firebase.app(),
+          databaseURL: _rtdbUrl,
+        );
       }
     } catch (e) {
       debugPrint('FirebaseDatabase instance notice: $e');
@@ -123,6 +129,9 @@ class FirebaseRealtimeService extends GetxService {
             );
             if (session.expiresAtTimestamp > now) {
               list.add(session);
+            } else {
+              // Expired! Prune from Realtime Database asynchronously
+              ref.child(key.toString()).remove().catchError((_) {});
             }
           }
         });

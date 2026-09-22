@@ -15,6 +15,7 @@ class LearningCatalogScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: const Text(
           'Islamic Learning',
           style: TextStyle(fontWeight: FontWeight.bold, letterSpacing: 0.5),

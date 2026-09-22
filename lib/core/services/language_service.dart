@@ -38,7 +38,7 @@ class LanguageService extends GetxService {
   // Quick helper for UI labels
   String t(String key) {
     final Map<String, Map<String, String>> localizedStrings = {
-      'app_name': {'en': 'DeenFlow', 'bn': 'দ্বীনফ্লো'},
+      'app_name': {'en': 'FocusDeen', 'bn': 'ফোকাসদ্বীন'},
       'home': {'en': 'Home', 'bn': 'হোম'},
       'progress': {'en': 'Progress', 'bn': 'অগ্রগতি'},
       'deeds': {'en': 'Deeds', 'bn': 'আমল'},
@@ -77,6 +77,100 @@ class LanguageService extends GetxService {
       'hold_to_set': {
         'en': 'Hold to set intention',
         'bn': 'নিয়ত করতে চেপে ধরে রাখুন',
+      },
+      // ScrollDeeds reference flow & dashboard keys
+      'time_remaining': {'en': 'Time Remaining', 'bn': 'অবশিষ্ট সময়'},
+      'apps_currently_unlocked': {
+        'en': 'APPS CURRENTLY UNLOCKED',
+        'bn': 'অ্যাপসমূহ বর্তমানে আনলকড',
+      },
+      'apps_currently_locked': {
+        'en': 'APPS CURRENTLY LOCKED',
+        'bn': 'অ্যাপসমূহ বর্তমানে লকড',
+      },
+      'add_more_time': {'en': 'Add more time', 'bn': 'আরও সময় যোগ করুন'},
+      'add_time_description': {
+        'en': 'Do another good deed to add time to your unlock. Your remaining time will stack.',
+        'bn': 'আপনার আনলক সময়ে আরও সময় যোগ করতে আরেকটি নেক আমল করুন। আপনার অবশিষ্ট সময় যুক্ত হবে।',
+      },
+      'do_another_deed': {
+        'en': 'Do another good deed →',
+        'bn': 'আরেকটি আমল করুন →',
+      },
+      'locked_apps': {'en': 'Locked Apps', 'bn': 'লক করা অ্যাপসমূহ'},
+      'choose_apps_to_lock': {
+        'en': 'Choose Apps to Lock',
+        'bn': 'লক করার অ্যাপ নির্বাচন করুন',
+      },
+      'app_icons_privacy_note': {
+        'en': 'App icons hidden for privacy',
+        'bn': 'গোপনীয়তার সুরক্ষায় অ্যাপ আইকন লুকানো রয়েছে',
+      },
+      'nav_stats': {'en': 'Stats', 'bn': 'পরিসংখ্যান'},
+      'nav_unlock': {'en': 'Unlock', 'bn': 'আনলক'},
+      'nav_settings': {'en': 'Settings', 'bn': 'সেটিংস'},
+      'streak_label': {'en': 'Streak', 'bn': 'ধারাবাহিকতা'},
+      'streak_days': {'en': '%s days', 'bn': '%s দিন'},
+      'all_apps_locked': {
+        'en': 'All protected apps are locked',
+        'bn': 'সুরক্ষিত সকল অ্যাপ লক করা আছে',
+      },
+      'apps_unlocked_desc': {
+        'en': 'Protected apps are accessible until the timer expires',
+        'bn': 'টাইমার শেষ না হওয়া পর্যন্ত সুরক্ষিত অ্যাপসমূহ ব্যবহারযোগ্য',
+      },
+      'finding_deed': {
+        'en': 'Finding your good deed...',
+        'bn': 'আপনার জন্য নেক আমল খোঁজা হচ্ছে...',
+      },
+      'translate': {'en': 'Translate', 'bn': 'অনুবাদ'},
+      'tap_to_count': {'en': 'Tap to count', 'bn': 'গণনা করতে ট্যাপ করুন'},
+      'mashaallah': {'en': 'MashaAllah!', 'bn': 'মাশাআল্লাহ!'},
+      'access_granted': {
+        'en': '+%s minutes of access',
+        'bn': '+%s মিনিট ব্যবহারের সুযোগ',
+      },
+      'continue_btn': {'en': 'Continue', 'bn': 'চালিয়ে যান'},
+      'your_apps_locked': {
+        'en': 'Your apps are locked',
+        'bn': 'আপনার অ্যাপসমূহ লক করা আছে',
+      },
+      'complete_deed_to_unlock': {
+        'en': 'Complete a good deed to unlock your apps',
+        'bn': 'অ্যাপসমূহ আনলক করতে একটি নেক আমল সম্পন্ন করুন',
+      },
+      'complete_a_good_deed': {
+        'en': 'Complete a Good Deed',
+        'bn': 'একটি নেক আমল সম্পন্ন করুন',
+      },
+      'xp_to_next': {'en': '%s XP to %s', 'bn': '%s-এ পৌঁছাতে %s XP বাকি'},
+      'easy': {'en': 'Easy', 'bn': 'সহজ'},
+      'medium': {'en': 'Medium', 'bn': 'মাঝারি'},
+      'hard': {'en': 'Hard', 'bn': 'কঠিন'},
+      'minutes_badge': {'en': '%s minutes', 'bn': '%s মিনিট'},
+      'xp_badge': {'en': '+%s XP', 'bn': '+%s এক্সপি'},
+      'tap_to_count_instruction': {
+        'en': 'Tap the counter or use the microphone to complete',
+        'bn': 'সম্পন্ন করতে কাউন্টারে ট্যাপ করুন বা মাইক্রোফোন ব্যবহার করুন',
+      },
+      'rank_shield_title': {'en': 'Current Rank', 'bn': 'বর্তমান পদমর্যাদা'},
+      'summary': {'en': 'Summary', 'bn': 'সারসংক্ষেপ'},
+      'current_streak': {'en': 'Current Streak', 'bn': 'বর্তমান ধারাবাহিকতা'},
+      'longest_streak': {'en': 'Longest Streak', 'bn': 'সর্বোচ্চ ধারাবাহিকতা'},
+      'total_deeds': {'en': 'Total Deeds', 'bn': 'মোট আমল'},
+      'total_xp': {'en': 'Total XP', 'bn': 'মোট এক্সপি'},
+      'total_time_earned': {'en': 'Total Time Earned', 'bn': 'মোট অর্জিত সময়'},
+      'weekly_activity': {'en': 'Weekly Activity', 'bn': 'সাপ্তাহিক আমল'},
+      'deed_history': {'en': 'Deed History', 'bn': 'আমলের ইতিহাস'},
+      'no_deeds_yet': {
+        'en': 'No deeds completed yet',
+        'bn': 'এখনও কোনো আমল সম্পন্ন হয়নি',
+      },
+      'completed_at': {'en': 'Completed at', 'bn': 'সম্পন্ন হয়েছে'},
+      'rank_overview': {'en': 'Rank Overview', 'bn': 'র‍্যাংক বিবরণ'},
+      'recitation_optional': {
+        'en': 'Mic recitation optional (tap works too)',
+        'bn': 'তেলাওয়াত ঐচ্ছিক (ট্যাপ করেও গণনা সম্ভব)',
       },
     };
 

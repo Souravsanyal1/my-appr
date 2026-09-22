@@ -63,6 +63,31 @@ class NotificationService(private val context: Context) {
         manager.notify(packageName.hashCode(), notification)
     }
 
+    fun showRelockNotification(packageName: String, appName: String) {
+        // Tap just opens DeenFlow home — overlay is shown natively on top of the app.
+        val intent = Intent(context, com.focusdeen.focus_deen.MainActivity::class.java).apply {
+            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        }
+        val pendingIntent = PendingIntent.getActivity(
+            context,
+            packageName.hashCode() + 2,
+            intent,
+            PendingIntent.FLAG_UPDATE_CURRENT or (if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) PendingIntent.FLAG_IMMUTABLE else 0)
+        )
+
+        val notification = NotificationCompat.Builder(context, CHANNEL_ID)
+            .setSmallIcon(android.R.drawable.ic_lock_lock)
+            .setContentTitle("FocusDeen: $appName Locked")
+            .setContentText("Your unlock time for $appName has expired. Recite again to unlock.")
+            .setPriority(NotificationCompat.PRIORITY_HIGH)
+            .setAutoCancel(true)
+            .setContentIntent(pendingIntent)
+            .build()
+
+        val manager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
+        manager.notify(packageName.hashCode() + 200, notification)
+    }
+
     fun showLockNotification(packageName: String, appName: String) {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP

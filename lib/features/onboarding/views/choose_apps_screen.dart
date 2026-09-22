@@ -407,7 +407,7 @@ class ChooseAppsScreen extends StatelessWidget {
                   child: ElevatedButton(
                     onPressed: () {
                       controller.saveSelection();
-                      Get.toNamed('/daily-goal');
+                      Get.toNamed('/permission-setup');
                     },
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryGreen,

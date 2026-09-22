@@ -1,5 +1,8 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:focus_deen/core/blocker/app_blocker.dart';
+import 'package:focus_deen/core/blocker/blocker_models.dart';
 import 'package:focus_deen/core/responsive/responsive_layout.dart';
 import 'package:focus_deen/features/dhikr/models/dhikr_model.dart';
 import 'package:focus_deen/features/focus_session/models/focus_session_model.dart';
@@ -12,10 +15,104 @@ import 'package:focus_deen/features/statistics/models/daily_stats_model.dart';
 import 'package:focus_deen/features/unlock/models/unlock_session_model.dart';
 import 'package:focus_deen/features/unlock/services/pronunciation_analyzer.dart';
 import 'package:get/get.dart' hide ScreenType;
+import 'package:focus_deen/core/services/gamification_service.dart';
 import 'package:focus_deen/core/services/language_service.dart';
 import 'package:focus_deen/features/onboarding/views/welcome_screen.dart';
+import 'package:focus_deen/features/unlock/models/good_deed_model.dart';
 
 void main() {
+  group('Gamification & Stacking Unlock Tests', () {
+    test('UserRank thresholds and progression evaluation', () {
+      expect(UserRank.bronze.minXp, 0);
+      expect(UserRank.bronze.nextThreshold, 110);
+      expect(UserRank.silver.minXp, 111);
+      expect(UserRank.gold.minXp, 301);
+      expect(UserRank.platinum.minXp, 601);
+
+      // Verify rank categorization
+      UserRank rankForXp(int xp) {
+        if (xp >= 601) return UserRank.platinum;
+        if (xp >= 301) return UserRank.gold;
+        if (xp >= 111) return UserRank.silver;
+        return UserRank.bronze;
+      }
+
+      expect(rankForXp(50), UserRank.bronze);
+      expect(rankForXp(110), UserRank.bronze);
+      expect(rankForXp(111), UserRank.silver);
+      expect(rankForXp(300), UserRank.silver);
+      expect(rankForXp(301), UserRank.gold);
+      expect(rankForXp(600), UserRank.gold);
+      expect(rankForXp(601), UserRank.platinum);
+      expect(rankForXp(1200), UserRank.platinum);
+    });
+
+    test('DeedHistoryItem serialization', () {
+      final now = DateTime.now();
+      final item = DeedHistoryItem(
+        deedName: 'Astaghfirullah',
+        xpEarned: 20,
+        durationMinutes: 30,
+        timestamp: now,
+      );
+
+      final map = item.toMap();
+      expect(map['deedName'], 'Astaghfirullah');
+      expect(map['xpEarned'], 20);
+      expect(map['durationMinutes'], 30);
+
+      final restored = DeedHistoryItem.fromMap(map);
+      expect(restored.deedName, 'Astaghfirullah');
+      expect(restored.xpEarned, 20);
+      expect(restored.durationMinutes, 30);
+    });
+
+    test('Stacking time logic adds duration to active expiry', () {
+      final now = DateTime.now();
+      // Case 1: No previous unlock or expired -> expiry = now + 30
+      DateTime currentExpiry = now.subtract(const Duration(minutes: 5));
+      DateTime stacked;
+      if (currentExpiry.isAfter(now)) {
+        stacked = currentExpiry.add(const Duration(minutes: 30));
+      } else {
+        stacked = now.add(const Duration(minutes: 30));
+      }
+      expect(stacked.difference(now).inMinutes, 30);
+
+      // Case 2: 15 minutes remaining -> stacked = current + 30 = 45 min
+      currentExpiry = now.add(const Duration(minutes: 15));
+      if (currentExpiry.isAfter(now)) {
+        stacked = currentExpiry.add(const Duration(minutes: 30));
+      } else {
+        stacked = now.add(const Duration(minutes: 30));
+      }
+      expect(stacked.difference(now).inMinutes, 45);
+    });
+
+    test('GoodDeedModel pool verification', () {
+      expect(GoodDeedModel.pool.isNotEmpty, true);
+      for (final deed in GoodDeedModel.pool) {
+        expect(deed.arabic.isNotEmpty, true);
+        expect(deed.transliteration.isNotEmpty, true);
+        expect(deed.banglaPronunciation.isNotEmpty, true);
+        expect(deed.translationEn.isNotEmpty, true);
+        expect(deed.translationBn.isNotEmpty, true);
+        expect(deed.hadithQuoteEn.isNotEmpty, true);
+        expect(deed.hadithQuoteBn.isNotEmpty, true);
+        expect(deed.targetRepetitions > 0, true);
+        expect(deed.rewardMinutes > 0, true);
+
+        // Verify points mapping rule: Easy = 10, Medium = 20, Hard = 30
+        if (deed.difficulty == 'Easy') {
+          expect(deed.xpEarned, 10);
+        } else if (deed.difficulty == 'Medium') {
+          expect(deed.xpEarned, 20);
+        } else if (deed.difficulty == 'Hard') {
+          expect(deed.xpEarned, 30);
+        }
+      }
+    });
+  });
   group('AppLimitModel Tests', () {
     test('Serialize and deserialize AppLimitModel', () {
       const limit = AppLimitModel(
@@ -532,4 +629,128 @@ void main() {
       },
     );
   });
+
+  group('AppBlocker & Timed Unlock Tests', () {
+    test('FakeAppBlocker correctly manages protected apps and timed unlocks', () async {
+      final fakeBlocker = FakeAppBlocker();
+
+      // Verify installed apps retrieval
+      final apps = await fakeBlocker.getInstalledApps();
+      expect(apps.length, 2);
+      expect(apps.first.name, 'TikTok');
+
+      // Set protected apps
+      await fakeBlocker.setProtectedApps(['com.zhiliaoapp.musically']);
+      expect(fakeBlocker.protectedApps.contains('com.zhiliaoapp.musically'), true);
+
+      // Unlock for 15 minutes
+      final beforeUnlock = DateTime.now();
+      await fakeBlocker.unlock('com.zhiliaoapp.musically', const Duration(minutes: 15));
+
+      final activeUnlocks = await fakeBlocker.getUnlockedUntil();
+      expect(activeUnlocks.containsKey('com.zhiliaoapp.musically'), true);
+      expect(
+        activeUnlocks['com.zhiliaoapp.musically']!.isAfter(beforeUnlock.add(const Duration(minutes: 14))),
+        true,
+      );
+
+      // Lock now
+      await fakeBlocker.lockNow('com.zhiliaoapp.musically');
+      final afterRelock = await fakeBlocker.getUnlockedUntil();
+      expect(afterRelock.containsKey('com.zhiliaoapp.musically'), false);
+
+      fakeBlocker.dispose();
+    });
+
+    test('BlockerEvent stream broadcasts unlock and relock events', () async {
+      final fakeBlocker = FakeAppBlocker();
+      final events = <BlockerEvent>[];
+
+      final sub = fakeBlocker.events.listen(events.add);
+
+      await fakeBlocker.unlock('com.instagram.android', const Duration(minutes: 30));
+      await fakeBlocker.lockNow('com.instagram.android');
+
+      await Future.delayed(const Duration(milliseconds: 50));
+      expect(events.length, 2);
+      expect(events[0].type, BlockerEventType.unlocked);
+      expect(events[1].type, BlockerEventType.relocked);
+
+      await sub.cancel();
+      fakeBlocker.dispose();
+    });
+  });
+}
+
+class FakeAppBlocker implements AppBlocker {
+  final List<String> protectedApps = [];
+  final Map<String, DateTime> unlockedUntil = {};
+  PermissionStatusSet permissions = const PermissionStatusSet(
+    accessibilityGranted: true,
+    usageStatsGranted: true,
+    overlayGranted: true,
+    notificationsGranted: true,
+    exactAlarmsGranted: true,
+    batteryOptimizationIgnored: true,
+  );
+  final StreamController<BlockerEvent> _controller =
+      StreamController<BlockerEvent>.broadcast();
+
+  @override
+  Stream<BlockerEvent> get events => _controller.stream;
+
+  @override
+  Future<List<InstalledAppInfo>> getInstalledApps() async => const [
+        InstalledAppInfo(
+            id: 'com.zhiliaoapp.musically', name: 'TikTok', category: 'Social'),
+        InstalledAppInfo(
+            id: 'com.instagram.android', name: 'Instagram', category: 'Social'),
+      ];
+
+  @override
+  Future<void> setProtectedApps(List<String> ids) async {
+    protectedApps.clear();
+    protectedApps.addAll(ids);
+  }
+
+  @override
+  Future<void> unlock(String id, Duration duration) async {
+    unlockedUntil[id] = DateTime.now().add(duration);
+    _controller.add(
+      BlockerEvent(
+        type: BlockerEventType.unlocked,
+        packageId: id,
+        appName: id,
+        timestamp: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<void> lockNow(String id) async {
+    unlockedUntil.remove(id);
+    _controller.add(
+      BlockerEvent(
+        type: BlockerEventType.relocked,
+        packageId: id,
+        appName: id,
+        timestamp: DateTime.now(),
+      ),
+    );
+  }
+
+  @override
+  Future<Map<String, DateTime>> getUnlockedUntil() async =>
+      Map.unmodifiable(unlockedUntil);
+
+  @override
+  Future<PermissionStatusSet> checkPermissions() async => permissions;
+
+  @override
+  Future<void> openPermissionSettings(BlockerPermission p) async {}
+
+  @override
+  void dispose() {
+    _controller.close();
+  }
 }

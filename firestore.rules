@@ -1,0 +1,82 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper: Check if caller is an authenticated administrator
+    function isAdmin() {
+      return request.auth != null &&
+        (request.auth.token.firebase.sign_in_provider == 'password' ||
+         request.auth.token.admin == true);
+    }
+
+    // Helper: Check if caller is authenticated (including Firebase Anonymous Auth)
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // ─── Users Collection ──────────────────────────────────────────
+    // users/{deviceId}
+    match /users/{deviceId} {
+      // Admin web panel can read and list all devices
+      allow read, list: if isAdmin();
+
+      // Mobile app can read its own device document
+      allow get: if isAuthenticated();
+
+      // Anonymous mobile app creates its own device document
+      allow create: if isAuthenticated() &&
+        (request.resource.data.deviceId == deviceId || !('deviceId' in request.resource.data));
+
+      // Anonymous mobile app updates lastActiveAt, fcmToken, lockedApps, and stats
+      allow update: if isAdmin() || isAuthenticated();
+
+      // Only admin can delete user records
+      allow delete: if isAdmin();
+    }
+
+    // Allow user device to sync its own subcollections (limits, stats, sessions)
+    match /users/{userId}/{allChildren=**} {
+      allow read, write: if isAuthenticated();
+    }
+
+    // ─── Notifications Collection ──────────────────────────────────
+    // Permanent notification history & delivery metrics
+    match /notifications/{id} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+
+      // Recipient delivery and open receipts written by client devices
+      match /recipients/{deviceId} {
+        allow read, list: if isAdmin();
+        allow create, update: if true;
+      }
+    }
+
+    // Legacy / Admin logs compatibility
+    match /notifications_log/{logId} {
+      allow read, write, list: if isAdmin();
+    }
+
+    match /scheduled_notifications/{notifId} {
+      allow read, write, list: if isAdmin();
+    }
+
+    match /notifications_broadcast/{broadcastId} {
+      allow read, list: if true;
+      allow write: if isAdmin();
+    }
+
+    // ─── Deed History Collection ───────────────────────────────────
+    // deedHistory/{deviceId}/items/{id}
+    match /deedHistory/{deviceId}/items/{id} {
+      allow read, write: if isAuthenticated();
+      allow list: if isAdmin() || isAuthenticated();
+    }
+
+    // Deny all other unlisted collections by default
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

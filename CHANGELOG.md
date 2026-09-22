@@ -131,3 +131,58 @@ All changes made during the multi-phase audit and remediation of **DeenFlow** (I
     - Compact screen rendering at 320x568 (iPhone SE) without overflow.
     - Tablet constraint test verifying 700dp max content width.
     - Accessibility test verifying 200% system font scaling without `RenderFlex` exceptions.
+
+---
+
+## [1.1.0] - 2026-09-21
+
+### Full "App Lock / Timed Unlock / Auto Re-lock" System & Real Data Elimination
+
+#### 1. Real Dynamic Data Integration (Eliminated All Fake Data)
+- **HomeScreen (`home_screen.dart`)**:
+  - Replaced hardcoded progress ring ratio (`0.33`) and deeds text (`2 / 6`) with real dynamic calculation based on completed and total deeds recorded in `StorageService`.
+  - Replaced hardcoded app pills (`TikTok`, `Instagram`, `Facebook`, `YouTube`) with the user's actual selected protected packages list from `storage.getMonitoredPackages()`, including an interactive "Edit" / "Add" chip leading to App Selection.
+  - Dynamically bound the "Next Deed" access duration to the user's configured unlock duration (`storage.getDefaultUnlockDurationMinutes()`).
+- **ProgressView (`progress_view.dart`)**:
+  - Replaced hardcoded `7 DAY STREAK` with live streak computation (`storage.getStreakDays()`).
+  - Replaced static Monday-Sunday checkmarks with live ISO weekly active day tracking (`storage.getWeeklyActiveDays()`).
+  - Replaced static `42` Total Deeds and `37` Completed with live totals (`storage.getTotalDeedsCount()`, `storage.getCompletedDeedsCount()`).
+  - Replaced hardcoded `87%` Average Score with rolling calculation of recorded pronunciation test scores (`storage.getAverageScore()`).
+  - Replaced hardcoded `11h 20m` Unlocked Time with accumulated unlock minutes formatted cleanly in hours and minutes (`storage.getUnlockedMinutesTotal()`).
+- **ProfileView (`profile_view.dart`)**:
+  - Replaced hardcoded `30m` Daily Goal, `3 Apps` Protected, and `7 Days` Streak with dynamic data from `StorageService`.
+  - Replaced hardcoded `80%` score threshold text with live setting from `storage.getMinimumPassingScore()`.
+- **StorageService (`storage_service.dart`)**:
+  - Added real persistence for `total_deeds_count`, `completed_deeds_count`, `unlocked_minutes_total`, `pronunciation_scores` (sliding window of last 50 scores), `streak_days`, `last_active_date_str`, `weekly_active_days`, and `recordDeedAttempt()`.
+
+#### 2. Flutter AppBlocker Abstraction Layer (`lib/core/blocker/`)
+- `app_blocker.dart`: Pure abstract interface defining `getInstalledApps()`, `setProtectedApps()`, `unlock()`, `lockNow()`, `getUnlockedUntil()`, `checkPermissions()`, `openPermissionSettings()`, and `events` stream.
+- `blocker_models.dart`: Added `InstalledAppInfo`, `BlockerPermission` enum, `PermissionStatusSet`, `BlockerEvent`, and typed exceptions (`BlockerException`, `PermissionMissingException`, `ServiceNotRunningException`, `UnsupportedPlatformException`).
+- `android_app_blocker.dart`: MethodChannel (`com.focusdeen.app/methods`) and EventChannel (`com.focusdeen.app/events`) implementation with typed exception handling.
+- `ios_app_blocker.dart`: Screen Time & FamilyControls contract with graceful degradation on unapproved environments.
+- `unsupported_app_blocker.dart`: Safe fallback for desktop and web.
+- `blocker_service.dart`: GetX service managing singleton injection based on current platform.
+
+#### 3. Android Native Kotlin Layer
+- `RelockScheduler.kt`: Exact alarm scheduling via `AlarmManager.setExactAndAllowWhileIdle` with Android 12+ (`API 31+`) `canScheduleExactAlarms()` compliance and pending intent flags.
+- `RelockReceiver.kt`: Exact broadcast receiver triggered when an unlock window elapses. Verifies if the expired package is currently in the foreground, immediately kicks to home via `GLOBAL_ACTION_HOME`, emits a lock notification, and brings DeenFlow to the front with `route=/blocked`.
+- `BootReceiver.kt`: Captures `BOOT_COMPLETED` and `MY_PACKAGE_REPLACED` to query active unlock sessions from persistent storage and reschedule alarms.
+- `AppMonitorService.kt`: Added clock-tamper protection checking `SystemClock.elapsedRealtime()` alongside wall-clock timestamps.
+- `FocusDeenMethodChannel.kt`: Implemented `launchApp` to seamlessly open the target protected app upon recitation completion.
+- `MainActivity.kt`: Updated `handleRouteIntent` to support both `blocked_pkg` and `packageName` intent extras.
+- `AndroidManifest.xml`: Declared `RECEIVE_BOOT_COMPLETED` and `SCHEDULE_EXACT_ALARM` permissions; registered `RelockReceiver` and `BootReceiver`.
+
+#### 4. Permission Onboarding UI (`permission_setup_screen.dart`)
+- Added dedicated `PermissionSetupScreen` between App Selection and Daily Goal.
+- Live status indicators re-checked on `AppLifecycleState.resumed` for Accessibility Service, Display Over Other Apps, Notifications, and Battery Optimization.
+- Prominent Google Play disclosure dialog before requesting Accessibility Service with clear "Agree & Enable" and "No thanks" options.
+- Device-specific guidance card for Xiaomi (MIUI/HyperOS), Samsung (OneUI), and Oppo (ColorOS) autostart settings.
+
+#### 5. iOS Swift Layer
+- `Runner.entitlements`: Added `com.apple.developer.family-controls` entitlement and `group.com.focusdeen.app` App Group.
+- `DeenFlowBlockerPlugin.swift`: Integrated `FamilyControls` and `ManagedSettings` authorization and temporary shield clearing.
+- `AppDelegate.swift`: Registered `DeenFlowBlockerPlugin`.
+
+#### 6. Expanded Automated Tests
+- Added `FakeAppBlocker` unit tests validating protected app synchronization, timed unlocks, and `BlockerEvent` broadcast emissions. Total automated tests increased from 20 to 24 (100% passing).
+
