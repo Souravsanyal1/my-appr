@@ -56,11 +56,13 @@ class StorageService extends GetxService {
         'com.snapchat.android',
       ];
     }
-    return raw.map((e) => e.toString()).toList();
+    // Deduplicate to prevent same app appearing multiple times
+    return raw.map((e) => e.toString()).toSet().toList();
   }
 
   void saveMonitoredPackages(List<String> packages) {
-    _box.write(keyMonitoredPackages, packages);
+    // Deduplicate before saving
+    _box.write(keyMonitoredPackages, packages.toSet().toList());
     try {
       if (Get.isRegistered<NativeBridgeService>()) {
         Get.find<NativeBridgeService>().syncMonitoredPackages(packages);

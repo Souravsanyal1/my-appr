@@ -415,7 +415,7 @@ class _IntroStep extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Header
+          // Header — app name intentionally hidden
           Row(
             children: [
               Container(
@@ -432,9 +432,9 @@ class _IntroStep extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
-                      '${request.label} is locked',
-                      style: const TextStyle(
+                    const Text(
+                      'FocusDeen',
+                      style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.bold,
                         color: Colors.white,
@@ -446,10 +446,6 @@ class _IntroStep extends StatelessWidget {
                     ),
                   ],
                 ),
-              ),
-              IconButton(
-                onPressed: onCancel,
-                icon: const Icon(Icons.close, color: Colors.white38, size: 22),
               ),
             ],
           ),
