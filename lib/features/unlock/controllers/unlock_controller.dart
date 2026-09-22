@@ -93,11 +93,29 @@ class UnlockController extends GetxController {
     _initSpeech();
   }
 
+  bool _fallbackToDefaultLocale = false;
+  Timer? _restartListenTimer;
+
   Future<void> _initSpeech() async {
     try {
       final available = await _speech.initialize(
-        onError: (e) => debugPrint('[STT] error: ${e.errorMsg}'),
-        onStatus: (s) => debugPrint('[STT] status: $s'),
+        onError: (e) {
+          debugPrint('[STT] error: ${e.errorMsg}');
+          // If error is no_match or language not supported, fallback to system default locale
+          if (e.errorMsg.contains('no_match') || e.errorMsg.contains('language')) {
+            _fallbackToDefaultLocale = true;
+          }
+          if (isWordTracking.value) {
+            _scheduleListenRestart();
+          }
+        },
+        onStatus: (s) {
+          debugPrint('[STT] status: $s');
+          if ((s == 'done' || s == 'notListening') && isWordTracking.value) {
+            _scheduleListenRestart();
+          }
+        },
+        debugLogging: false,
       );
       speechAvailable.value = available;
       debugPrint('[STT] initialized: $available');
@@ -106,18 +124,30 @@ class UnlockController extends GetxController {
     }
   }
 
+  void _scheduleListenRestart() {
+    _restartListenTimer?.cancel();
+    if (!isWordTracking.value) return;
+    _restartListenTimer = Timer(const Duration(milliseconds: 250), () {
+      if (isWordTracking.value && !_speech.isListening) {
+        _listenContinuous();
+      }
+    });
+  }
+
   void randomizeDeed() {
     final pool = GoodDeedModel.pool;
     final nextIdx = (DateTime.now().millisecond) % pool.length;
     activeDeed.value = pool[nextIdx];
     repetitionCount.value = 0;
     isTranslated.value = false;
+    resetWordTracking();
   }
 
   void setDeed(GoodDeedModel deed) {
     activeDeed.value = deed;
     repetitionCount.value = 0;
     isTranslated.value = false;
+    resetWordTracking();
   }
 
   void incrementRepetition() {
@@ -136,6 +166,7 @@ class UnlockController extends GetxController {
     _ticker?.cancel();
     _recordingTimer?.cancel();
     _amplitudeTimer?.cancel();
+    _restartListenTimer?.cancel();
     _audioRecorder.dispose();
     _speech.stop();
     super.onClose();
@@ -199,26 +230,36 @@ class UnlockController extends GetxController {
     final eAr = _normalizeArabic(expected);
     final sAr = _normalizeArabic(spoken);
     if (eAr.isNotEmpty && sAr.isNotEmpty) {
-      if (sAr.contains(eAr) || eAr.contains(sAr)) return true;
-      if (eAr.length > 2 && sAr.startsWith(eAr.substring(0, eAr.length - 1))) return true;
+      if (sAr == eAr || sAr.contains(eAr) || eAr.contains(sAr)) return true;
+      if (eAr.length >= 2 && sAr.length >= 2 && eAr.substring(0, 2) == sAr.substring(0, 2)) return true;
     }
 
     // Check Bangla
     final eBn = _normalizeBangla(expected);
     final sBn = _normalizeBangla(spoken);
     if (eBn.isNotEmpty && sBn.isNotEmpty) {
-      if (sBn.contains(eBn) || eBn.contains(sBn)) return true;
-      if (eBn.length > 2 && sBn.startsWith(eBn.substring(0, eBn.length - 1))) return true;
+      if (sBn == eBn || sBn.contains(eBn) || eBn.contains(sBn)) return true;
+      if (eBn.length >= 3 && sBn.length >= 3 && eBn.substring(0, 3) == sBn.substring(0, 3)) return true;
     }
 
     // Check Latin / English
     final eLa = _normalizeLatin(expected);
     final sLa = _normalizeLatin(spoken);
     if (eLa.isNotEmpty && sLa.isNotEmpty) {
-      if (sLa.contains(eLa) || eLa.contains(sLa)) return true;
-      if (eLa.length > 3 && sLa.startsWith(eLa.substring(0, eLa.length - 1))) return true;
+      if (sLa == eLa || sLa.contains(eLa) || eLa.contains(sLa)) return true;
+      if (eLa.length >= 3 && sLa.length >= 3 && eLa.substring(0, 3) == sLa.substring(0, 3)) return true;
     }
 
+    return false;
+  }
+
+  bool _phraseContainsWord(String fullPhrase, String word) {
+    final wLa = _normalizeLatin(word);
+    final wBn = _normalizeBangla(word);
+    final wAr = _normalizeArabic(word);
+    if (wLa.length >= 3 && fullPhrase.contains(wLa)) return true;
+    if (wBn.length >= 3 && fullPhrase.contains(wBn)) return true;
+    if (wAr.length >= 2 && fullPhrase.contains(wAr)) return true;
     return false;
   }
 
@@ -255,9 +296,10 @@ class UnlockController extends GetxController {
   void setVoiceMode(VoiceTrackMode mode) {
     if (activeVoiceMode.value == mode) return;
     activeVoiceMode.value = mode;
+    _fallbackToDefaultLocale = false;
     resetWordTracking();
     if (isWordTracking.value) {
-      _speech.stop().then((_) => startWordTracking());
+      _speech.stop().then((_) => _scheduleListenRestart());
     }
   }
 
@@ -269,22 +311,20 @@ class UnlockController extends GetxController {
     }
   }
 
-  String _resolveLocale(List<stt.LocaleName> locales) {
+  String? _resolveLocale(List<stt.LocaleName> locales) {
+    if (_fallbackToDefaultLocale) return null; // Use device default recognizer
+
     String prefix;
-    String fallback;
     switch (activeVoiceMode.value) {
       case VoiceTrackMode.arabic:
         prefix = 'ar';
-        fallback = 'ar_SA';
         break;
       case VoiceTrackMode.banglaPronun:
       case VoiceTrackMode.banglaMeaning:
         prefix = 'bn';
-        fallback = 'bn_BD';
         break;
       case VoiceTrackMode.englishMeaning:
         prefix = 'en';
-        fallback = 'en_US';
         break;
     }
     for (final l in locales) {
@@ -292,7 +332,7 @@ class UnlockController extends GetxController {
         return l.localeId;
       }
     }
-    return fallback;
+    return null; // Fallback to system default
   }
 
   Future<void> startWordTracking() async {
@@ -306,8 +346,15 @@ class UnlockController extends GetxController {
 
     resetWordTracking();
     isWordTracking.value = true;
+    _fallbackToDefaultLocale = false;
     trackingStatusMessage.value = 'শুনছি... পাঠ শুরু করুন';
     HapticFeedback.mediumImpact();
+
+    await _listenContinuous();
+  }
+
+  Future<void> _listenContinuous() async {
+    if (!isWordTracking.value || _speech.isListening) return;
 
     try {
       final locales = await _speech.locales();
@@ -327,19 +374,21 @@ class UnlockController extends GetxController {
           partialResults: true,
           cancelOnError: false,
           listenFor: const Duration(seconds: 40),
-          pauseFor: const Duration(seconds: 4),
+          pauseFor: const Duration(seconds: 5),
           localeId: localeId,
         ),
       );
     } catch (e) {
       debugPrint('[STT] listen error: $e');
-      isWordTracking.value = false;
+      _fallbackToDefaultLocale = true;
+      _scheduleListenRestart();
     }
   }
 
   Future<void> stopWordTracking() async {
-    await _speech.stop();
     isWordTracking.value = false;
+    _restartListenTimer?.cancel();
+    await _speech.stop();
     trackingStatusMessage.value = '';
     HapticFeedback.mediumImpact();
   }
@@ -347,6 +396,7 @@ class UnlockController extends GetxController {
   void _updateWordMatches(String spokenText) {
     if (spokenText.trim().isEmpty) return;
     final spokenWords = spokenText.split(RegExp(r'\s+'));
+    final fullPhrase = '${_normalizeLatin(spokenText)} ${_normalizeBangla(spokenText)} ${_normalizeArabic(spokenText)}';
     final targetWords = currentWords;
     if (targetWords.isEmpty) return;
 
@@ -369,8 +419,13 @@ class UnlockController extends GetxController {
     for (int i = 0; i < targetWords.length; i++) {
       if (updated[i]) continue;
       final expected = targetWords[i];
+      final sec = i < secondary.length ? secondary[i] : '';
+
       final bool matched = spokenWords.any((sw) => _wordMatches(expected, sw)) ||
-          (i < secondary.length && spokenWords.any((sw) => _wordMatches(secondary[i], sw)));
+          (sec.isNotEmpty && spokenWords.any((sw) => _wordMatches(sec, sw))) ||
+          _phraseContainsWord(fullPhrase, expected) ||
+          (sec.isNotEmpty && _phraseContainsWord(fullPhrase, sec));
+
       if (matched) {
         updated[i] = true;
         HapticFeedback.selectionClick();

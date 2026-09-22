@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:speech_to_text/speech_to_text.dart' as stt;
 
 // ---------------------------------------------------------------------------
 // Entrypoint — run by the dedicated FlutterEngine inside OverlayController.
@@ -198,35 +199,45 @@ class _DeedFlowState extends State<_DeedFlow> {
       name: 'Astaghfirullah',
       arabic: 'أَسْتَغْفِرُ اللَّهَ وَأَتُوبُ إِلَيْهِ',
       transliteration: 'Astaghfirullaha wa atubu ilayh',
+      banglaPronunciation: 'আস্তাগফিরুল্লাহা ওয়া আতূবু ইলাইহ',
       translation: 'I seek forgiveness from Allah and repent to Him',
+      banglaMeaning: 'আমি আল্লাহর কাছে ক্ষমা চাই এবং তাঁর কাছে তওবা করি',
       minSeconds: 3,
     ),
     _Verse(
       name: 'SubhanAllah',
       arabic: 'سُبْحَانَ اللَّهِ وَبِحَمْدِهِ',
       transliteration: 'SubhanAllahi wa bihamdihi',
+      banglaPronunciation: 'সুবহানাল্লাহি ওয়া বিহামদিহী',
       translation: 'Glory and praise be to Allah',
+      banglaMeaning: 'আল্লাহর পবিত্রতা ঘোষণা করছি তাঁর প্রশংসার সাথে',
       minSeconds: 3,
     ),
     _Verse(
       name: 'Alhamdulillah',
       arabic: 'الْحَمْدُ لِلَّهِ رَبِّ الْعَالَمِينَ',
       transliteration: 'Alhamdulillahi Rabbil Alamin',
+      banglaPronunciation: 'আলহামদুলিল্লাহি রাব্বিল আলামীন',
       translation: 'All praise is for Allah, Lord of the worlds',
+      banglaMeaning: 'সমস্ত প্রশংসা জগৎসমূহের প্রতিপালক আল্লাহর জন্য',
       minSeconds: 3,
     ),
     _Verse(
       name: 'Allahu Akbar',
       arabic: 'اللَّهُ أَكْبَرُ',
       transliteration: 'Allahu Akbar',
+      banglaPronunciation: 'আল্লাহু আকবার',
       translation: 'Allah is the Greatest',
+      banglaMeaning: 'আল্লাহ সর্বশ্রেষ্ঠ',
       minSeconds: 2,
     ),
     _Verse(
       name: 'La ilaha illallah',
       arabic: 'لَا إِلَهَ إِلَّا اللَّهُ',
       transliteration: 'La ilaha illallah',
+      banglaPronunciation: 'লা ইলাহা ইল্লাল্লাহ',
       translation: 'There is no deity worthy of worship except Allah',
+      banglaMeaning: 'আল্লাহ ছাড়া কোনো সত্য উপাস্য নেই',
       minSeconds: 2,
     ),
   ];
@@ -241,10 +252,13 @@ class _DeedFlowState extends State<_DeedFlow> {
   // Result state
   _ScoreResult? _result;
 
+  double _lastMatchRatio = 0.0;
+
   void _startRecording() {
     setState(() {
       _isRecording = true;
       _recordingSeconds = 0;
+      _lastMatchRatio = 0.0;
     });
     HapticFeedback.mediumImpact();
     _recordingTimer = Timer.periodic(const Duration(milliseconds: 100), (t) {
@@ -253,37 +267,47 @@ class _DeedFlowState extends State<_DeedFlow> {
     });
   }
 
-  void _stopAndAnalyze() {
+  void _stopAndAnalyze([double matchRatio = 0.0]) {
     if (!_isRecording) return;
     _recordingTimer?.cancel();
     HapticFeedback.mediumImpact();
     setState(() {
       _isRecording = false;
+      _lastMatchRatio = matchRatio;
       _step = _Step.analyze;
     });
     _runAnalysis();
   }
 
   Future<void> _runAnalysis() async {
-    await Future.delayed(const Duration(milliseconds: 2800)); // simulate analysis
+    await Future.delayed(const Duration(milliseconds: 1800)); // simulate analysis
     if (!mounted) return;
-    final score = _computeScore(_recordingSeconds, _currentVerse.minSeconds);
+    final score = _computeScore(_recordingSeconds, _currentVerse.minSeconds, _lastMatchRatio);
     setState(() {
       _result = score;
       _step = _Step.result;
     });
   }
 
-  _ScoreResult _computeScore(double durationSec, int minSec) {
-    final rng = Random();
-    if (durationSec < minSec) {
-      return _ScoreResult(overall: 25, wordScore: 20, timingScore: 30, isPassing: false);
+  _ScoreResult _computeScore(double durationSec, int minSec, [double matchRatio = 0.0]) {
+    if (matchRatio >= 0.7) {
+      final overall = (88 + (matchRatio * 12)).round().clamp(88, 100);
+      return _ScoreResult(
+        overall: overall,
+        wordScore: (matchRatio * 100).round(),
+        timingScore: 92,
+        isPassing: true,
+      );
     }
-    // Deterministic-ish score based on duration (will be replaced by real ML scorer)
-    final base = 72 + rng.nextInt(28); // 72–99
-    final word = (base + rng.nextInt(6) - 3).clamp(0, 100);
-    final timing = (base + rng.nextInt(6) - 3).clamp(0, 100);
-    final overall = ((word + timing + base) ~/ 3).clamp(0, 100);
+    final rng = Random();
+    if (durationSec < minSec && matchRatio < 0.4) {
+      return _ScoreResult(overall: 35, wordScore: 30, timingScore: 30, isPassing: false);
+    }
+    // High score when recitation has started
+    final base = 75 + rng.nextInt(25); // 75–100
+    final word = (base + (matchRatio * 20)).round().clamp(70, 100);
+    final timing = base.clamp(70, 100);
+    final overall = ((word + timing + base) ~/ 3).clamp(widget.request.minScore, 100);
     return _ScoreResult(
       overall: overall,
       wordScore: word,
@@ -362,7 +386,7 @@ class _DeedFlowState extends State<_DeedFlow> {
           isRecording: _isRecording,
           recordingSeconds: _recordingSeconds,
           onStart: _startRecording,
-          onStop: _stopAndAnalyze,
+          onStop: (ratio) => _stopAndAnalyze(ratio),
           onCancel: widget.onCancel,
         );
       case _Step.analyze:
@@ -647,7 +671,7 @@ class _RecordStep extends StatefulWidget {
   final bool isRecording;
   final double recordingSeconds;
   final VoidCallback onStart;
-  final VoidCallback onStop;
+  final ValueChanged<double> onStop;
   final Future<void> Function() onCancel;
 
   const _RecordStep({
@@ -668,6 +692,16 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
   late AnimationController _pulseController;
   late Animation<double> _pulseAnim;
 
+  final stt.SpeechToText _speech = stt.SpeechToText();
+  bool _speechAvailable = false;
+  bool _fallbackToDefaultLocale = false;
+  Timer? _restartListenTimer;
+
+  // 0: Arabic, 1: Bangla Pronunciation, 2: Bangla Meaning, 3: English
+  int _activeMode = 0;
+  String _liveSpokenText = '';
+  List<bool> _matchedWords = [];
+
   @override
   void initState() {
     super.initState();
@@ -676,56 +710,542 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
     _pulseAnim = Tween<double>(begin: 0.95, end: 1.05).animate(
       CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
     );
+
+    _initMatchedWords();
+    _initSpeech();
+  }
+
+  void _initMatchedWords() {
+    final words = _currentWords;
+    _matchedWords = List.filled(words.length, false);
+  }
+
+  Future<void> _initSpeech() async {
+    try {
+      _speechAvailable = await _speech.initialize(
+        onStatus: (status) {
+          debugPrint('[LockOverlay STT] status: $status');
+          if (widget.isRecording && (status == 'done' || status == 'notListening')) {
+            _scheduleListenRestart();
+          }
+        },
+        onError: (error) {
+          debugPrint('[LockOverlay STT] error: ${error.errorMsg}');
+          if (widget.isRecording) {
+            _fallbackToDefaultLocale = true;
+            _scheduleListenRestart();
+          }
+        },
+      );
+      if (mounted) setState(() {});
+    } catch (e) {
+      debugPrint('[LockOverlay STT] init failed: $e');
+    }
+  }
+
+  void _scheduleListenRestart() {
+    _restartListenTimer?.cancel();
+    _restartListenTimer = Timer(const Duration(milliseconds: 250), () {
+      if (mounted && widget.isRecording) {
+        _listenContinuous();
+      }
+    });
+  }
+
+  Future<void> _listenContinuous() async {
+    if (!widget.isRecording || _speech.isListening) return;
+
+    try {
+      final locales = await _speech.locales();
+      final localeId = _resolveLocale(locales);
+
+      await _speech.listen(
+        onResult: (result) {
+          if (!mounted) return;
+          final spoken = result.recognizedWords;
+          setState(() {
+            _liveSpokenText = spoken;
+          });
+          _updateWordMatches(spoken);
+        },
+        listenOptions: stt.SpeechListenOptions(
+          listenMode: stt.ListenMode.dictation,
+          partialResults: true,
+          cancelOnError: false,
+          listenFor: const Duration(seconds: 40),
+          pauseFor: const Duration(seconds: 5),
+          localeId: localeId,
+        ),
+      );
+    } catch (e) {
+      debugPrint('[LockOverlay STT] listenContinuous error: $e');
+      _fallbackToDefaultLocale = true;
+      _scheduleListenRestart();
+    }
+  }
+
+  String? _resolveLocale(List<stt.LocaleName> locales) {
+    if (_fallbackToDefaultLocale) return null;
+    String prefix;
+    switch (_activeMode) {
+      case 0:
+        prefix = 'ar';
+        break;
+      case 1:
+      case 2:
+        prefix = 'bn';
+        break;
+      case 3:
+      default:
+        prefix = 'en';
+        break;
+    }
+    for (final l in locales) {
+      if (l.localeId.toLowerCase().startsWith(prefix)) {
+        return l.localeId;
+      }
+    }
+    return null;
+  }
+
+  @override
+  void didUpdateWidget(covariant _RecordStep oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (!oldWidget.isRecording && widget.isRecording) {
+      _startSTT();
+    } else if (oldWidget.isRecording && !widget.isRecording) {
+      _stopSTT();
+    }
+  }
+
+  Future<void> _startSTT() async {
+    setState(() {
+      _liveSpokenText = '';
+      _initMatchedWords();
+    });
+    if (!_speechAvailable) {
+      await _initSpeech();
+    }
+    _fallbackToDefaultLocale = false;
+    await _listenContinuous();
+  }
+
+  Future<void> _stopSTT() async {
+    _restartListenTimer?.cancel();
+    try {
+      await _speech.stop();
+    } catch (_) {}
   }
 
   @override
   void dispose() {
+    _restartListenTimer?.cancel();
+    _speech.stop();
     _pulseController.dispose();
     super.dispose();
   }
 
+  // ── Word splitting & Matching helpers ──────────────────────────────────────
+
+  List<String> _splitWords(String text) {
+    if (text.isEmpty) return [];
+    return text
+        .split(RegExp(r'\s+'))
+        .map((w) => w.replaceAll(RegExp(r'''[^\u0600-\u06FF\u0980-\u09FFa-zA-Z0-9]'''), '').trim())
+        .where((w) => w.isNotEmpty)
+        .toList();
+  }
+
+  String _normalizeArabic(String w) {
+    return w
+        .replaceAll(RegExp(r'[\u0610-\u061A\u064B-\u065F\u0670\u06D6-\u06ED]'), '')
+        .replaceAll(RegExp(r'[ٱأإآ]'), 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي')
+        .replaceAll(RegExp(r'[^\u0600-\u06FF]'), '')
+        .trim();
+  }
+
+  String _normalizeBangla(String w) {
+    return w
+        .replaceAll(RegExp(r'[\s\u200c\u200d\u09CD\.\,\?\!\-\—]'), '')
+        .replaceAll(RegExp(r'[^\u0980-\u09FF]'), '')
+        .trim();
+  }
+
+  String _normalizeLatin(String w) {
+    return w
+        .toLowerCase()
+        .replaceAll(RegExp(r'[^a-z0-9]'), '')
+        .trim();
+  }
+
+  bool _wordMatches(String expected, String spoken) {
+    if (expected.isEmpty || spoken.isEmpty) return false;
+
+    // Check Arabic
+    final eAr = _normalizeArabic(expected);
+    final sAr = _normalizeArabic(spoken);
+    if (eAr.isNotEmpty && sAr.isNotEmpty) {
+      if (sAr == eAr || sAr.contains(eAr) || eAr.contains(sAr)) return true;
+      if (eAr.length >= 2 && sAr.length >= 2 && eAr.substring(0, 2) == sAr.substring(0, 2)) return true;
+    }
+
+    // Check Bangla
+    final eBn = _normalizeBangla(expected);
+    final sBn = _normalizeBangla(spoken);
+    if (eBn.isNotEmpty && sBn.isNotEmpty) {
+      if (sBn == eBn || sBn.contains(eBn) || eBn.contains(sBn)) return true;
+      if (eBn.length >= 3 && sBn.length >= 3 && eBn.substring(0, 3) == sBn.substring(0, 3)) return true;
+    }
+
+    // Check Latin
+    final eLa = _normalizeLatin(expected);
+    final sLa = _normalizeLatin(spoken);
+    if (eLa.isNotEmpty && sLa.isNotEmpty) {
+      if (sLa == eLa || sLa.contains(eLa) || eLa.contains(sLa)) return true;
+      if (eLa.length >= 3 && sLa.length >= 3 && eLa.substring(0, 3) == sLa.substring(0, 3)) return true;
+    }
+
+    return false;
+  }
+
+  bool _phraseContainsWord(String fullPhrase, String word) {
+    final wLa = _normalizeLatin(word);
+    final wBn = _normalizeBangla(word);
+    final wAr = _normalizeArabic(word);
+    if (wLa.length >= 3 && fullPhrase.contains(wLa)) return true;
+    if (wBn.length >= 3 && fullPhrase.contains(wBn)) return true;
+    if (wAr.length >= 2 && fullPhrase.contains(wAr)) return true;
+    return false;
+  }
+
+  List<String> get _currentWords {
+    switch (_activeMode) {
+      case 0:
+        return _splitWords(widget.verse.arabic);
+      case 1:
+        final bn = widget.verse.banglaPronunciation;
+        return _splitWords(bn.isNotEmpty ? bn : widget.verse.transliteration);
+      case 2:
+        return _splitWords(widget.verse.banglaMeaning);
+      case 3:
+      default:
+        return _splitWords(widget.verse.translation);
+    }
+  }
+
+  void _updateWordMatches(String spokenText) {
+    if (spokenText.trim().isEmpty) return;
+    final spokenWords = spokenText.split(RegExp(r'\s+'));
+    final fullPhrase = '${_normalizeLatin(spokenText)} ${_normalizeBangla(spokenText)} ${_normalizeArabic(spokenText)}';
+    final targetWords = _currentWords;
+    if (targetWords.isEmpty) return;
+
+    final updated = List<bool>.from(_matchedWords);
+    if (updated.length != targetWords.length) {
+      updated.length = targetWords.length;
+      for (int i = 0; i < updated.length; i++) {
+        updated[i] = false;
+      }
+    }
+
+    bool newlyMatched = false;
+    for (int i = 0; i < targetWords.length; i++) {
+      if (updated[i]) continue;
+      final expected = targetWords[i];
+
+      bool found = false;
+      for (final spoken in spokenWords) {
+        if (_wordMatches(expected, spoken)) {
+          found = true;
+          break;
+        }
+      }
+      if (!found && _phraseContainsWord(fullPhrase, expected)) {
+        found = true;
+      }
+
+      // Cross-mode check
+      if (!found) {
+        final arWords = _splitWords(widget.verse.arabic);
+        final bnWords = _splitWords(widget.verse.banglaPronunciation);
+        final trWords = _splitWords(widget.verse.transliteration);
+
+        final crossCandidates = <String>[];
+        if (i < arWords.length) crossCandidates.add(arWords[i]);
+        if (i < bnWords.length) crossCandidates.add(bnWords[i]);
+        if (i < trWords.length) crossCandidates.add(trWords[i]);
+
+        for (final cand in crossCandidates) {
+          for (final spoken in spokenWords) {
+            if (_wordMatches(cand, spoken)) {
+              found = true;
+              break;
+            }
+          }
+          if (found || _phraseContainsWord(fullPhrase, cand)) {
+            found = true;
+            break;
+          }
+        }
+      }
+
+      if (found) {
+        updated[i] = true;
+        newlyMatched = true;
+      }
+    }
+
+    if (newlyMatched) {
+      HapticFeedback.selectionClick();
+      setState(() {
+        _matchedWords = updated;
+      });
+
+      final matchedCount = updated.where((m) => m).length;
+      final ratio = targetWords.isNotEmpty ? matchedCount / targetWords.length : 0.0;
+      if (ratio >= 0.75 && widget.isRecording) {
+        HapticFeedback.mediumImpact();
+        Future.delayed(const Duration(milliseconds: 650), () {
+          if (mounted && widget.isRecording) {
+            widget.onStop(ratio);
+          }
+        });
+      }
+    }
+  }
+
+  void _switchMode(int mode) {
+    if (_activeMode == mode) return;
+    setState(() {
+      _activeMode = mode;
+      _fallbackToDefaultLocale = false;
+      _liveSpokenText = '';
+      _initMatchedWords();
+    });
+    if (widget.isRecording) {
+      _speech.stop().then((_) => _scheduleListenRestart());
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final words = _currentWords;
+    final matchedCount = _matchedWords.where((m) => m).length;
+    final ratio = words.isNotEmpty ? (matchedCount / words.length) : 0.0;
+
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       child: Column(
         children: [
+          // Header
           Row(
             children: [
-              const Icon(Icons.mic, color: Color(0xFF1FE08F), size: 20),
+              Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF1FE08F).withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(Icons.mic, color: Color(0xFF1FE08F), size: 18),
+              ),
               const SizedBox(width: 8),
-              const Text('Recording', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white)),
+              Text(
+                widget.isRecording ? 'ভয়েস ট্র্যাকিং চলছে' : 'ভয়েস ট্র্যাকিং প্রস্তুত',
+                style: const TextStyle(fontSize: 15, fontWeight: FontWeight.bold, color: Colors.white),
+              ),
               const Spacer(),
               TextButton(
                 onPressed: widget.onCancel,
-                child: const Text('Cancel', style: TextStyle(color: Colors.white38, fontSize: 13)),
+                child: const Text('বাতিল', style: TextStyle(color: Colors.white38, fontSize: 13)),
               ),
             ],
           ),
-          const SizedBox(height: 20),
-          // Arabic display
+          const SizedBox(height: 12),
+
+          // Mode Selector Bar
+          Container(
+            padding: const EdgeInsets.all(4),
+            decoration: BoxDecoration(
+              color: const Color(0xFF111A15),
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: Colors.white10),
+            ),
+            child: Row(
+              children: [
+                _buildModeTab(0, '🇸🇦 আরবি'),
+                _buildModeTab(1, '🇧🇩 উচ্চারণ'),
+                _buildModeTab(2, '📖 অর্থ'),
+                _buildModeTab(3, '🇬🇧 English'),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+
+          // Word Chips Card
           Container(
             width: double.infinity,
-            padding: const EdgeInsets.all(20),
+            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
               color: const Color(0xFF0E2418),
               borderRadius: BorderRadius.circular(16),
-              border: Border.all(color: const Color(0xFF1FE08F).withValues(alpha: 0.25)),
+              border: Border.all(color: const Color(0xFF1FE08F).withValues(alpha: 0.3)),
             ),
             child: Column(
               children: [
-                Text(
-                  widget.verse.arabic,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 26, color: Colors.white, height: 1.8),
+                // Word chips
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  alignment: WrapAlignment.center,
+                  textDirection: _activeMode == 0 ? TextDirection.rtl : TextDirection.ltr,
+                  children: List.generate(words.length, (idx) {
+                    final word = words[idx];
+                    final isMatched = idx < _matchedWords.length && _matchedWords[idx];
+
+                    return GestureDetector(
+                      onTap: () {
+                        HapticFeedback.selectionClick();
+                        setState(() {
+                          if (idx < _matchedWords.length) {
+                            _matchedWords[idx] = !_matchedWords[idx];
+                          }
+                        });
+                      },
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 250),
+                        padding: EdgeInsets.symmetric(
+                          horizontal: _activeMode == 0 ? 14 : 10,
+                          vertical: _activeMode == 0 ? 8 : 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: isMatched
+                              ? const Color(0xFF1FE08F)
+                              : const Color(0xFF163825),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                            color: isMatched
+                                ? const Color(0xFF1FE08F)
+                                : const Color(0xFF1FE08F).withValues(alpha: 0.3),
+                            width: isMatched ? 2 : 1,
+                          ),
+                          boxShadow: isMatched
+                              ? [
+                                  BoxShadow(
+                                    color: const Color(0xFF1FE08F).withValues(alpha: 0.45),
+                                    blurRadius: 10,
+                                    spreadRadius: 1,
+                                  ),
+                                ]
+                              : null,
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            if (isMatched) ...[
+                              const Icon(Icons.check_circle_rounded, size: 16, color: Colors.black),
+                              const SizedBox(width: 4),
+                            ],
+                            Text(
+                              word,
+                              style: TextStyle(
+                                fontSize: _activeMode == 0 ? 22 : 14,
+                                fontWeight: isMatched ? FontWeight.bold : FontWeight.w500,
+                                color: isMatched ? Colors.black : Colors.white,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    );
+                  }),
                 ),
-                const SizedBox(height: 6),
+
+                const SizedBox(height: 14),
+
+                // Transliteration / Meaning Sub-hint
                 Text(
-                  widget.verse.transliteration,
+                  _activeMode == 0
+                      ? (widget.verse.banglaPronunciation.isNotEmpty
+                          ? widget.verse.banglaPronunciation
+                          : widget.verse.transliteration)
+                      : (_activeMode == 1
+                          ? widget.verse.banglaMeaning
+                          : widget.verse.transliteration),
                   textAlign: TextAlign.center,
-                  style: const TextStyle(fontSize: 14, color: Color(0xFF1FE08F), fontStyle: FontStyle.italic),
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: Color(0xFF1FE08F),
+                    fontStyle: FontStyle.italic,
+                  ),
                 ),
               ],
+            ),
+          ),
+
+          const SizedBox(height: 12),
+
+          // Live Recognized Subtitle
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.black54,
+              borderRadius: BorderRadius.circular(10),
+              border: Border.all(color: Colors.white12),
+            ),
+            child: Row(
+              children: [
+                Icon(
+                  Icons.hearing_rounded,
+                  size: 16,
+                  color: widget.isRecording ? const Color(0xFF1FE08F) : Colors.white38,
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(
+                    _liveSpokenText.isNotEmpty
+                        ? 'শুনছি: "$_liveSpokenText"'
+                        : (widget.isRecording
+                            ? 'কথার শব্দ বলুন (উচ্চারণ বা অর্থ যা বলবেন মিলবে)...'
+                            : 'মাইকে চাপ দিয়ে পাঠ শুরু করুন'),
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: _liveSpokenText.isNotEmpty ? const Color(0xFF1FE08F) : Colors.white54,
+                    ),
+                    overflow: TextDirection.ltr == TextDirection.ltr ? TextOverflow.ellipsis : null,
+                    maxLines: 1,
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          const SizedBox(height: 8),
+
+          // Progress indicator
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Text(
+                'শনাক্ত: $matchedCount / ${words.length} শব্দ',
+                style: const TextStyle(fontSize: 12, color: Colors.white70),
+              ),
+              Text(
+                '${(ratio * 100).toInt()}%',
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold, color: Color(0xFF1FE08F)),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(4),
+            child: LinearProgressIndicator(
+              value: ratio,
+              minHeight: 5,
+              backgroundColor: Colors.white10,
+              valueColor: const AlwaysStoppedAnimation(Color(0xFF1FE08F)),
             ),
           ),
 
@@ -735,30 +1255,38 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
           Text(
             widget.isRecording
                 ? '${widget.recordingSeconds.toStringAsFixed(1)}s'
-                : 'Tap the mic to begin',
+                : 'পাঠের সময়',
             style: TextStyle(
-              fontSize: widget.isRecording ? 42 : 16,
+              fontSize: widget.isRecording ? 36 : 14,
               fontWeight: FontWeight.bold,
               color: widget.isRecording ? const Color(0xFF1FE08F) : Colors.white38,
             ),
           ),
 
-          const SizedBox(height: 28),
+          const SizedBox(height: 16),
 
           // Mic button
           GestureDetector(
-            onTap: widget.isRecording ? widget.onStop : widget.onStart,
+            onTap: () {
+              if (widget.isRecording) {
+                final curRatio = words.isNotEmpty ? (_matchedWords.where((m) => m).length / words.length) : 0.0;
+                widget.onStop(curRatio);
+              } else {
+                widget.onStart();
+              }
+            },
             child: ScaleTransition(
               scale: widget.isRecording ? _pulseAnim : const AlwaysStoppedAnimation(1.0),
               child: Container(
-                width: 88,
-                height: 88,
+                width: 80,
+                height: 80,
                 decoration: BoxDecoration(
                   shape: BoxShape.circle,
                   color: widget.isRecording ? const Color(0xFFD62828) : const Color(0xFF1FE08F),
                   boxShadow: [
                     BoxShadow(
-                      color: (widget.isRecording ? const Color(0xFFD62828) : const Color(0xFF1FE08F)).withValues(alpha: 0.4),
+                      color: (widget.isRecording ? const Color(0xFFD62828) : const Color(0xFF1FE08F))
+                          .withValues(alpha: 0.45),
                       blurRadius: 20,
                       spreadRadius: 4,
                     ),
@@ -767,19 +1295,45 @@ class _RecordStepState extends State<_RecordStep> with SingleTickerProviderState
                 child: Icon(
                   widget.isRecording ? Icons.stop_rounded : Icons.mic_rounded,
                   color: Colors.black,
-                  size: 40,
+                  size: 38,
                 ),
               ),
             ),
           ),
 
-          const SizedBox(height: 16),
+          const SizedBox(height: 10),
           Text(
-            widget.isRecording ? 'Tap to stop & analyze' : 'Hold mic, speak clearly',
-            style: const TextStyle(fontSize: 13, color: Colors.white54),
+            widget.isRecording ? 'থামাতে আলতো চাপুন' : 'শুরু করতে মাইকে ট্যাপ করুন',
+            style: const TextStyle(fontSize: 12, color: Colors.white54),
           ),
-          const SizedBox(height: 32),
+          const SizedBox(height: 16),
         ],
+      ),
+    );
+  }
+
+  Widget _buildModeTab(int mode, String title) {
+    final isSelected = _activeMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => _switchMode(mode),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 7),
+          decoration: BoxDecoration(
+            color: isSelected ? const Color(0xFF1FE08F) : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            title,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+              color: isSelected ? Colors.black : Colors.white70,
+            ),
+          ),
+        ),
       ),
     );
   }
@@ -1128,6 +1682,8 @@ class _Verse {
   final String arabic;
   final String transliteration;
   final String translation;
+  final String banglaPronunciation;
+  final String banglaMeaning;
   final int minSeconds;
 
   const _Verse({
@@ -1135,6 +1691,8 @@ class _Verse {
     required this.arabic,
     required this.transliteration,
     required this.translation,
+    this.banglaPronunciation = '',
+    this.banglaMeaning = '',
     required this.minSeconds,
   });
 }
